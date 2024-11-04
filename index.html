@@ -27,7 +27,7 @@
                 <div style="margin: 10px">
                     历史数据查询：
                     <el-date-picker
-                        style="width: 120px"
+                        style="width: 133px"
                         v-model="Dates.HistoryDate"
                         type="date"
                         format="YYYY/MM/DD"
@@ -35,15 +35,16 @@
                         :disabled-date="(time) => {
                             const minDate = new Date('2021-01-01');
                             const maxDate = new Date()
-                            return time.getTime() > maxDate.getTime()||time.getTime() < minDate.getTime()
+                            const week = time.getDay();// 周六是6，周日是0
+                            return time.getTime() > maxDate.getTime()||time.getTime() < minDate.getTime()||week === 6 || week === 0|| !Dates.isHoliday(time)
                           }"
                     >
-                        <template #default="cell">
+                        <!-- <template #default="cell">
                             <div class="cell" :class="{ current: cell.isCurrent }">
                                 <span class="text">{{ cell.text }}</span>
                                 <span v-if="Dates.isHoliday(cell)" class="holiday" />
                             </div>
-                        </template>
+                        </template> -->
                     </el-date-picker>
                     <el-button type="danger" style="margin: 0 10px" @click="submit('历史')">查询</el-button>
                 </div>

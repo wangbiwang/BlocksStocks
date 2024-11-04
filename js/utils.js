@@ -101,6 +101,42 @@ function handle_requestsData(type, url, page = 1, perpage = 100) {
     }
 }
 
+function jsonp(options) {
+    // 超时处理
+    const { url, timeout } = options
+    return new Promise((resolve, reject) => {
+        // 防止函数名冲突
+        let funcName = `jsonp${Date.now()}`
+        let time = null,
+            scriptNode
+        // 定义callback
+        // debugger
+        window[funcName] = function (data) {
+            // debugger
+            // if (timeout) clearTimeout(time)
+            resolve(data)
+            // 很重要的性能优化点
+            // 清除本次请求产生的回调函数和script标签
+            delete window[funcName]
+            document.body.removeChild(scriptNode)
+        }
+        // 创建script标签
+        scriptNode = document.createElement('script')
+        // 给script标签添加src属性
+        scriptNode.src = url
+        // 发出请求
+        document.body.appendChild(scriptNode)
+        // debugger
+        // time = setTimeout(() => {
+        //     reject('network err, timeout')
+        // }, timeout)
+        // // 失败
+        // scriptNode.onerror = function (err) {
+        //     reject(err)
+        // }
+    })
+}
+
 var document = window.document
 var navigator = window.navigator
 var TOKEN_SERVER_TIME = 1670329000.28
@@ -1184,7 +1220,7 @@ var _red
                 var c, s, v
                 c = s = v = r
                 var f = b
-                if (((f = En), Wn(v[205], s[206]) in t)){
+                if (((f = En), Wn(v[205], s[206]) in t)) {
                     // console.log(t,n,e,'错误debugger',e[v[56]],f , En)
                     return t.apply(n, e)
                 }

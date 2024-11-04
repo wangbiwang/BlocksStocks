@@ -19,7 +19,7 @@ const Dates = reactive({
     HistoryBtn: false,
     isHoliday: (cell) => {
         // console.log(cell,'cell',dayjs(cell.date).format('YYYYMMDD'),Dates.DateList.includes(dayjs(cell.date).format('YYYYMMDD')),Dates.DateList)
-        return Dates.DateList.includes(dayjs(cell.date).format('YYYYMMDD'))
+        return Dates.DateList.includes(dayjs(cell).format('YYYYMMDD'))
     },
 })
 
@@ -124,14 +124,14 @@ function goToTHSUrl() {
     goToTHSUrl_flag = true
 }
 
-//最后操作状态记录
-const FinalOperatingState = reactive({
-    searchDate: '',
-})
-
 //-----------------------------
 async function submit(e) {
-    let FinalOperatingState = getLocalStorage('FinalOperatingState') || {}
+    //最后操作状态记录
+    let FinalOperatingState = getLocalStorage('FinalOperatingState') || {
+        searchDate: '', //查询的历史日期
+        TradingDay: [], //历史可交易日组
+        updateTradingDay: '', //上次请求可交易日期时间
+    }
     if (FinalOperatingState.searchDate && !e) {
         e = '历史'
         Dates.HistoryDate = FinalOperatingState.searchDate
@@ -146,50 +146,44 @@ async function submit(e) {
             })
             return
         }
-
         Dates.Today = dayjs(Dates.HistoryDate).format('YYYYMMDD')
         FinalOperatingState.searchDate = Dates.HistoryDate
-        setLocalStorage('FinalOperatingState', FinalOperatingState)
     } else {
         Dates.Today = dayjs().format('YYYYMMDD')
         FinalOperatingState.searchDate = ''
-        setLocalStorage('FinalOperatingState', FinalOperatingState)
     }
     Dates.HistoryBtn = e
-    let year_month = `${dayjs(Dates.Today).format('YYYY-MM')}`
-    let DateListvalue = getLocalStorage(year_month)
-    if (!DateListvalue) {
-        let baseUrl = 'https://www.szse.cn/api/report/exchange/onepersistenthour/monthList?month='
-        let _p1 = dayjs(Dates.Today).subtract(1, 'month').format('YYYY-MM')
-        let _1 = dayjs(Dates.Today).format('YYYY-MM')
-        let _n1 = dayjs(Dates.Today).add(1, 'month').format('YYYY-MM')
-        let res = await Promise.all([
-            axios({ withCredentials: true, method: 'get', url: baseUrl + _p1 }),
-            axios({ withCredentials: true, method: 'get', url: baseUrl + _1 }),
-            axios({ withCredentials: true, method: 'get', url: baseUrl + _n1 }),
-        ])
-        res = res
-            .map((e) => {
-                return e.data.data
-                    .filter((e) => e.jybz == 1)
-                    .map((e) => e.jyrq)
-                    .map((e) => e.replaceAll('-', ''))
-            })
-            .flat()
-        setLocalStorage(_1, res)
-        DateListvalue = res
-
-    }
-    if (!DateListvalue.some((el) => el == Dates.Today)) {
-        ElNotification({
-            title: '当前选中日期非交易日！',
-            type: 'error',
-            position: 'top-right',
-            duration: 3000,
+    console.log(FinalOperatingState)
+    //---------
+    // https://proxy.finance.qq.com/ifzqgtimg/appstock/app/newfqkline/get?_var=kline_dayqfq&param=sh000001,day,2021-01-01,2025-01-01,1040,qfq
+    let baseUrl = 'https://proxy.finance.qq.com/ifzqgtimg/appstock/app/newfqkline/get?_var=kline_dayqfq&param='
+    let dayArr,
+        oldYear = 2021,
+        newyYear = Number(dayjs(new Date()).format('YYYY')) + 1
+    // 第一次请求获取[2021至今]历史所有数据 每年余量270day
+    if (FinalOperatingState.TradingDay.length == 0) {
+        dayArr = await axios({
+            method: 'get',
+            url: `${baseUrl}sh000001,day,${oldYear}-01-01,${newyYear}-01-01,${Number((newyYear - oldYear) * 270)},qfq`,
         })
-        return
     }
-    Dates.DateList = DateListvalue
+    // 之后每天请求一次当年数据
+    else if (FinalOperatingState.updateTradingDay != dayjs(new Date()).format('YYYYMMDD')) {
+        dayArr = await axios({
+            method: 'get',
+            url: `${baseUrl}sh000001,day,${Number(newyYear - 1)}-01-01,${newyYear}-01-01,${Number(270)},qfq`,
+        })
+    }
+    if (dayArr && dayArr.status == 200 && dayArr.data) {
+        let data = JSON.parse(dayArr.data.replace('kline_dayqfq=', ''))
+        if (data.data && data.data.sh000001 && data.data.sh000001.day.length > 0) {
+            data = data.data.sh000001.day.map((e) => dayjs(e[0]).format('YYYYMMDD'))
+            FinalOperatingState.TradingDay = Array.from(new Set([...FinalOperatingState.TradingDay, ...data]))
+            FinalOperatingState.updateTradingDay = dayjs(new Date()).format('YYYYMMDD')
+        }
+    }
+    Dates.DateList = FinalOperatingState.TradingDay
+
     Dates.yesterday = Dates.DateList[Dates.DateList.findIndex((el) => el == Dates.Today) - 1]
     let TimeTilArr = [Dates.Today, `09:35`, `09:33`, `09:31`, Dates.yesterday]
     Blocks.headerData = ['指数简称', ...TimeTilArr, '放量', 'M05', 'M10', 'M30', 'M60', '9:35打分']
@@ -215,6 +209,7 @@ async function submit(e) {
     Blocks.Data[0].default = []
     Blocks.Data[1].default = []
     Stocks.Data[0].default = []
+    setLocalStorage('FinalOperatingState', FinalOperatingState)
     submitBlocks()
 }
 function submitBlocks() {
@@ -388,9 +383,9 @@ function handleBlocksData(res) {
             let 扣分5 = obj['09:33']['涨跌幅'] < 0 && obj['09:35']['涨跌幅'] < 0 ? 5 : 0
             let 扣分6 =
                 obj['09:31']['资金流向'] > obj['09:33']['资金流向'] &&
-                    obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
-                    obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
-                    obj['09:33']['大单净额'] > obj['09:35']['大单净额']
+                obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
+                obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
+                obj['09:33']['大单净额'] > obj['09:35']['大单净额']
                     ? 5
                     : 0
             let 扣分 = 扣分1 + 扣分2 + 扣分3 + 扣分4 + 扣分5 + 扣分6
@@ -603,9 +598,9 @@ function handleStocksData(res) {
             let 扣分5 = obj['09:33']['涨跌幅'] < 0 && obj['09:35']['涨跌幅'] < 0 ? 5 : 0
             let 扣分6 =
                 obj['09:31']['资金流向'] > obj['09:33']['资金流向'] &&
-                    obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
-                    obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
-                    obj['09:33']['大单净额'] > obj['09:35']['大单净额']
+                obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
+                obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
+                obj['09:33']['大单净额'] > obj['09:35']['大单净额']
                     ? 5
                     : 0
             let 扣分 = 扣分1 + 扣分2 + 扣分3 + 扣分4 + 扣分5 + 扣分6
