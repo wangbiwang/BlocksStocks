@@ -159,7 +159,7 @@ async function submit(e) {
     let year_month = `${dayjs(Dates.Today).format('YYYY-MM')}`
     let DateListvalue = getLocalStorage(year_month)
     if (!DateListvalue) {
-        let baseUrl = 'https://www.szse.cn/api/report/exchange/onepersistenthour/monthList?month='
+        let baseUrl = 'http://www.szse.cn/api/report/exchange/onepersistenthour/monthList?month='
         let _p1 = dayjs(Dates.Today).subtract(1, 'month').format('YYYY-MM')
         let _1 = dayjs(Dates.Today).format('YYYY-MM')
         let _n1 = dayjs(Dates.Today).add(1, 'month').format('YYYY-MM')
