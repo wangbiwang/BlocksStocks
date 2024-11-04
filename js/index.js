@@ -159,38 +159,36 @@ async function submit(e) {
     let year_month = `${dayjs(Dates.Today).format('YYYY-MM')}`
     let DateListvalue = getLocalStorage(year_month)
     if (!DateListvalue) {
-        // let baseUrl = 'https://www.szse.cn/api/report/exchange/onepersistenthour/monthList?month='
-        // let _p1 = dayjs(Dates.Today).subtract(1, 'month').format('YYYY-MM')
-        // let _1 = dayjs(Dates.Today).format('YYYY-MM')
-        // let _n1 = dayjs(Dates.Today).add(1, 'month').format('YYYY-MM')
-        // let res = await Promise.all([
-        //     axios({ method: 'get', url: baseUrl + _p1 }),
-        //     axios({ method: 'get', url: baseUrl + _1 }),
-        //     axios({ method: 'get', url: baseUrl + _n1 }),
-        // ])
-        // res = res
-        //     .map((e) => {
-        //         return e.data.data
-        //             .filter((e) => e.jybz == 1)
-        //             .map((e) => e.jyrq)
-        //             .map((e) => e.replaceAll('-', ''))
-        //     })
-        //     .flat()
-        // setLocalStorage(_1, res)
-        // DateListvalue = res
+        let baseUrl = 'https://www.szse.cn/api/report/exchange/onepersistenthour/monthList?month='
+        let _p1 = dayjs(Dates.Today).subtract(1, 'month').format('YYYY-MM')
+        let _1 = dayjs(Dates.Today).format('YYYY-MM')
+        let _n1 = dayjs(Dates.Today).add(1, 'month').format('YYYY-MM')
+        let res = await Promise.all([
+            axios({ withCredentials: true, method: 'get', url: baseUrl + _p1 }),
+            axios({ withCredentials: true, method: 'get', url: baseUrl + _1 }),
+            axios({ withCredentials: true, method: 'get', url: baseUrl + _n1 }),
+        ])
+        res = res
+            .map((e) => {
+                return e.data.data
+                    .filter((e) => e.jybz == 1)
+                    .map((e) => e.jyrq)
+                    .map((e) => e.replaceAll('-', ''))
+            })
+            .flat()
+        setLocalStorage(_1, res)
+        DateListvalue = res
 
-
-        DateListvalue = []
     }
-    // if (!DateListvalue.some((el) => el == Dates.Today)) {
-    //     ElNotification({
-    //         title: '当前选中日期非交易日！',
-    //         type: 'error',
-    //         position: 'top-right',
-    //         duration: 3000,
-    //     })
-    //     return
-    // }
+    if (!DateListvalue.some((el) => el == Dates.Today)) {
+        ElNotification({
+            title: '当前选中日期非交易日！',
+            type: 'error',
+            position: 'top-right',
+            duration: 3000,
+        })
+        return
+    }
     Dates.DateList = DateListvalue
     Dates.yesterday = Dates.DateList[Dates.DateList.findIndex((el) => el == Dates.Today) - 1]
     let TimeTilArr = [Dates.Today, `09:35`, `09:33`, `09:31`, Dates.yesterday]
@@ -390,9 +388,9 @@ function handleBlocksData(res) {
             let 扣分5 = obj['09:33']['涨跌幅'] < 0 && obj['09:35']['涨跌幅'] < 0 ? 5 : 0
             let 扣分6 =
                 obj['09:31']['资金流向'] > obj['09:33']['资金流向'] &&
-                obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
-                obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
-                obj['09:33']['大单净额'] > obj['09:35']['大单净额']
+                    obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
+                    obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
+                    obj['09:33']['大单净额'] > obj['09:35']['大单净额']
                     ? 5
                     : 0
             let 扣分 = 扣分1 + 扣分2 + 扣分3 + 扣分4 + 扣分5 + 扣分6
@@ -427,7 +425,7 @@ function submitStocks() {
         if (Dates.HistoryBtn == '历史') {
             // let cn = dayjs(Dates.HistoryDate).format('YYYY年MM月DD日')
             let cn = dayjs(Dates.Today).format('YYYY年MM月DD日')
-            
+
             el = el
                 .replaceAll('当日', cn)
                 .replaceAll('09:35', cn + '09:35')
@@ -605,9 +603,9 @@ function handleStocksData(res) {
             let 扣分5 = obj['09:33']['涨跌幅'] < 0 && obj['09:35']['涨跌幅'] < 0 ? 5 : 0
             let 扣分6 =
                 obj['09:31']['资金流向'] > obj['09:33']['资金流向'] &&
-                obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
-                obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
-                obj['09:33']['大单净额'] > obj['09:35']['大单净额']
+                    obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
+                    obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
+                    obj['09:33']['大单净额'] > obj['09:35']['大单净额']
                     ? 5
                     : 0
             let 扣分 = 扣分1 + 扣分2 + 扣分3 + 扣分4 + 扣分5 + 扣分6
