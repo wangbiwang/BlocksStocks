@@ -1,0 +1,197 @@
+html,
+body,
+#app {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    transition: color 0.5s, background-color 0.5s;
+    line-height: 1.6;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans',
+        'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-size: 15px;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+#app {
+    width: calc(100% - 20px);
+    margin: 0 10px;
+}
+.green {
+    color: #0e9d58 !important;
+}
+.red {
+    color: #eb4436 !important;
+}
+.f600 {
+    font-weight: 600 !important;
+}
+.f400 {
+    font-weight: 400 !important;
+}
+.fs16 {
+    font-size: 16px !important;
+}
+.fs14 {
+    font-size: 14px !important;
+}
+.fs9 {
+    font-size: 9px !important;
+}
+table {
+    width: 100%;
+    font-size: 14px;
+    border-collapse: collapse;
+}
+.hoverStyle {
+    background-color: rgba(255, 200, 209, 0.7);
+}
+.table_hy tr:hover,
+.table_gu tr:hover {
+    background-color: rgba(200, 221, 255, 0.7);
+}
+.table_cnText {
+    color: #1657d9;
+    text-align: center;
+    font-size: 12px;
+    /* white-space: nowrap;  */
+    /* 保持文本在一行内显示，不自动换行 */
+    /* overflow: hidden;  */
+    /* 当内容超出容器时显示滚动条 */
+    /* display: flex; */
+}
+.table_cnText:hover {
+    text-decoration: underline;
+    /* font-weight: 600; */
+}
+.text_end {
+    text-align: end;
+}
+
+/* 指数table css */
+.table_hy {
+    display: block;
+    width: 100%;
+    height: 181px; /* 设置一个合适的高度 */
+    overflow-y: auto; /* 或者使用 'scroll' 始终显示滚动条 */
+}
+.table_hy th,
+.table_hy td {
+    padding: 0;
+    margin: 0;
+    height: 23px;
+    overflow: hidden;
+    box-sizing: border-box;
+    border: 1px solid #dbdbdb;
+}
+.table_hy th {
+    overflow: hidden;
+    font-weight: 400;
+    color: #1e2024;
+    background-color: #f4f4f4;
+}
+
+table thead {
+    position: sticky;
+    top: 0;
+    background-color: #f4f4f4;
+}
+
+/* 个股table css */
+.table_gu {
+    display: block;
+    width: 100%;
+    height: 380px; /* 设置一个合适的高度 */
+    overflow-y: auto; /* 或者使用 'scroll' 始终显示滚动条 */
+
+    /* height: 100%;
+    min-width: 400px; */
+    /* overflow: auto; */
+}
+.table_gu th,
+.table_gu td {
+    padding: 0;
+    margin: 0;
+    height: 23px;
+    overflow: auto;
+    box-sizing: border-box;
+    border: 1px solid #dbdbdb;
+}
+.table_gu th {
+    font-weight: 400;
+    color: #1e2024;
+    background-color: #f4f4f4;
+}
+
+/* 综合日期时间涨跌幅资金流向大单净额大单净量css */
+.rateTd {
+    overflow: hidden;
+    width: 130px;
+}
+.rateTd .tb3_box {
+    display: flex;
+    align-items: center;
+}
+
+.rateTd .tb3_box div {
+    font-size: 9px;
+    width: 35px;
+    text-align: end;
+}
+.rateTd .tb3_box div:first-child {
+    font-size: 14px;
+    width: 50px;
+}
+
+/* 日历 */
+.cell {
+    height: 30px;
+    padding: 3px 0;
+    box-sizing: border-box;
+}
+.cell .text {
+    width: 24px;
+    height: 24px;
+    display: block;
+    margin: 0 auto;
+    line-height: 24px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+}
+.cell.current .text {
+    background: #626aef;
+    color: #fff;
+}
+.cell .holiday {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #f56c6c;
+    border-radius: 50%;
+    bottom: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.holiday {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #f56c6c;
+    border-radius: 50%;
+    bottom: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* 影藏当日结束数据  */
+/* .table_hy tbody tr td:nth-child(2) {
+    position: relative;
+    left: -999px;
+}
+.table_gu tbody tr td:nth-child(10) {
+    position: relative;
+    left: -999px;
+} */
