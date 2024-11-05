@@ -164,14 +164,15 @@ async function submit(e) {
     if (FinalOperatingState.TradingDay.length == 0) {
         dayArr = await axios({
             method: 'get',
-            url: `${baseUrl}sh000001,day,${oldYear}-01-01,${newyYear}-01-01,${Number((newyYear - oldYear) * 270)},qfq`,
+            url: `${baseUrl}sh000001,day,,,${Number((newyYear - oldYear) * 270)},qfq`,
         })
     }
     // 之后每天请求一次当年数据
+    // https://proxy.finance.qq.com/ifzqgtimg/appstock/app/newfqkline/get?_var=kline_dayqfq&param=sh000001,day,,,320,qfq
     else if (FinalOperatingState.updateTradingDay != dayjs(new Date()).format('YYYYMMDD')) {
         dayArr = await axios({
             method: 'get',
-            url: `${baseUrl}sh000001,day,${Number(newyYear - 1)}-01-01,${newyYear}-01-01,${Number(270)},qfq`,
+            url: `${baseUrl}sh000001,day,,,320,qfq`,
         })
     }
     if (dayArr && dayArr.status == 200 && dayArr.data) {
