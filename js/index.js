@@ -64,7 +64,7 @@ const Blocks = reactive({
         //     return
         // }
         if (i < 1 || i > 5) return
-        console.log(e, i)
+        // console.log(e, i)
         Questions.block = Questions.block.map((el) => {
             el = el.replaceAll('涨跌幅降序', '涨跌幅')
             return el
@@ -92,7 +92,7 @@ const Stocks = reactive({
     Data: [{ name: '实时策略', base: [], default: [], filter: [] }],
     CheckedOptimum: true,
     CheckedOptimumFN: () => {
-        console.log(Stocks.CheckedOptimum)
+        // console.log(Stocks.CheckedOptimum)
         if (Stocks.CheckedOptimum) {
             Stocks.Data[0].default = Stocks.Data[0].filter
         } else {
@@ -101,7 +101,7 @@ const Stocks = reactive({
     },
     hoverBlocks: [],
     openUrl: (e) => {
-        console.log(e)
+        // console.log(e)
         window.open(e)
     },
     handleMouseOver: (e) => {
@@ -153,7 +153,7 @@ async function submit(e) {
         FinalOperatingState.searchDate = ''
     }
     Dates.HistoryBtn = e
-    console.log(FinalOperatingState)
+    // console.log(FinalOperatingState)
     //---------
     // https://proxy.finance.qq.com/ifzqgtimg/appstock/app/newfqkline/get?_var=kline_dayqfq&param=sh000001,day,2021-01-01,2025-01-01,1040,qfq
     let baseUrl = 'https://proxy.finance.qq.com/ifzqgtimg/appstock/app/newfqkline/get?_var=kline_dayqfq&param='
@@ -234,7 +234,7 @@ function submitBlocks() {
                 if (el.data && el.data.data && el.data.data.answer && el.data.data.answer.length > 0) {
                     return el.data.data.answer[0].txt[0].content.components[0].data.datas
                 } else {
-                    console.log(el)
+                    // console.log(el)
                     ElNotification({
                         title: ' 刷新重试！3秒后尝试打开同花顺官网测试连通性！',
                         type: 'error',
@@ -246,11 +246,11 @@ function submitBlocks() {
                     }, 3000)
                 }
             })
-            console.log('submitBlocks', ...res)
+            // console.log('submitBlocks', ...res)
             let errKey = []
             res.forEach((el, i) => {
                 if (el.length > 0 && !el[0]['指数简称']) {
-                    console.log('错误项：', el[0])
+                    // console.log('错误项：', el[0])
                     errKey.push(i)
                 }
             })
@@ -311,7 +311,7 @@ function handleBlocksData(res) {
                 resArr.push(Object.assign({}, el, foundItem))
             }
         })
-        console.log(resArr, 'resArr')
+        // console.log(resArr, 'resArr')
         return resArr.map((ele) => {
             let obj = {}
             obj['code'] = ele['code']
@@ -439,7 +439,7 @@ function submitStocks() {
                 if (el.data && el.data.data && el.data.data.answer && el.data.data.answer.length > 0) {
                     return el.data.data.answer[0].txt[0].content.components[0].data.datas
                 } else {
-                    console.log(el)
+                    // console.log(el)
                     ElNotification({
                         title: ' 刷新重试！3秒后尝试打开同花顺官网测试连通性！',
                         type: 'error',
@@ -451,21 +451,21 @@ function submitStocks() {
                     }, 3000)
                 }
             })
-            console.log('submitStocks', ...res)
+            // console.log('submitStocks', ...res)
             //----
             let errKey = []
             res.forEach((el, i) => {
                 if (el.length > 0 && !el[0]['股票简称']) {
-                    console.log('错误项：', el[0])
+                    // console.log('错误项：', el[0])
                     errKey.push(i)
                 }
             })
-            console.log('errKey:', errKey)
+            // console.log('errKey:', errKey)
             if (errKey.length > 0) {
                 let errRequests = errKey.map((el) => {
                     return (el = requests[el])
                 })
-                console.log('errRequests:', errRequests)
+                // console.log('errRequests:', errRequests)
                 Promise.all(errRequests)
                     .then(async (errResponses) => {
                         errResponses = errResponses.map((el) => {
@@ -497,7 +497,7 @@ function submitStocks() {
                 position: 'top-right',
                 duration: 3000,
             })
-            console.error('error!!!', error)
+            // console.error('error!!!', error)
         })
         .finally(() => (Stocks.loading = false))
 }
@@ -668,7 +668,7 @@ const App = {
     },
 }
 const app = Vue.createApp(App)
-console.log(ElementPlus, ElementPlusLocaleZhCn)
+// console.log(ElementPlus, ElementPlusLocaleZhCn)
 app.use(ElementPlus, { locale: ElementPlusLocaleZhCn })
 app.mount('#app')
 function findKeysWithPattern(obj, start, end) {
