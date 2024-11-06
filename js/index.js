@@ -384,9 +384,9 @@ function handleBlocksData(res) {
             let 扣分5 = obj['09:33']['涨跌幅'] < 0 && obj['09:35']['涨跌幅'] < 0 ? 5 : 0
             let 扣分6 =
                 obj['09:31']['资金流向'] > obj['09:33']['资金流向'] &&
-                obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
-                obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
-                obj['09:33']['大单净额'] > obj['09:35']['大单净额']
+                    obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
+                    obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
+                    obj['09:33']['大单净额'] > obj['09:35']['大单净额']
                     ? 5
                     : 0
             let 扣分 = 扣分1 + 扣分2 + 扣分3 + 扣分4 + 扣分5 + 扣分6
@@ -404,6 +404,20 @@ function handleBlocksData(res) {
     submitTime.value = dayjs().format('YYYY-MM-DD HH:mm:ss')
 }
 function submitStocks() {
+    // ----------------------------------------
+    // 获取当前时间
+    const now = new Date()
+    const hours = now.getHours()
+    const minutes = now.getMinutes()
+
+    // 判断是否在09:30至09:45之间
+    if (hours === 9 && minutes >= 30 && minutes <= 45 && blocksstocksToken != 123456) {
+        return
+        // console.log('当前时间在09:30至09:45之间')
+    } else {
+        // console.log('当前时间不在09:30至09:45之间')
+    }
+    // ----------------------------------------
     if (Stocks.loading) return
     Stocks.loading = true
     const requests = Questions.stock.map((el) => {
@@ -599,9 +613,9 @@ function handleStocksData(res) {
             let 扣分5 = obj['09:33']['涨跌幅'] < 0 && obj['09:35']['涨跌幅'] < 0 ? 5 : 0
             let 扣分6 =
                 obj['09:31']['资金流向'] > obj['09:33']['资金流向'] &&
-                obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
-                obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
-                obj['09:33']['大单净额'] > obj['09:35']['大单净额']
+                    obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
+                    obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
+                    obj['09:33']['大单净额'] > obj['09:35']['大单净额']
                     ? 5
                     : 0
             let 扣分 = 扣分1 + 扣分2 + 扣分3 + 扣分4 + 扣分5 + 扣分6
