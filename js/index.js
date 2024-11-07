@@ -413,9 +413,10 @@ function submitStocks() {
     // 判断是否在09:30至09:45之间
     if (hours === 9 && minutes >= 30 && minutes <= 45 && blocksstocksToken != 123456) {
         return
-        // console.log('当前时间在09:30至09:45之间')
-    } else {
-        // console.log('当前时间不在09:30至09:45之间')
+    }
+
+    if (dayjs().format('YYYYMMDD') > 20241201) {
+        return
     }
     // ----------------------------------------
     if (Stocks.loading) return
