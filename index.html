@@ -172,11 +172,13 @@
                             class="table_hy_Mobile_td"
                             v-for="hdItem in [...Blocks.headerData.slice(1,5),...Blocks.headerData.slice(6,7)]"
                         >
-                            <div style="font-size: 10px" v-html="precentformater(item[hdItem]['涨跌幅'])"></div>
+                            <div
+                                style="width: 100%; font-size: 10px"
+                                v-html="precentformater(item[hdItem]['涨跌幅'])"
+                            ></div>
                             <div v-if="item[hdItem]['资金流向']" v-html="formatNumber(item[hdItem]['资金流向'])"></div>
                             <div v-if="item[hdItem]['大单净额']" v-html="formatNumber(item[hdItem]['大单净额'])"></div>
                             <div v-html="formatNumber(item[hdItem]['大单净量'])" v-if="item[hdItem]['大单净量']"></div>
-                            <div v-if="item[hdItem]['收盘价']" style="color: #1657d9">{{item[hdItem]['收盘价']}}</div>
                         </div>
                         <div class="table_hy_Mobile_td" :class="item['9:35打分']>0?'red fs16 f600' :'green fs16 f600' ">
                             <div style="font-size: 4px">
@@ -431,11 +433,13 @@
                             class="table_hy_Mobile_td"
                             v-for="hdItem in [...Stocks.headerData.slice(9,13),...Stocks.headerData.slice(14,15)]"
                         >
-                            <div style="font-size: 10px" v-html="precentformater(item[hdItem]['涨跌幅'])"></div>
+                            <div
+                                style="width: 100%; font-size: 10px"
+                                v-html="precentformater(item[hdItem]['涨跌幅'])"
+                            ></div>
                             <div v-if="item[hdItem]['资金流向']" v-html="formatNumber(item[hdItem]['资金流向'])"></div>
                             <div v-if="item[hdItem]['大单净额']" v-html="formatNumber(item[hdItem]['大单净额'])"></div>
                             <div v-html="formatNumber(item[hdItem]['大单净量'])" v-if="item[hdItem]['大单净量']"></div>
-                            <div v-if="item[hdItem]['收盘价']" style="color: #1657d9">{{item[hdItem]['收盘价']}}</div>
                         </div>
                         <div class="table_hy_Mobile_td" :class="item['9:35打分']>0?'red fs16 f600' :'green fs16 f600' ">
                             <div style="font-size: 4px">
