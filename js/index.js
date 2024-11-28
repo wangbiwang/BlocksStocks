@@ -29,20 +29,20 @@ const text1 = '(前1交易日成交量-前1交易日20日均量线)/前1交易�
 const text2 = '前1交易日(M5和M10和M30和M60)'
 const Questions = reactive({
     block: [
-        `当日涨跌幅资金流向大单净额大单净量;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35${text01}；前1交易日涨跌幅资金流向大单净额大单净量；二级行业`,
+        `当日涨跌幅资金流向大单净额大单净量;09:30涨跌幅；09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35${text01}；前1交易日涨跌幅资金流向大单净额大单净量；二级行业`,
         `当日涨跌幅资金流向大单净额大单净量;09:35${text01}；${text1}；${text2}；前1交易日收盘价；二级行业`,
-        `当日涨跌幅资金流向大单净额大单净量;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35${text01}；前1交易日涨跌幅资金流向大单净额大单净量；概念`,
+        `当日涨跌幅资金流向大单净额大单净量;09:30涨跌幅；09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35${text01}；前1交易日涨跌幅资金流向大单净额大单净量；概念`,
         `当日涨跌幅资金流向大单净额大单净量;09:35${text01}；${text1}；${text2}；前1交易日收盘价；概念`,
     ],
     stock: [
-        `前1交易日热度排名升序当日热度排名流通市值非st；当日涨跌幅资金流向大单净额大单净量收盘价；行业概念`,
-        `前1交易日热度排名升序前40交易日区间最高价不复权;09:31涨跌幅资金流向大单净额股价；09:33涨跌幅资金流向大单净额股价；09:35涨跌幅资金流向大单净额股价；前1交易日涨跌幅资金流向大单净额大单净量；行业概念`,
-        `前1交易日热度排名升序；${text1}；${text2}；前1交易日收盘价前复权；行业概念`,
+        `当日涨跌幅资金流向大单净额大单净量收盘价；09:30涨跌幅；前1交易日热度排名升序当日热度排名流通市值非st；前1交易日涨跌幅资金流向大单净额大单净量；行业概念`,
+        `前1交易日热度排名升序前40交易日区间最高价不复权;09:31涨跌幅资金流向大单净额大单净量；09:33涨跌幅资金流向大单净额大单净量；09:35涨跌幅资金流向大单净额大单净量股价；行业概念`,
+        `前1交易日热度排名升序前20交易日区间最高价不复权；${text1}；${text2}；前1交易日收盘价前复权；行业概念`,
     ],
 })
 //指数板块相关
 const Blocks = reactive({
-    checked: { type: '-', name: '-' },
+    checked: { type: '-', name: '-', item: null },
     loading: false,
     headerData: [],
     Data: [
@@ -92,24 +92,44 @@ const Stocks = reactive({
     Data: [{ name: '实时策略', base: [], default: [], filter: [] }],
     CheckedOptimum: true,
     CheckedOptimumFN: () => {
-        // console.log(Stocks.CheckedOptimum)
         if (Stocks.CheckedOptimum) {
             Stocks.Data[0].default = Stocks.Data[0].filter
         } else {
             Stocks.Data[0].default = Stocks.Data[0].base
         }
     },
-    hoverBlocks: [],
     openUrl: (e) => {
-        // console.log(e)
         window.open(e)
     },
+    hoverBlocks: [],
     handleMouseOver: (e) => {
         Stocks.hoverBlocks = [e['行业'] && e['行业'].split('-')[1], e['行业'], ...e['概念'].split(';')]
     },
     handleMouseLeave: () => {
         Stocks.hoverBlocks = []
     },
+    mySort: (ea, eb) => {
+        console.log(ea, eb, Stocks.Data[0].default)
+        Stocks.Data[0].base = Stocks.Data[0].base.sort((a, b) => {
+            if (eb) {
+                return b[ea][eb] - a[ea][eb]
+            } else {
+                if (ea == '昨热度排名' || ea == '今热度排名') return a[ea] - b[ea]
+                return b[ea] - a[ea]
+            }
+        })
+        Stocks.Data[0].filter = Stocks.Data[0].filter.sort((a, b) => {
+            if (eb) {
+                return b[ea][eb] - a[ea][eb]
+            } else {
+                if (ea == '昨热度排名' || ea == '今热度排名') return a[ea] - b[ea]
+                return b[ea] - a[ea]
+            }
+        })
+        Stocks.CheckedOptimumFN()
+        Stocks.Sort_selected = [ea, eb ? eb : null]
+    },
+    Sort_selected: ['昨热度排名', null],
 })
 //防爬虫点击验证
 let goToTHSUrl_flag = false
@@ -169,7 +189,7 @@ async function submit(e) {
     }
     // 之后每天请求一次当年数据
     // https://proxy.finance.qq.com/ifzqgtimg/appstock/app/newfqkline/get?_var=kline_dayqfq&param=sh000001,day,,,320,qfq
-    else if (FinalOperatingState.updateTradingDay != dayjs(new Date()).format('YYYYMMDD')) {
+    else if (Number(FinalOperatingState.updateTradingDay) < Number(dayjs(new Date()).format('YYYYMMDD') + '0930')) {
         dayArr = await axios({
             method: 'get',
             url: `${baseUrl}sh000001,day,,,320,qfq`,
@@ -180,13 +200,13 @@ async function submit(e) {
         if (data.data && data.data.sh000001 && data.data.sh000001.day.length > 0) {
             data = data.data.sh000001.day.map((e) => dayjs(e[0]).format('YYYYMMDD'))
             FinalOperatingState.TradingDay = Array.from(new Set([...FinalOperatingState.TradingDay, ...data]))
-            FinalOperatingState.updateTradingDay = dayjs(new Date()).format('YYYYMMDD')
+            FinalOperatingState.updateTradingDay = dayjs(new Date()).format('YYYYMMDDHHmm')
         }
     }
     Dates.DateList = FinalOperatingState.TradingDay
 
     Dates.yesterday = Dates.DateList[Dates.DateList.findIndex((el) => el == Dates.Today) - 1]
-    let TimeTilArr = [Dates.Today, `09:35`, `09:33`, `09:31`, Dates.yesterday]
+    let TimeTilArr = [Dates.Today, `09:35`, `09:33`, `09:31`, `09:30`, Dates.yesterday]
     Blocks.headerData = ['指数简称', ...TimeTilArr, '放量', 'M05', 'M10', 'M30', 'M60', '9:35打分']
     Stocks.headerData = [
         '序号',
@@ -204,16 +224,39 @@ async function submit(e) {
         'M10',
         'M30',
         'M60',
+        '前20日',
         '前40日',
         '9:35打分',
     ]
     Blocks.Data[0].default = []
     Blocks.Data[1].default = []
     Stocks.Data[0].default = []
+    //---------------
+    if (Dates.HistoryBtn == '历史') {
+        let d = dayjs(Dates.HistoryDate).format('YYYYMMDD')
+        if (d == 20221121) FinalOperatingState.keyDate = d
+    }
+    if (!FinalOperatingState.keyDate) return
+    //---------------
     setLocalStorage('FinalOperatingState', FinalOperatingState)
     submitBlocks()
 }
 function submitBlocks() {
+    // // ----------------------------------------
+    // // 获取当前时间
+    // const now = new Date()
+    // const hours = now.getHours()
+    // const minutes = now.getMinutes()
+
+    // // 判断是否在09:30至09:45之间
+    // if (hours === 9 && minutes >= 30 && minutes <= 45&&blocksstocksToken!=123456) {
+    //     return
+    //     // console.log('当前时间在09:30至09:45之间')
+    // } else {
+    //     // console.log('当前时间不在09:30至09:45之间')
+    // }
+
+    // // ----------------------------------------
     if (Blocks.loading) return
     Blocks.loading = true
     const requests = Questions.block.map((el) => {
@@ -354,7 +397,7 @@ function handleBlocksData(res) {
             obj['放量'] = num(ele[findKeysWithPattern(ele, '{(}{(}指数@成交量[', ']{)}')[0]])
             obj['放量达成'] = obj['放量'] > 0
             obj['M05'] = num(ele[`5日指数@均线[${pd1}]`])
-            obj['M05达成'] = obj['M05'] <= obj['p收盘价']
+            obj['M05达成'] = obj['放量达成'] && obj['M05'] <= obj['p收盘价']
             obj['M10'] = num(ele[`10日指数@均线[${pd1}]`])
             obj['M10达成'] = obj['M05达成'] && obj['M10'] <= obj['p收盘价']
             obj['M30'] = num(ele[`30日指数@均线[${pd1}]`])
@@ -363,37 +406,59 @@ function handleBlocksData(res) {
             obj['M60达成'] = obj['M30达成'] && obj['M60'] <= obj['p收盘价']
 
             let 长期趋势 =
+                (obj['放量达成'] ? 1 : 0) +
                 (obj['M05达成'] ? 1 : 0) +
                 (obj['M10达成'] ? 1 : 0) +
                 (obj['M30达成'] ? 1 : 0) +
-                (obj['M60达成'] ? 2 : 0) //长期趋势占比50%
+                (obj['M60达成'] ? 1 : 0) //长期趋势占比50%
 
-            let p涨跌 = obj[pd1]['涨跌幅'] > 0 ? 1 : -1
-            let p资金p大单p放量 = (obj[pd1]['资金流向'] > 0 || obj[pd1]['大单净额'] > 0) && obj['放量达成'] ? 1 : -1
-            let 昨日集合 = p涨跌 + p资金p大单p放量
+            let p趋势 = obj[pd1]['涨跌幅'] > 0 && (obj[pd1]['资金流向'] > 0 || obj[pd1]['大单净额'] > 0) ? 1 : 0
 
             let _35涨跌 = obj['09:35']['涨跌幅'] > obj['09:31']['涨跌幅'] ? 1 : 0
             let _35资金 = obj['09:35']['资金流向'] > obj['09:31']['资金流向'] ? 1 : 0
             let _35大单 = obj['09:35']['大单净额'] > obj['09:31']['大单净额'] ? 1 : 0
-            let _35集合 = _35涨跌 + _35资金 + _35大单 //资金大单涨跌幅方向
+            let _35幅度 =
+                obj['09:35']['涨跌幅'] > 0 && (obj['09:35']['大单净额'] > 0 || obj['09:35']['资金流向'] > 0) ? 1 : 0
+            let 短期趋势 = p趋势 + _35涨跌 + _35资金 + _35大单 + _35幅度
 
-            let 扣分1 = obj['09:35']['资金流向'] < 0 && obj['09:35']['大单净额'] < 0 ? 5 : 0
-            let 扣分2 = 扣分1 && obj['09:33']['资金流向'] < 0 && obj['09:33']['大单净额'] < 0 ? 5 : 0
-            let 扣分3 = obj['09:35']['涨跌幅'] < obj['09:33']['涨跌幅'] ? 1 : 0
-            let 扣分4 = obj['09:35']['涨跌幅'] < 0 ? 5 : 0
-            let 扣分5 = obj['09:33']['涨跌幅'] < 0 && obj['09:35']['涨跌幅'] < 0 ? 5 : 0
-            let 扣分6 =
-                obj['09:31']['资金流向'] > obj['09:33']['资金流向'] &&
-                    obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
-                    obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
-                    obj['09:33']['大单净额'] > obj['09:35']['大单净额']
-                    ? 5
-                    : 0
-            let 扣分 = 扣分1 + 扣分2 + 扣分3 + 扣分4 + 扣分5 + 扣分6
+            let 扣分 = [
+                obj['09:35']['大单净额'] <= 0 &&
+                obj['09:33']['大单净额'] >= obj['09:35']['大单净额'] &&
+                obj['09:31']['大单净额'] >= obj['09:35']['大单净额']
+                    ? -5
+                    : 0,
+
+                obj['09:31']['大单净额'] >= obj['09:33']['大单净额'] &&
+                obj['09:33']['大单净额'] >= obj['09:35']['大单净额']
+                    ? -5
+                    : 0,
+                obj['09:35']['资金流向'] <= 0 && obj['09:35']['大单净额'] < 0 ? -5 : 0,
+                obj['09:35']['资金流向'] <= obj['09:33']['资金流向'] &&
+                obj['09:35']['大单净额'] <= obj['09:33']['大单净额']
+                    ? -5
+                    : 0,
+                obj['09:33']['涨跌幅'] >= obj['09:35']['涨跌幅'] ? -1 : 0,
+                obj['09:35']['涨跌幅'] <= 0 ? -5 : 0,
+                obj['M30达成'] ? 0 : -5,
+            ].reduce((accumulator, currentValue) => accumulator + currentValue, 0)
+
+            // let 打分特殊条件1 =
+            //     obj['09:35']['涨跌幅'] >= obj['09:33']['涨跌幅'] &&
+            //     obj['09:33']['涨跌幅'] >= obj['09:31']['涨跌幅'] &&
+            //     obj['09:31']['涨跌幅'] > 0 &&
+            //     obj['09:35']['涨跌幅'] > 1 &&
+            //     obj['09:35']['资金流向'] >= obj['09:33']['资金流向'] &&
+            //     obj['09:33']['资金流向'] >= obj['09:31']['资金流向'] &&
+            //     obj['09:33']['资金流向'] > 0 &&
+            //     obj['09:35']['大单净额'] >= obj['09:33']['大单净额'] &&
+            //     obj['09:33']['大单净额'] >= obj['09:31']['大单净额'] &&
+            //     obj['09:31']['大单净额'] > 0
+            // 扣分 = 打分特殊条件1 ? 0 : 扣分
+            // 短期趋势 = 打分特殊条件1 ? (长期趋势 == 0 ? 6 : 5) : 短期趋势
 
             obj['9:35打分'] =
-                // `${长期趋势} + ${昨日集合} + 【${_35涨跌} +${_35资金}  +${_35大单}】  - ${扣分}=` +
-                Number(长期趋势 + 昨日集合 + _35集合 - 扣分)
+                // `${长期趋势} + ${短期趋势}  + ${扣分}=` +
+                Number(长期趋势 + 短期趋势 + 扣分)
 
             return obj
         })
@@ -404,45 +469,32 @@ function handleBlocksData(res) {
     submitTime.value = dayjs().format('YYYY-MM-DD HH:mm:ss')
 }
 function submitStocks() {
-    // ----------------------------------------
-    // 获取当前时间
-    const now = new Date()
-    const hours = now.getHours()
-    const minutes = now.getMinutes()
-
-    // 判断是否在09:30至09:45之间
-    if (hours === 9 && minutes >= 30 && minutes <= 45 && blocksstocksToken != 123456) {
-        return
-    }
-
-    if (dayjs().format('YYYYMMDD') > 20241201) {
-        return
-    }
-    // ----------------------------------------
     if (Stocks.loading) return
     Stocks.loading = true
     const requests = Questions.stock.map((el) => {
-        if (Blocks.checked.type != '-' && Blocks.checked.name != '-') {
+        if (Blocks.checked.type == 'Max') {
+            el = el.replace('前1交易日热度排名升序', `当日收盘价>=前20交易日区间最高价不复权;前1交易日热度排名升序`)
+        } else if (Blocks.checked.type == '100') {
+        } else {
             let _name = Blocks.checked.name
             if (Blocks.checked.type == '概念') {
-                // _name = _name.replace('概念', '').replace(')', '').replace('(', '')
                 _name = _name.replace('封装光学(CPO)', '封装光学')
-
                 el = el.replace('行业概念', `行业概念；所属概念包含${_name}；`)
             } else if (Blocks.checked.type == '行业') {
                 el = el.replace('行业概念', `概念；所属二级行业包含${_name}；`)
             }
         }
         if (Dates.HistoryBtn == '历史') {
-            // let cn = dayjs(Dates.HistoryDate).format('YYYY年MM月DD日')
             let cn = dayjs(Dates.Today).format('YYYY年MM月DD日')
-
+            let us = dayjs(Dates.Today).format('YYYYMMDD')
+            if (Stocks.Sort_selected[1] && !Stocks.Sort_selected[0].includes('09:')) Stocks.Sort_selected[0] = us
             el = el
                 .replaceAll('当日', cn)
-                .replaceAll('09:35', cn + '09:35')
-                .replaceAll('09:33', cn + '09:33')
-                .replaceAll('09:31', cn + '09:31')
-                .replaceAll('前', cn + '前')
+                .replaceAll('09:', cn + '09:')
+                .replaceAll('前1交易日', cn + '前1交易日')
+                .replaceAll('前5交易日', cn + '前5交易日')
+                .replaceAll('前20交易日', cn + '前20交易日')
+                .replaceAll('前40交易日', cn + '前40交易日')
                 .replaceAll('流通市值', cn + '流通市值')
         }
         return axios(handle_requestsData('stock', el))
@@ -552,21 +604,54 @@ function handleStocksData(res) {
                 资金流向: num(ele[`资金流向[${d1}]`]),
                 大单净额: num(ele[`dde大单净额[${d1}]`]),
                 大单净量: num(ele[`dde大单净量[${d1}]`]),
+                涨跌幅趋势:
+                    num(ele[`涨跌幅:前复权[${d1}`]) >= num(ele[`分时涨跌幅:前复权[${d1} 09:35]`]) ? 'j1' : '-j1',
+                资金流向趋势: num(ele[`资金流向[${d1}]`]) >= num(ele[`分时资金流向[${d1} 09:35]`]) ? 'j1' : '-j1',
+                // 大单净额趋势:num(ele[`dde大单净额[${d1} 09:35]`])>=num(ele[`分时dde大单净额[${d1} 09:35]`])?'j1':'-j1',
+                大单净量趋势: num(ele[`dde大单净量[${d1}]`]) >= num(ele[`分时dde大单净量[${d1} 09:35]`]) ? 'j1' : '-j1',
             }
             obj[`09:35`] = {
                 涨跌幅: num(ele[`分时涨跌幅:前复权[${d1} 09:35]`]),
                 资金流向: num(ele[`分时资金流向[${d1} 09:35]`]),
                 大单净额: num(ele[`分时dde大单净额[${d1} 09:35]`]),
+                大单净量: num(ele[`分时dde大单净量[${d1} 09:35]`]),
+                涨跌幅趋势:
+                    num(ele[`分时涨跌幅:前复权[${d1} 09:35]`]) >= num(ele[`分时涨跌幅:前复权[${d1} 09:33]`])
+                        ? 'j1'
+                        : '-j1',
+                资金流向趋势:
+                    num(ele[`分时资金流向[${d1} 09:35]`]) >= num(ele[`分时资金流向[${d1} 09:33]`]) ? 'j1' : '-j1',
+                // 大单净额趋势:num(ele[`分时dde大单净额[${d1} 09:35]`])>=num(ele[`分时dde大单净额[${d1} 09:33]`])?'j1':'-j1',
+                大单净量趋势:
+                    num(ele[`分时dde大单净量[${d1} 09:35]`]) >= num(ele[`分时dde大单净量[${d1} 09:33]`]) ? 'j1' : '-j1',
             }
             obj[`09:33`] = {
                 涨跌幅: num(ele[`分时涨跌幅:前复权[${d1} 09:33]`]),
                 资金流向: num(ele[`分时资金流向[${d1} 09:33]`]),
                 大单净额: num(ele[`分时dde大单净额[${d1} 09:33]`]),
+                大单净量: num(ele[`分时dde大单净量[${d1} 09:33]`]),
+                涨跌幅趋势:
+                    num(ele[`分时涨跌幅:前复权[${d1} 09:33]`]) >= num(ele[`分时涨跌幅:前复权[${d1} 09:31]`])
+                        ? 'j1'
+                        : '-j1',
+                资金流向趋势:
+                    num(ele[`分时资金流向[${d1} 09:33]`]) >= num(ele[`分时资金流向[${d1} 09:31]`]) ? 'j1' : '-j1',
+                // 大单净额趋势:num(ele[`分时dde大单净额[${d1} 09:33]`])>=num(ele[`分时dde大单净额[${d1} 09:31]`])?'j1':'-j1',
+                大单净量趋势:
+                    num(ele[`分时dde大单净量[${d1} 09:33]`]) >= num(ele[`分时dde大单净量[${d1} 09:31]`]) ? 'j1' : '-j1',
             }
             obj[`09:31`] = {
                 涨跌幅: num(ele[`分时涨跌幅:前复权[${d1} 09:31]`]),
                 资金流向: num(ele[`分时资金流向[${d1} 09:31]`]),
                 大单净额: num(ele[`分时dde大单净额[${d1} 09:31]`]),
+                大单净量: num(ele[`分时dde大单净量[${d1} 09:31]`]),
+                涨跌幅趋势:
+                    num(ele[`分时涨跌幅:前复权[${d1} 09:31]`]) >= num(ele[`分时涨跌幅:前复权[${d1} 09:30]`])
+                        ? 'j1'
+                        : '-j1',
+            }
+            obj[`09:30`] = {
+                涨跌幅: num(ele[`分时涨跌幅:前复权[${d1} 09:30]`]),
             }
             obj[pd1] = {
                 涨跌幅: num(ele[`涨跌幅:前复权[${pd1}]`]),
@@ -580,16 +665,23 @@ function handleStocksData(res) {
             obj['放量'] = num(ele[findKeysWithPattern(ele, '{(}{(}成交量[', ']{)}')[0]])
             obj['放量达成'] = obj['放量'] > 0
             obj['M05'] = num(ele[`5日均线[${pd1}]`])
-            obj['M05达成'] = obj['M05'] <= obj['p收盘价']
+            obj['M05达成'] = obj['放量达成'] && obj['M05'] <= obj['p收盘价']
             obj['M10'] = num(ele[`10日均线[${pd1}]`])
             obj['M10达成'] = obj['M05达成'] && obj['M10'] <= obj['p收盘价']
             obj['M30'] = num(ele[`30日均线[${pd1}]`])
             obj['M30达成'] = obj['M10达成'] && obj['M30'] <= obj['p收盘价']
             obj['M60'] = num(ele[`60日均线[${pd1}]`])
             obj['M60达成'] = obj['M30达成'] && obj['M60'] <= obj['p收盘价']
-            obj['前40日'] =
-                Number(ele[`分时收盘价:不复权[${d1} 09:35]`]) >=
-                Number(ele[findKeysWithPattern(ele, '区间最高价:不复权[', ']')[0]])
+            obj['前20日'] = ele[`分时收盘价:不复权[${d1} 09:35]`]
+                ? Number(ele[`分时收盘价:不复权[${d1} 09:35]`]) >=
+                  Number(ele[findKeysWithPattern(ele, '区间最高价:不复权[', ']')[1]])
+                : Number(ele[`收盘价:不复权[${d1}]`]) >=
+                  Number(ele[findKeysWithPattern(ele, '区间最高价:不复权[', ']')[1]])
+            obj['前40日'] = ele[`分时收盘价:不复权[${d1} 09:35]`]
+                ? Number(ele[`分时收盘价:不复权[${d1} 09:35]`]) >=
+                  Number(ele[findKeysWithPattern(ele, '区间最高价:不复权[', ']')[0]])
+                : Number(ele[`收盘价:不复权[${d1}]`]) >=
+                  Number(ele[findKeysWithPattern(ele, '区间最高价:不复权[', ']')[0]])
 
             let 长期趋势 =
                 (obj['M05达成'] ? 1 : 0) +
@@ -598,32 +690,39 @@ function handleStocksData(res) {
                 (obj['M60达成'] ? 1 : 0) +
                 (obj['前40日'] ? 1 : 0) //长期趋势占比50%
 
-            let p涨跌 = obj[pd1]['涨跌幅'] > 0 ? 1 : -1
-            let p资金p大单p放量 = (obj[pd1]['资金流向'] > 0 || obj[pd1]['大单净额'] > 0) && obj['放量达成'] ? 1 : -1
-            let 昨日集合 = p涨跌 + p资金p大单p放量
+            let p趋势 = obj[pd1]['涨跌幅'] > 0 && (obj[pd1]['资金流向'] > 0 || obj[pd1]['大单净额'] > 0) ? 1 : 0
 
             let _35涨跌 = obj['09:35']['涨跌幅'] > obj['09:31']['涨跌幅'] ? 1 : 0
             let _35资金 = obj['09:35']['资金流向'] > obj['09:31']['资金流向'] ? 1 : 0
             let _35大单 = obj['09:35']['大单净额'] > obj['09:31']['大单净额'] ? 1 : 0
-            let _35集合 = _35涨跌 + _35资金 + _35大单 //资金大单涨跌幅方向
+            let _35幅度 =
+                obj['09:35']['涨跌幅'] > 0 && (obj['09:35']['大单净额'] > 0 || obj['09:35']['资金流向'] > 0) ? 1 : 0
+            let 短期趋势 = p趋势 + _35涨跌 + _35资金 + _35大单 + _35幅度
 
-            let 扣分1 = obj['09:35']['资金流向'] < 0 && obj['09:35']['大单净额'] < 0 ? 5 : 0
-            let 扣分2 = 扣分1 && obj['09:33']['资金流向'] < 0 && obj['09:33']['大单净额'] < 0 ? 5 : 0
-            let 扣分3 = obj['09:35']['涨跌幅'] < obj['09:33']['涨跌幅'] ? 1 : 0
-            let 扣分4 = obj['09:35']['涨跌幅'] < 1 ? 5 : 0
-            let 扣分5 = obj['09:33']['涨跌幅'] < 0 && obj['09:35']['涨跌幅'] < 0 ? 5 : 0
-            let 扣分6 =
-                obj['09:31']['资金流向'] > obj['09:33']['资金流向'] &&
-                    obj['09:33']['资金流向'] > obj['09:35']['资金流向'] &&
-                    obj['09:31']['大单净额'] > obj['09:33']['大单净额'] &&
-                    obj['09:33']['大单净额'] > obj['09:35']['大单净额']
-                    ? 5
-                    : 0
-            let 扣分 = 扣分1 + 扣分2 + 扣分3 + 扣分4 + 扣分5 + 扣分6
+            let 扣分 = [
+                obj['09:35']['资金流向'] <= 0 && obj['09:35']['大单净额'] <= 0 ? -5 : 0,
+                obj['09:33']['涨跌幅'] >= obj['09:35']['涨跌幅'] ? -1 : 0,
+                obj['09:35']['涨跌幅'] <= 0 ? -5 : 0,
+                obj['M30达成'] ? 0 : -5,
+                Blocks.checked.item && Blocks.checked.item['09:35']['涨跌幅'] * 1.5 > obj['09:35']['涨跌幅'] ? -5 : 0,
+            ].reduce((accumulator, currentValue) => accumulator + currentValue, 0)
 
+            // let 打分特殊条件1 =
+            //     obj['09:35']['涨跌幅'] >= obj['09:33']['涨跌幅'] &&
+            //     obj['09:33']['涨跌幅'] >= obj['09:31']['涨跌幅'] &&
+            //     obj['09:31']['涨跌幅'] > 0 &&
+            //     obj['09:35']['涨跌幅'] > 3 &&
+            //     obj['09:35']['资金流向'] >= obj['09:33']['资金流向'] &&
+            //     obj['09:33']['资金流向'] >= obj['09:31']['资金流向'] &&
+            //     obj['09:33']['资金流向'] > 0 &&
+            //     obj['09:35']['大单净额'] >= obj['09:33']['大单净额'] &&
+            //     obj['09:33']['大单净额'] >= obj['09:31']['大单净额'] &&
+            //     obj['09:31']['大单净额'] > 0
+            // 扣分 = 打分特殊条件1 ? 0 : 扣分
+            // 短期趋势 = 打分特殊条件1 ? (长期趋势 == 0 ? 6 : 5) : 短期趋势
             obj['9:35打分'] =
-                // `${长期趋势} + ${昨日集合} + 【${_35涨跌} +${_35资金}  +${_35大单}】  - ${扣分}=` +
-                Number(长期趋势 + 昨日集合 + _35集合 - 扣分)
+                // `${长期趋势} + ${短期趋势}  + ${扣分}=` +
+                Number(长期趋势 + 短期趋势 + 扣分)
             return obj
         })
         // ${obj['M05'] <= obj['p收盘价'] && obj['M30'] <= obj['p收盘价'] && obj['M60'] <= obj['p收盘价'] ? 1 : 0} +
@@ -639,20 +738,23 @@ function handleStocksData(res) {
         })
     Stocks.Data[0].filter = Stocks.Data[0].base.filter((obj) => {
         return obj['9:35打分'] >= 8 || (obj['前40日'] && obj['9:35打分'] >= 5)
+        // return obj['前40日'] && obj['9:35打分'] >= 5
     })
-    Stocks.CheckedOptimumFN()
+    Stocks.mySort(...Stocks.Sort_selected)
+    // Stocks.CheckedOptimumFN()
 
     submitTime.value = dayjs().format('YYYY-MM-DD HH:mm:ss')
 }
-function CheckedBlock(type, name) {
+function CheckedBlock(type, name, item = null) {
     if (Blocks.loading) return
-    if (type == '' || type == '-' || type == undefined || name == undefined) {
-        Blocks.checked.name = '-'
-        Blocks.checked.type = '-'
-    } else {
-        Blocks.checked.name = name
-        Blocks.checked.type = type
-    }
+    // if (type == '' || type == '-' || type == undefined || name == undefined) {
+    //     Blocks.checked.name = '-'
+    //     Blocks.checked.type = '-'
+    // } else {
+    Blocks.checked.name = name
+    Blocks.checked.type = type
+    Blocks.checked.item = item
+    // }
 
     submitStocks()
 }
@@ -679,6 +781,8 @@ const App = {
             formatNumber,
             Intervals,
             submitTime,
+            nTOs,
+            isMobile,
         }
     },
 }
@@ -687,5 +791,21 @@ const app = Vue.createApp(App)
 app.use(ElementPlus, { locale: ElementPlusLocaleZhCn })
 app.mount('#app')
 function findKeysWithPattern(obj, start, end) {
-    return Object.keys(obj).filter((key) => key.startsWith(start) && key.endsWith(end))
+    let res = Object.keys(obj).filter((key) => key.startsWith(start) && key.endsWith(end))
+    if (res.length > 1) {
+        res = res.sort((a, b) => {
+            return Number(a.substring(10, 18)) - Number(b.substring(10, 18))
+        })
+        console.log('findKeysWithPattern', res)
+    }
+
+    return res
+}
+function nTOs(e) {
+    console.log(e, 'nTOsnTOs')
+    if (typeof num === 'number') {
+        return e + ''
+    } else {
+        return e
+    }
 }

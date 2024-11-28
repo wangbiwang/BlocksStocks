@@ -1,13 +1,13 @@
 function setLocalStorage(key, value) {
-    // console.log(key, value)
+    console.log(key, value)
     // 设置localStorage
     localStorage.setItem(key, JSON.stringify(value))
 }
 function getLocalStorage(key) {
-    // console.log('key:', key)
+    console.log('key:', key)
     // 获取localStorage
     let value = JSON.parse(localStorage.getItem(key))
-    // console.log('value:', value)
+    console.log('value:', value)
     return value
 }
 
@@ -23,7 +23,7 @@ function precentformater(num, decimals = 2) {
     }
 }
 function formatNumber(num, type) {
-    if (num === '-' || num === '' || num === null || num === undefined || num === 0) return '-'
+    if (num === '-' || num === '' || num === null || num === undefined) return '-'
     num = Number(num)
     let s = ''
     let isNegative = Number(num) < 0 // 标记是否为负数
@@ -54,6 +54,11 @@ function formatNumber(num, type) {
         return `<span class="green">-${s}</span>`
     }
 }
+function isMobile() {
+    return /phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone/i.test(
+        navigator.userAgent
+    )
+}
 //找出重复出现的值
 function findDuplicates(arr) {
     const seen = new Set()
@@ -71,7 +76,7 @@ function findDuplicates(arr) {
 }
 
 function handle_requestsData(type, url, page = 1, perpage = 100) {
-    // console.log(type, url, url.length)
+    console.log(type, url, url.length)
     let cc =
         'ta_random_userid=i9gckljzq8; other_uid=Ths_iwencai_Xuangu_ekk7bbaq04em50q1rbydne1z3c0s2r17; cid=f32efed578dca091636a4a63317c86421712223556; cid=f32efed578dca091636a4a63317c86421712223556; ComputerID=f32efed578dca091636a4a63317c86421712223556; WafStatus=0; THSSESSID=a4564673bfe08fb605c87b7b0d; wencai_pc_version=0; PHPSESSID=85a0e6842b16ce5899d28de4052ba362; guideState=1; user_status=0; u_ukey=A10702B8689642C6BE607730E11E6E4A; u_uver=1.0.0; u_dpass=swxA0gmX9nGRADXCBbyV2yDAYMp3ljhxYyTTzMjHLBRhjIs9J4BbNt613W%2FLnxN4Hi80LrSsTFH9a%2B6rtRvqGg%3D%3D; u_did=820280EB012C4B03ACBC3AA6864D5AFD; u_ttype=WEB; user=MDpteF82MzgyODE1MDg6Ok5vbmU6NTAwOjY0ODI4MTUwODoxMDMsMDAwMDAwMTAwMDAwMDAxLDI2MTsxMTMsMDExMDAwLDI2MTsxMTQsMTEsMjYxOzExNSwwMDAwMDAwMDAwMDAwMDEwMDAwMDAwMDAwMDAwMDAwMCwyNjE7MTE5LDAwMDAwMDAwMDAwMDAwMDAwMDAwMTAwMDAwLDI2MTs3LDExMTExMTExMTExLDQwOzQ0LDExLDQwOzYsMSw0MDs1LDEsNDA7MSwxMDEsNDA7MiwxLDQwOzMsMSw0MDs4LDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAxLDQwOzEwMiwxLDQwOjE5Ojo6NjM4MjgxNTA4OjE3MjQzMDE3MzI6OjoxNjU1NzE3MTYwOjQwMDY2ODowOjExY2IxYmE3NTk4YmFiOGYyZDk3OThhYzRhN2VmYWQxODpkZWZhdWx0XzQ6MA%3D%3D; userid=638281508; u_name=mx_638281508; escapename=mx_638281508; ticket=c085ae91cca27ad515244798d3b2ed70; utk=698759daef9c09116f1b1941853c0356; v=' //vip URL  起服务使用
     return {
