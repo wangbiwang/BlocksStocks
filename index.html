@@ -134,6 +134,7 @@
                                 <td :class="item['M10达成']?'red' :'green' ">{{item['M10']}}</td>
                                 <td :class="item['M30达成']?'red' :'green' ">{{item['M30']}}</td>
                                 <td :class="item['M60达成']?'red' :'green' ">{{item['M60']}}</td>
+                                <td style="min-width: 45px" class="table_cnText">{{item['前5日']?'√':''}}</td>
                                 <td
                                     style="min-width: 45px; text-align: center"
                                     :class="item['9:35打分']>0?'red fs16 f600' :'green fs16 f600' "
@@ -188,59 +189,10 @@
                                 <div :class="item['M30达成']?'red' :'green' ">M30</div>
                                 <div :class="item['M60达成']?'red' :'green' ">M60</div>
                             </div>
-                            {{item['9:35打分']}}
+                            <div style="max-width: 20px">{{item['前40日']?'✓':''}}</div>
+                            <div style="width: 25px; text-align: end">{{item['9:35打分']}}</div>
                         </div>
                     </div>
-                    <!-- <table>
-
-                        <tbody>
-                            <tr
-                                v-for="(item,key) in BlocksItem.default"
-                                :style="item['9:35打分']>5?'text-align: center':'text-align: center;opacity: 0.3'"
-                                :class="Stocks.hoverBlocks.includes(item['指数简称'])?'hoverStyle':''"
-                            >
-                                <td
-                                    style="width: 120px; min-width: 60px"
-                                    :class="(Blocks.checked.type==(BlocksKey>0?'概念':'行业')&&Blocks.checked.name==item['指数简称'])?'fs16 f600 table_cnText':'table_cnText'"
-                                    @click="CheckedBlock(BlocksKey>0?'概念':'行业',item['指数简称'],item)"
-                                >
-                                    {{item['指数简称']}}
-                                </td>
-                                <td class="rateTd f600" v-for="hdItem in Blocks.headerData.slice(1,7)">
-                                    <div class="tb3_box" v-if="item[hdItem]">
-                                        <div v-html="precentformater(item[hdItem]['涨跌幅'])"></div>
-                                        <div
-                                            v-if="item[hdItem]['资金流向']"
-                                            v-html="formatNumber(item[hdItem]['资金流向'])"
-                                        ></div>
-                                        <div
-                                            v-if="item[hdItem]['大单净额']"
-                                            v-html="formatNumber(item[hdItem]['大单净额'])"
-                                        ></div>
-                                        <div
-                                            v-html="formatNumber(item[hdItem]['大单净量'])"
-                                            v-if="item[hdItem]['大单净量']"
-                                        ></div>
-                                        <div v-if="item[hdItem]['收盘价']" class="table_cnText">
-                                            {{item[hdItem]['收盘价']}}
-                                        </div>
-                                    </div>
-                                </td>
-
-                                <td :class="item['放量达成']?'red' :'green' ">{{item['放量']}}</td>
-                                <td :class="item['M05达成']?'red' :'green' ">{{item['M05']}}</td>
-                                <td :class="item['M10达成']?'red' :'green' ">{{item['M10']}}</td>
-                                <td :class="item['M30达成']?'red' :'green' ">{{item['M30']}}</td>
-                                <td :class="item['M60达成']?'red' :'green' ">{{item['M60']}}</td>
-                                <td
-                                    style="min-width: 45px; text-align: center"
-                                    :class="item['9:35打分']>0?'red fs16 f600' :'green fs16 f600' "
-                                >
-                                    {{item['9:35打分']}}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table> -->
                 </div>
             </el-container>
             <!-- 个股指数名称类型 -->
@@ -256,7 +208,12 @@
                 <div
                     style="min-width: 100px; display: flex; justify-content: center; color: #ac2024; margin-right: 10px"
                 >
-                    已选择：[ 类型：{{Blocks.checked.type}} , 名称：{{Blocks.checked.name}} ]
+                    已选择：[ 类型：{{Blocks.checked.type}} , 名称：{{Blocks.checked.name}} ]<br />
+                    [
+                    当日占比：{{Stocks.Data[0].base.length>0?`${Stocks.Data[0].base[0]['_当日上涨个数']}/${Stocks.Data[0].base.length}=
+                    ${((Stocks.Data[0].base[0]['_当日上涨个数']/Stocks.Data[0].base.length)*100).toFixed(0)}%`:'-'}} ,
+                    09:35占比：{{Stocks.Data[0].base.length>0?`${Stocks.Data[0].base[0]['_0935上涨个数']}/${Stocks.Data[0].base.length}=
+                    ${((Stocks.Data[0].base[0]['_0935上涨个数']/Stocks.Data[0].base.length)*100).toFixed(0)}%`:'-'}} ]
                 </div>
                 <button
                     v-if="!isMobile()"
@@ -305,7 +262,7 @@
                                 @mouseover="Stocks.handleMouseOver(item)"
                                 @mouseleave="Stocks.handleMouseLeave(item)"
                             >
-                                <td>{{item['序号']}}</td>
+                                <td>{{key+1}}</td>
                                 <td style="min-width: 50px; width: 50px">{{item['code']}}</td>
                                 <td
                                     style="min-width: 60px; width: 60px"
@@ -407,7 +364,7 @@
                                 <td :class="item['M10达成']?'red' :'green' ">{{item['M10']}}</td>
                                 <td :class="item['M30达成']?'red' :'green' ">{{item['M30']}}</td>
                                 <td :class="item['M60达成']?'red' :'green' ">{{item['M60']}}</td>
-                                <td style="min-width: 45px" class="table_cnText">{{item['前20日']?'√':''}}</td>
+                                <td style="min-width: 40px" class="table_cnText">{{item['前5日']?'√':''}}</td>
                                 <td style="min-width: 45px" class="table_cnText">{{item['前40日']?'√':''}}</td>
                                 <td
                                     style="min-width: 45px; text-align: center"
