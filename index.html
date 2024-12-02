@@ -80,7 +80,9 @@
                     <table>
                         <thead>
                             <tr>
-                                <th :colspan="Blocks.headerData.length">{{BlocksItem.name}}</th>
+                                <th :colspan="Blocks.headerData.length">
+                                    {{BlocksItem.name}} (总数：{{BlocksItem.default.length}})
+                                </th>
                             </tr>
                             <tr>
                                 <th
@@ -95,7 +97,7 @@
                         <tbody>
                             <tr
                                 v-for="(item,key) in BlocksItem.default"
-                                :style="item['9:35打分']>5?'text-align: center':'text-align: center;opacity: 0.3'"
+                                :style="item['9:35打分']>=7?'text-align: center':'text-align: center;opacity: 0.3'"
                                 :class="Stocks.hoverBlocks.includes(item['指数简称'])?'hoverStyle':''"
                             >
                                 <td
@@ -161,7 +163,7 @@
                     <div
                         v-for="(item,key) in BlocksItem.default"
                         class="table_hy_Mobile_tr"
-                        :style="item['9:35打分']>5?'':'opacity: 0.3'"
+                        :style="item['9:35打分']>=7?'':'opacity: 0.3'"
                     >
                         <div
                             class="table_hy_Mobile_td"
@@ -236,7 +238,7 @@
                 <el-checkbox
                     v-model="Stocks.CheckedOptimum"
                     @change="Stocks.CheckedOptimumFN"
-                    label="筛出趋势突破且分值5及以上，非突破则分值8及以上"
+                    label="筛出趋势突破且分值5及以上，非突破则放量分值6及以上"
                     size="large"
                 />
             </div>
