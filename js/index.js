@@ -49,21 +49,22 @@ const Blocks = reactive({
         { name: '实时行业策略排行', base: [], default: [], filter: [] },
         { name: '实时行业概念排行', base: [], default: [], filter: [] },
     ],
+    CheckedOptimum: false,
+    CheckedOptimumFN: () => {
+        if (Blocks.CheckedOptimum) {
+            Blocks.Data = Blocks.Data.map((el) => {
+                el.default = el.filter
+                return el
+            })
+        } else {
+            Blocks.Data = Blocks.Data.map((el) => {
+                el.default = el.base
+                return el
+            })
+        }
+    },
     RateSort: (e, i) => {
-        // if (e == '9:35打分') {
-        //     Blocks.loading = !Blocks.loading
-        //     Blocks.Data[0].default = Blocks.Data[0].default.sort((a, b) => {
-        //         return b['9:35打分'] - a['9:35打分']
-        //     })
-        //     Blocks.Data[1].default = Blocks.Data[1].default.sort((a, b) => {
-        //         return b['9:35打分'] - a['9:35打分']
-        //     })
-        //     console.log(Blocks.Data[0].default, Blocks.Data[1].default)
-        //     Blocks.RateSort_selected = e
-        //     Blocks.loading = !Blocks.loading
-        //     return
-        // }
-        if (i < 1 || i > 5) return
+        if (i < 2 || i > 6) return
         // console.log(e, i)
         Questions.block = Questions.block.map((el) => {
             el = el.replaceAll('涨跌幅降序', '涨跌幅')
@@ -207,7 +208,7 @@ async function submit(e) {
 
     Dates.yesterday = Dates.DateList[Dates.DateList.findIndex((el) => el == Dates.Today) - 1]
     let TimeTilArr = [Dates.Today, `09:35`, `09:33`, `09:31`, `09:30`, Dates.yesterday]
-    Blocks.headerData = ['指数简称', ...TimeTilArr, '放量', 'M05', 'M10', 'M30', 'M60', '前5日', '9:35打分']
+    Blocks.headerData = ['序号', '指数简称', ...TimeTilArr, '放量', 'M05', 'M10', 'M30', 'M60', '前5日', '9:35打分']
     Stocks.headerData = [
         '序号',
         'code',
@@ -228,9 +229,14 @@ async function submit(e) {
         '前40日',
         '9:35打分',
     ]
-    Blocks.Data[0].default = []
-    Blocks.Data[1].default = []
-    Stocks.Data[0].default = []
+    Blocks.Data = Blocks.Data.map((el) => {
+        el.default = []
+        return el
+    })
+    Stocks.Data = Stocks.Data.map((el) => {
+        el.default = []
+        return el
+    })
     //---------------
     if (Dates.HistoryBtn == '历史') {
         let d = dayjs(Dates.HistoryDate).format('YYYYMMDD')
@@ -340,8 +346,9 @@ function handleBlocksData(res) {
                 resArr.push(Object.assign({}, el, foundItem))
             }
         })
-        return resArr.map((ele) => {
+        return resArr.map((ele, idx) => {
             let obj = {}
+            obj['序号'] = idx + 1
             obj['code'] = ele['code']
             obj['指数简称'] = ele['指数简称']
             obj[`${d1}`] = {
@@ -374,20 +381,6 @@ function handleBlocksData(res) {
                 收盘价: num(ele[`指数@收盘价:不复权[${pd1}]`]),
             }
 
-            let 条件1 =
-                obj['09:35']['涨跌幅'] > 0 &&
-                obj['09:35']['涨跌幅'] > obj['09:33']['涨跌幅'] &&
-                obj['09:33']['涨跌幅'] > obj['09:31']['涨跌幅']
-            let 条件2 =
-                obj['09:35']['资金流向'] > 0 &&
-                obj['09:35']['资金流向'] > obj['09:33']['资金流向'] &&
-                obj['09:33']['资金流向'] > obj['09:31']['资金流向']
-
-            let 条件3 =
-                obj['09:35']['大单净额'] > 0 &&
-                obj['09:35']['大单净额'] > obj['09:33']['大单净额'] &&
-                obj['09:33']['大单净额'] > obj['09:31']['大单净额']
-
             obj['p收盘价'] = num(ele[`指数@收盘价:不复权[${pd1}]`])
             obj['放量'] = num(ele[findKeysWithPattern(ele, '{(}{(}指数@成交量[', ']{)}')[0]])
             obj['放量达成'] = obj['放量'] > 0
@@ -406,8 +399,6 @@ function handleBlocksData(res) {
                 : Number(ele[`指数@收盘价:不复权[${d1}]`]) >=
                   Number(ele[findKeysWithPattern(ele, '指数@区间最高价:不复权[', ']')[0]])
 
-            //   新打分规则 昨日趋势+今日趋势+长期趋势=4+3+3=10
-
             let 昨日趋势 = obj['放量'] > 0 && obj[pd1]['涨跌幅'] > 1 && obj[pd1]['大单净额'] > 0 ? 4 : 0
             let 今日趋势 = 0
             if (obj['09:35']['涨跌幅'] > 0 && (obj['09:35']['资金流向'] > 0 || obj['09:35']['大单净额'] > 0)) {
@@ -422,16 +413,6 @@ function handleBlocksData(res) {
                 }
             }
             let 长期趋势 = obj['M30达成'] && obj['M60达成'] ? 3 : 0
-
-            // let 长期趋势 = (obj['放量达成'] ? 2 : 0) + (obj['M30达成'] ? 1 : 0) + (obj['M60达成'] ? 2 : 0)
-            // // + (obj['前5日'] ? 1 : 0) //长期趋势占比50%
-
-            // let 短期趋势 = [
-            //     obj['09:35']['涨跌幅'] > 0 && (obj['09:35']['资金流向'] > 0 || obj['09:35']['大单净额'] > 0) ? 2 : 0,
-            //     obj['09:35']['资金流向'] >= obj['09:33']['资金流向'] ? 1 : 0,
-            //     obj['09:35']['大单净额'] >= obj['09:33']['大单净额'] ? 1 : 0,
-            //     obj['09:35']['涨跌幅'] >= obj['09:33']['涨跌幅'] ? 1 : 0,
-            // ].reduce((accumulator, currentValue) => accumulator + currentValue, 0)
 
             let 扣分 = [
                 (obj['09:35']['大单净额'] < 0 && obj['09:35']['资金流向'] < 0) ||
@@ -456,19 +437,6 @@ function handleBlocksData(res) {
                 obj['09:35']['大单净额'] < obj['09:33']['大单净额']
                     ? -3
                     : 0,
-
-                // obj['放量达成'] ? 0 : -5,
-                // obj['09:31']['大单净额'] >= obj['09:33']['大单净额'] &&
-                // obj['09:33']['大单净额'] >= obj['09:35']['大单净额']
-                //     ? -10
-                //     : 0,
-                // obj['09:35']['资金流向'] <= 0 && obj['09:35']['大单净额'] < 0 ? -10 : 0,
-                // obj['09:35']['资金流向'] <= obj['09:33']['资金流向'] &&
-                // obj['09:35']['大单净额'] <= obj['09:33']['大单净额']
-                //     ? -10
-                //     : 0,
-                // obj['09:33']['涨跌幅'] >= obj['09:35']['涨跌幅'] ? -1 : 0,
-                // obj['09:35']['涨跌幅'] < 0 ? -10 : 0,
             ].reduce((accumulator, currentValue) => accumulator + currentValue, 0)
 
             obj['9:35打分'] =
@@ -479,8 +447,11 @@ function handleBlocksData(res) {
         })
         // .slice(0, 5)
     }
-    Blocks.Data[0].default = handleArr(res[0], res[1])
-    Blocks.Data[1].default = handleArr(res[2], res[3])
+    Blocks.Data[0].base = handleArr(res[0], res[1])
+    Blocks.Data[1].base = handleArr(res[2], res[3])
+    Blocks.Data[0].filter = Blocks.Data[0].base.filter((obj) => obj['9:35打分'] >= 7)
+    Blocks.Data[1].filter = Blocks.Data[1].base.filter((obj) => obj['9:35打分'] >= 7)
+    Blocks.CheckedOptimumFN()
     submitTime.value = dayjs().format('YYYY-MM-DD HH:mm:ss')
 }
 function submitStocks() {
@@ -588,9 +559,7 @@ function handleStocksData(res) {
     let pd1 = Dates.yesterday
     function num(e) {
         if (e) {
-            if (Number(e).toFixed(2) == '0.00') {
-                return 0.01
-            }
+            if (Number(e).toFixed(2) == '0.00') return 0.01
             return Number(Number(e).toFixed(2))
         }
         return '-'
@@ -601,13 +570,14 @@ function handleStocksData(res) {
         .filter((el) => {
             return !/^68/.test(el.code) && !/^8/.test(el.code)
         })
-        .map((ele) => {
+        .map((ele,idx) => {
             let obj = {}
             ele = {
                 ...ele,
                 ...res[1].filter((el) => el['股票简称'] === ele['股票简称'])[0],
                 ...res[2].filter((el) => el['股票简称'] === ele['股票简称'])[0],
             }
+            obj['序号'] = idx + 1
             obj['股票简称'] = ele['股票简称']
             obj['code'] = ele['code']
             obj['行业'] = ele['所属同花顺行业'] || ele['所属同花顺二级行业']
@@ -680,20 +650,6 @@ function handleStocksData(res) {
                 收盘价: num(ele[`收盘价:前复权[${pd1}]`]),
             }
 
-            let 条件1 =
-                obj['09:35']['涨跌幅'] > 0 &&
-                obj['09:35']['涨跌幅'] > obj['09:33']['涨跌幅'] &&
-                obj['09:33']['涨跌幅'] > obj['09:31']['涨跌幅']
-            let 条件2 =
-                obj['09:35']['资金流向'] > 0 &&
-                obj['09:35']['资金流向'] > obj['09:33']['资金流向'] &&
-                obj['09:33']['资金流向'] > obj['09:31']['资金流向']
-
-            let 条件3 =
-                obj['09:35']['大单净额'] > 0 &&
-                obj['09:35']['大单净额'] > obj['09:33']['大单净额'] &&
-                obj['09:33']['大单净额'] > obj['09:31']['大单净额']
-
             obj['p收盘价'] = num(ele[`收盘价:前复权[${pd1}]`])
             obj['放量'] = num(ele[findKeysWithPattern(ele, '{(}{(}成交量[', ']{)}')[0]])
             obj['放量达成'] = obj['放量'] > 0
@@ -717,8 +673,6 @@ function handleStocksData(res) {
                 : Number(ele[`收盘价:不复权[${d1}]`]) >=
                   Number(ele[findKeysWithPattern(ele, '区间最高价:不复权[', ']')[0]])
 
-            //   新打分规则 昨日趋势+今日趋势+长期趋势=4+3+3=10
-
             let 昨日趋势 = obj['放量'] > 0 && obj[pd1]['涨跌幅'] > 1 && obj[pd1]['大单净额'] > 0 ? 4 : 0
             let 今日趋势 = 0
             if (obj['09:35']['涨跌幅'] > 0 && (obj['09:35']['资金流向'] > 0 || obj['09:35']['大单净额'] > 0)) {
@@ -734,24 +688,7 @@ function handleStocksData(res) {
             }
             let 长期趋势 = obj['M30达成'] && obj['M60达成'] && obj['前40日'] ? 3 : 0
 
-            // //   长期趋势=昨日主力买入+趋势线成型
-            // let 长期趋势 =
-            //     (obj['放量达成'] ? 2 : 0) +
-            //     (obj['M30达成'] ? 1 : 0) +
-            //     (obj['M60达成'] ? 1 : 0) +
-            //     (obj['前40日'] ? 1 : 0) //长期趋势占比50%
-            // let 短期趋势 = [
-            //     obj['09:35']['涨跌幅'] > 0 && (obj['09:35']['资金流向'] > 0 || obj['09:35']['大单净额'] > 0) ? 2 : 0,
-            //     obj['09:35']['资金流向'] >= obj['09:33']['资金流向'] ? 1 : 0,
-            //     obj['09:35']['大单净额'] >= obj['09:33']['大单净额'] ? 1 : 0,
-            //     obj['09:35']['涨跌幅'] >= obj['09:33']['涨跌幅'] ? 1 : 0,
-            //     条件1 && 条件2 && 条件3 ? 1 : 0,
-            // ].reduce((accumulator, currentValue) => accumulator + currentValue, 0)
-
             let 扣分 = [
-                // obj['09:31']['大单净额'] < 0 && obj['09:31']['资金流向'] < 0 ? -6 : 0,
-                // obj['放量达成'] ? 0 : -5,
-                // obj['09:35']['涨跌幅'] < 2 ? -5 : 0,
                 obj['09:31']['大单净额'] < 0 &&
                 obj['09:31']['资金流向'] < 0 &&
                 ((obj['09:31']['大单净额'] >= obj['09:33']['大单净额'] &&
@@ -783,10 +720,7 @@ function handleStocksData(res) {
             ele[`_当日上涨个数`] = _当日上涨个数
             return ele
         })
-    Stocks.Data[0].filter = Stocks.Data[0].base.filter((obj) => {
-        // return (obj['放量达成'] && obj['9:35打分'] >= 6) || (obj['前40日'] && obj['9:35打分'] >= 5)
-        return obj['9:35打分'] >= 7
-    })
+    Stocks.Data[0].filter = Stocks.Data[0].base.filter((obj) => obj['9:35打分'] >= 7)
     Stocks.mySort(...Stocks.Sort_selected)
     submitTime.value = dayjs().format('YYYY-MM-DD HH:mm:ss')
 }

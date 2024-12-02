@@ -74,6 +74,15 @@
                     >
                 </div>
             </div>
+            <!-- 行业筛选条件 -->
+            <div>
+                <el-checkbox
+                    v-model="Blocks.CheckedOptimum"
+                    @change="Blocks.CheckedOptimumFN"
+                    label="筛出分值7及以上"
+                    size="large"
+                />
+            </div>
             <!-- 行业table -->
             <el-container v-if="!isMobile()" class="table_container" v-loading="Blocks.loading">
                 <div class="table_hy" v-for="(BlocksItem,BlocksKey) in Blocks.Data" v-if="!Blocks.loading">
@@ -100,6 +109,7 @@
                                 :style="item['9:35打分']>=7?'text-align: center':'text-align: center;opacity: 0.3'"
                                 :class="Stocks.hoverBlocks.includes(item['指数简称'])?'hoverStyle':''"
                             >
+                                <td style="width: 30px">{{item['序号']}}</td>
                                 <td
                                     style="width: 120px; min-width: 60px"
                                     :class="(Blocks.checked.type==(BlocksKey>0?'概念':'行业')&&Blocks.checked.name==item['指数简称'])?'fs16 f600 table_cnText':'table_cnText'"
@@ -107,7 +117,7 @@
                                 >
                                     {{item['指数简称']}}
                                 </td>
-                                <td class="rateTd f600" v-for="hdItem in Blocks.headerData.slice(1,7)">
+                                <td class="rateTd f600" v-for="hdItem in Blocks.headerData.slice(2,8)">
                                     <div class="tb3_box" v-if="item[hdItem]">
                                         <div v-html="precentformater(item[hdItem]['涨跌幅'])"></div>
                                         <div
@@ -173,7 +183,7 @@
                         </div>
                         <div
                             class="table_hy_Mobile_td"
-                            v-for="hdItem in [...Blocks.headerData.slice(1,5),...Blocks.headerData.slice(6,7)]"
+                            v-for="hdItem in [...Blocks.headerData.slice(2,6),...Blocks.headerData.slice(7,8)]"
                         >
                             <div
                                 style="width: 100%; font-size: 10px"
@@ -238,7 +248,7 @@
                 <el-checkbox
                     v-model="Stocks.CheckedOptimum"
                     @change="Stocks.CheckedOptimumFN"
-                    label="筛出趋势突破且分值5及以上，非突破则放量分值6及以上"
+                    label="筛出分值7及以上"
                     size="large"
                 />
             </div>
@@ -264,7 +274,7 @@
                                 @mouseover="Stocks.handleMouseOver(item)"
                                 @mouseleave="Stocks.handleMouseLeave(item)"
                             >
-                                <td>{{key+1}}</td>
+                                <td style="width: 30px">{{item['序号']}}</td>
                                 <td style="min-width: 50px; width: 50px">{{item['code']}}</td>
                                 <td
                                     style="min-width: 60px; width: 60px"
