@@ -75,13 +75,39 @@
                 </div>
             </div>
             <!-- 行业筛选条件 -->
-            <div>
-                <el-checkbox
-                    v-model="Blocks.CheckedOptimum"
-                    @change="Blocks.CheckedOptimumFN"
-                    label="筛出分值7及以上"
-                    size="large"
-                />
+            <div style="display: flex">
+                <div>
+                    <el-checkbox
+                        v-model="Blocks.CheckedOptimum._p10"
+                        @change="Blocks.CheckedOptimumFN"
+                        label="前10"
+                        size="large"
+                    />
+                </div>
+                <div>
+                    <el-checkbox
+                        v-model="Blocks.CheckedOptimum.YesterdayTrend"
+                        @change="Blocks.CheckedOptimumFN"
+                        label="昨日趋势"
+                        size="large"
+                    />
+                </div>
+                <div>
+                    <el-checkbox
+                        v-model="Blocks.CheckedOptimum.LongTrend"
+                        @change="Blocks.CheckedOptimumFN"
+                        label="长期趋势"
+                        size="large"
+                    />
+                </div>
+                <div>
+                    <el-checkbox
+                        v-model="Blocks.CheckedOptimum.TodayTrend"
+                        @change="Blocks.CheckedOptimumFN"
+                        label="今日趋势"
+                        size="large"
+                    />
+                </div>
             </div>
             <!-- 行业table -->
             <el-container v-if="!isMobile()" class="table_container" v-loading="Blocks.loading">
@@ -106,7 +132,7 @@
                         <tbody>
                             <tr
                                 v-for="(item,key) in BlocksItem.default"
-                                :style="item['9:35打分']>=7?'text-align: center':'text-align: center;opacity: 0.3'"
+                                :style="item['9:35打分']>=7?'text-align: center':'text-align: center;opacity: 1'"
                                 :class="Stocks.hoverBlocks.includes(item['指数简称'])?'hoverStyle':''"
                             >
                                 <td style="width: 30px">{{item['序号']}}</td>
@@ -132,20 +158,70 @@
                                             v-html="formatNumber(item[hdItem]['大单净量'])"
                                             v-if="item[hdItem]['大单净量']"
                                         ></div>
-                                        <div v-if="item[hdItem]['收盘价']" class="table_cnText">
-                                            {{item[hdItem]['收盘价']}}
-                                        </div>
                                     </div>
                                 </td>
                                 <!-- <td style="width: 70px;" class="table_cnText">
                                     <div>{{item['上涨占比']}}</div>
                                 </td> -->
 
-                                <td :class="item['放量达成']?'red' :'green' ">{{item['放量']}}</td>
-                                <td :class="item['M05达成']?'red' :'green' ">{{item['M05']}}</td>
-                                <td :class="item['M10达成']?'red' :'green' ">{{item['M10']}}</td>
-                                <td :class="item['M30达成']?'red' :'green' ">{{item['M30']}}</td>
-                                <td :class="item['M60达成']?'red' :'green' ">{{item['M60']}}</td>
+                                <td :class="item['p成交量环比率']>0?'red' :'green' ">{{item['p成交量环比率']}}</td>
+                                <td>
+                                    <div
+                                        style="display: inline-block; padding: 2px; transform: scale(0.7)"
+                                        :class="item['M05达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['M05'],'shizhi')}}
+                                    </div>
+                                    <div
+                                        style="display: inline-block; padding: 2px; transform: scale(0.7)"
+                                        :class="item['v05达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['v05'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div
+                                        style="display: inline-block; padding: 2px; transform: scale(0.7)"
+                                        :class="item['M10达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['M10'],'shizhi')}}
+                                    </div>
+                                    <div
+                                        style="display: inline-block; padding: 2px; transform: scale(0.7)"
+                                        :class="item['v10达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['v10'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div
+                                        style="display: inline-block; padding: 2px; transform: scale(0.7)"
+                                        :class="item['M30达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['M30'],'shizhi')}}
+                                    </div>
+                                    <div
+                                        style="display: inline-block; padding: 2px; transform: scale(0.7)"
+                                        :class="item['v30达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['v30'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div
+                                        style="display: inline-block; padding: 2px; transform: scale(0.7)"
+                                        :class="item['M60达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['M60'],'shizhi')}}
+                                    </div>
+                                    <div
+                                        style="display: inline-block; padding: 2px; transform: scale(0.7)"
+                                        :class="item['v60达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['v60'],'shizhi')}}
+                                    </div>
+                                </td>
+
                                 <td style="min-width: 45px" class="table_cnText">{{item['前5日']?'√':''}}</td>
                                 <td
                                     style="min-width: 45px; text-align: center"
@@ -173,7 +249,7 @@
                     <div
                         v-for="(item,key) in BlocksItem.default"
                         class="table_hy_Mobile_tr"
-                        :style="item['9:35打分']>=7?'':'opacity: 0.3'"
+                        :style="item['9:35打分']>=7?'':'opacity: 1'"
                     >
                         <div
                             class="table_hy_Mobile_td"
@@ -195,7 +271,6 @@
                         </div>
                         <div class="table_hy_Mobile_td" :class="item['9:35打分']>0?'red fs16 f600' :'green fs16 f600' ">
                             <div style="font-size: 4px">
-                                <div :class="item['放量达成']?'red' :'green' ">放量</div>
                                 <div :class="item['M05达成']?'red' :'green' ">M05</div>
                                 <div :class="item['M10达成']?'red' :'green' ">M10</div>
                                 <div :class="item['M30达成']?'red' :'green' ">M30</div>
@@ -244,13 +319,37 @@
                 </button> -->
             </div>
             <!-- 个股筛选条件 -->
-            <div>
-                <el-checkbox
-                    v-model="Stocks.CheckedOptimum"
-                    @change="Stocks.CheckedOptimumFN"
-                    label="筛出分值7及以上"
-                    size="large"
-                />
+            <div style="display: flex">
+                <!-- <el-checkbox
+                        v-model="Stocks.CheckedOptimum.分值"
+                        @change="Stocks.CheckedOptimumFN"
+                        label="分值7及以上"
+                        size="large"
+                       /> -->
+                <div>
+                    <el-checkbox
+                        v-model="Stocks.CheckedOptimum.YesterdayTrend"
+                        @change="Stocks.CheckedOptimumFN"
+                        label="昨日趋势"
+                        size="large"
+                    />
+                </div>
+                <div>
+                    <el-checkbox
+                        v-model="Stocks.CheckedOptimum.LongTrend"
+                        @change="Stocks.CheckedOptimumFN"
+                        label="长期趋势"
+                        size="large"
+                    />
+                </div>
+                <div>
+                    <el-checkbox
+                        v-model="Stocks.CheckedOptimum.TodayTrend"
+                        @change="Stocks.CheckedOptimumFN"
+                        label="今日趋势"
+                        size="large"
+                    />
+                </div>
             </div>
             <!-- 个股table -->
             <el-container v-if="!isMobile()" class="table_container" v-loading="Stocks.loading">
@@ -366,16 +465,66 @@
                                                 v-html="formatNumber(item[hdItem]['大单净量'])"
                                             ></span>
                                         </div>
-                                        <div v-if="String(item[hdItem]['收盘价'])!='undefined'" class="table_cnText">
-                                            {{item[hdItem]['收盘价']}}
-                                        </div>
                                     </div>
                                 </td>
-                                <td :class="item['放量达成']?'red' :'green' ">{{item['放量']}}</td>
-                                <td :class="item['M05达成']?'red' :'green' ">{{item['M05']}}</td>
-                                <td :class="item['M10达成']?'red' :'green' ">{{item['M10']}}</td>
-                                <td :class="item['M30达成']?'red' :'green' ">{{item['M30']}}</td>
-                                <td :class="item['M60达成']?'red' :'green' ">{{item['M60']}}</td>
+                                <td :class="item['p成交量环比率']>0?'red' :'green' ">{{item['p成交量环比率']}}</td>
+
+                                <td>
+                                    <div
+                                        style="display: inline-block; padding: 2px; transform: scale(0.7)"
+                                        :class="item['M05达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['M05'],'shizhi')}}
+                                    </div>
+                                    <div
+                                        style="display: inline-block; transform: scale(0.7)"
+                                        :class="item['v05达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['v05'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div
+                                        style="display: inline-block; transform: scale(0.7)"
+                                        :class="item['M10达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['M10'],'shizhi')}}
+                                    </div>
+                                    <div
+                                        style="display: inline-block; transform: scale(0.7)"
+                                        :class="item['v10达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['v10'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div
+                                        style="display: inline-block; transform: scale(0.7)"
+                                        :class="item['M30达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['M30'],'shizhi')}}
+                                    </div>
+                                    <div
+                                        style="display: inline-block; transform: scale(0.7)"
+                                        :class="item['v30达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['v30'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div
+                                        style="display: inline-block; transform: scale(0.7)"
+                                        :class="item['M60达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['M60'],'shizhi')}}
+                                    </div>
+                                    <div
+                                        style="display: inline-block; transform: scale(0.7)"
+                                        :class="item['v60达成']?'red' :'green' "
+                                    >
+                                        {{formatNumber(item['v60'],'shizhi')}}
+                                    </div>
+                                </td>
                                 <td style="min-width: 40px" class="table_cnText">{{item['前5日']?'√':''}}</td>
                                 <td style="min-width: 45px" class="table_cnText">{{item['前40日']?'√':''}}</td>
                                 <td
@@ -412,7 +561,6 @@
                         </div>
                         <div class="table_hy_Mobile_td" :class="item['9:35打分']>0?'red fs16 f600' :'green fs16 f600' ">
                             <div style="font-size: 4px">
-                                <div :class="item['放量达成']?'red' :'green' ">放量</div>
                                 <div :class="item['M05达成']?'red' :'green' ">M05</div>
                                 <div :class="item['M10达成']?'red' :'green' ">M10</div>
                                 <div :class="item['M30达成']?'red' :'green' ">M30</div>

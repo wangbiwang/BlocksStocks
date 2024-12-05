@@ -277,3 +277,7 @@ table thead {
     transform: rotate(135deg);
     transform-origin: top right;
   }
+  .el-checkbox{
+    padding-right: 5px;
+    height: 30px;
+  }
