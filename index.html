@@ -42,7 +42,31 @@
                           }"
                     >
                     </el-date-picker>
+                    <div
+                        style="
+                            display: inline-block;
+                            cursor: pointer;
+                            background-color: #ac2024;
+                            color: #fff;
+                            padding: 0 5px;
+                        "
+                        @click="submit('历史-1')"
+                    >
+                        <-
+                    </div>
                     <el-button type="danger" style="margin: 0 10px" @click="submit('历史')">查询</el-button>
+                    <div
+                        style="
+                            display: inline-block;
+                            cursor: pointer;
+                            background-color: #ac2024;
+                            color: #fff;
+                            padding: 0 5px;
+                        "
+                        @click="submit('历史+1')"
+                    >
+                        ->
+                    </div>
                 </div>
             </div>
             <!-- / -->
@@ -75,12 +99,36 @@
                 </div>
             </div>
             <!-- 行业筛选条件 -->
-            <div style="display: flex">
+            <div style="display: flex;flex-wrap: wrap;">
+                <div>
+                    <el-checkbox
+                        v-model="Blocks.CheckedOptimum.LongTrend"
+                        @change="Blocks.CheckedOptimumFN"
+                        label="长期趋势"
+                        size="large"
+                    />
+                </div>
                 <div>
                     <el-checkbox
                         v-model="Blocks.CheckedOptimum._p10"
                         @change="Blocks.CheckedOptimumFN"
                         label="前10"
+                        size="large"
+                    />
+                </div>
+                <div>
+                    <el-checkbox
+                        v-model="Blocks.CheckedOptimum.YangXian"
+                        @change="Blocks.CheckedOptimumFN"
+                        label="阳线趋势"
+                        size="large"
+                    />
+                </div>
+                <div>
+                    <el-checkbox
+                        v-model="Blocks.CheckedOptimum.TodayTrend"
+                        @change="Blocks.CheckedOptimumFN"
+                        label="今日趋势"
                         size="large"
                     />
                 </div>
@@ -94,17 +142,9 @@
                 </div>
                 <div>
                     <el-checkbox
-                        v-model="Blocks.CheckedOptimum.LongTrend"
+                        v-model="Blocks.CheckedOptimum._0935"
                         @change="Blocks.CheckedOptimumFN"
-                        label="长期趋势"
-                        size="large"
-                    />
-                </div>
-                <div>
-                    <el-checkbox
-                        v-model="Blocks.CheckedOptimum.TodayTrend"
-                        @change="Blocks.CheckedOptimumFN"
-                        label="今日趋势"
+                        label="今日趋势强势"
                         size="large"
                     />
                 </div>
@@ -116,7 +156,11 @@
                         <thead>
                             <tr>
                                 <th :colspan="Blocks.headerData.length">
-                                    {{BlocksItem.name}} (总数：{{BlocksItem.default.length}})
+                                    {{BlocksItem.name}} (总数：{{BlocksItem.base.length}})
+                                    (筛选：{{BlocksItem.default.length}})
+                                    <span @click="Blocks.setCache('clean')" v-if="Blocks.isCache" style="color: #ac2024"
+                                        >缓存</span
+                                    >
                                 </th>
                             </tr>
                             <tr>
@@ -164,7 +208,6 @@
                                     <div>{{item['上涨占比']}}</div>
                                 </td> -->
 
-                                <td :class="item['p成交量环比率']>0?'red' :'green' ">{{item['p成交量环比率']}}</td>
                                 <td>
                                     <div
                                         style="display: inline-block; padding: 2px; transform: scale(0.7)"
@@ -222,7 +265,6 @@
                                     </div>
                                 </td>
 
-                                <td style="min-width: 45px" class="table_cnText">{{item['前5日']?'√':''}}</td>
                                 <td
                                     style="min-width: 45px; text-align: center"
                                     :class="item['9:35打分']>0?'red fs16 f600' :'green fs16 f600' "
@@ -295,15 +337,10 @@
                 <div
                     style="min-width: 100px; display: flex; justify-content: center; color: #ac2024; margin-right: 10px"
                 >
-                    已选择：[ 类型：{{Blocks.checked.type}} , 名称：{{Blocks.checked.name}} ]<br />
-                    [
-                    当日占比：{{Stocks.Data[0].base.length>0?`${Stocks.Data[0].base[0]['_当日上涨个数']}/${Stocks.Data[0].base.length}=
-                    ${((Stocks.Data[0].base[0]['_当日上涨个数']/Stocks.Data[0].base.length)*100).toFixed(0)}%`:'-'}} ,
-                    09:35占比：{{Stocks.Data[0].base.length>0?`${Stocks.Data[0].base[0]['_0935上涨个数']}/${Stocks.Data[0].base.length}=
-                    ${((Stocks.Data[0].base[0]['_0935上涨个数']/Stocks.Data[0].base.length)*100).toFixed(0)}%`:'-'}} ]
+                    已选择：[ 类型：{{Blocks.checked.type}} , 名称：{{Blocks.checked.name}} ]
                 </div>
                 <button
-                    v-if="!isMobile()"
+                    
                     type="button"
                     style="display: flex; justify-content: center; color: #ac2024"
                     @click="CheckedBlock('100','100')"
@@ -319,21 +356,13 @@
                 </button> -->
             </div>
             <!-- 个股筛选条件 -->
-            <div style="display: flex">
+            <div style="display: flex;flex-wrap: wrap;">
                 <!-- <el-checkbox
                         v-model="Stocks.CheckedOptimum.分值"
                         @change="Stocks.CheckedOptimumFN"
                         label="分值7及以上"
                         size="large"
                        /> -->
-                <div>
-                    <el-checkbox
-                        v-model="Stocks.CheckedOptimum.YesterdayTrend"
-                        @change="Stocks.CheckedOptimumFN"
-                        label="昨日趋势"
-                        size="large"
-                    />
-                </div>
                 <div>
                     <el-checkbox
                         v-model="Stocks.CheckedOptimum.LongTrend"
@@ -344,9 +373,33 @@
                 </div>
                 <div>
                     <el-checkbox
+                        v-model="Stocks.CheckedOptimum.YangXian"
+                        @change="Stocks.CheckedOptimumFN"
+                        label="阳线趋势"
+                        size="large"
+                    />
+                </div>
+                <div>
+                    <el-checkbox
+                        v-model="Stocks.CheckedOptimum.YesterdayTrend"
+                        @change="Stocks.CheckedOptimumFN"
+                        label="昨日趋势"
+                        size="large"
+                    />
+                </div>
+                <div>
+                    <el-checkbox
                         v-model="Stocks.CheckedOptimum.TodayTrend"
                         @change="Stocks.CheckedOptimumFN"
                         label="今日趋势"
+                        size="large"
+                    />
+                </div>
+                <div>
+                    <el-checkbox
+                        v-model="Stocks.CheckedOptimum._0935"
+                        @change="Stocks.CheckedOptimumFN"
+                        label="今日趋势强势"
                         size="large"
                     />
                 </div>
@@ -360,6 +413,10 @@
                                 <th :colspan="Stocks.headerData.length">
                                     {{StocksItem.name}} (总数：{{StocksItem.base.length}})
                                     (筛选：{{StocksItem.default.length}})
+                                    ({{Number((StocksItem.base.length/3).toFixed(2))}})
+                                    <span @click="Stocks.setCache('clean')" v-if="Stocks.isCache" style="color: #ac2024"
+                                        >缓存</span
+                                    >
                                 </th>
                             </tr>
                             <tr>
@@ -467,7 +524,6 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td :class="item['p成交量环比率']>0?'red' :'green' ">{{item['p成交量环比率']}}</td>
 
                                 <td>
                                     <div
@@ -525,7 +581,11 @@
                                         {{formatNumber(item['v60'],'shizhi')}}
                                     </div>
                                 </td>
-                                <td style="min-width: 40px" class="table_cnText">{{item['前5日']?'√':''}}</td>
+                                <td style="min-width: 80px" class="table_cnText" v-if="item['后2日']">
+                                    <span style="margin-right: 5px" v-html="precentformater(item['后2日'][0])"> </span>
+
+                                    <span style="margin-right: 5px" v-html="precentformater(item['后2日'][1])"> </span>
+                                </td>
                                 <td style="min-width: 45px" class="table_cnText">{{item['前40日']?'√':''}}</td>
                                 <td
                                     style="min-width: 45px; text-align: center"
@@ -581,7 +641,7 @@
         <!-- 引入element plus中文语言包 -->
         <script src="./js/elementplus@v2.7.7-zhCn.js"></script>
         <script src="./js/elementplus@v2.7.7.js"></script>
-
+        <script src="./js/localForage.js"></script>
         <script src="./js/day.js"></script>
         <script src="./js/utils.js"></script>
         <script src="./js/index.js"></script>

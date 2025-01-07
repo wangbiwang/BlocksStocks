@@ -1,14 +1,26 @@
+const myIndexedDB = localforage.createInstance({
+    name: 'myIndexedDB',
+})
 function setLocalStorage(key, value) {
-    console.log(key, value)
-    // 设置localStorage
-    localStorage.setItem(key, JSON.stringify(value))
+    myIndexedDB.setItem(key, value)
+    //console.log(key, value)
+    // // 设置localStorage
+    // localStorage.setItem(key, JSON.stringify(value))
 }
-function getLocalStorage(key) {
-    console.log('key:', key)
-    // 获取localStorage
-    let value = JSON.parse(localStorage.getItem(key))
-    console.log('value:', value)
-    return value
+async function getLocalStorage(key) {
+    try {
+        const value = await myIndexedDB.getItem(key)
+        if (value == null) return false
+        return value
+    } catch (err) {
+        // This code runs if there were any errors.
+        return false
+    }
+    // //console.log('key:', key)
+    // // 获取localStorage
+    // let value = JSON.parse(localStorage.getItem(key))
+    // //console.log('value:', value)
+    // return value
 }
 
 function precentformater(num, decimals = 2) {
@@ -1226,7 +1238,7 @@ var _red
                 c = s = v = r
                 var f = b
                 if (((f = En), Wn(v[205], s[206]) in t)) {
-                    // console.log(t,n,e,'错误debugger',e[v[56]],f , En)
+                    // //console.log(t,n,e,'错误debugger',e[v[56]],f , En)
                     return t.apply(n, e)
                 }
                 switch (e[v[56]]) {
