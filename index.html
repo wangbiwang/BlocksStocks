@@ -148,6 +148,14 @@
                         size="large"
                     />
                 </div>
+                <div>
+                    <el-checkbox
+                        v-model="Blocks.CheckedOptimum._0935Red"
+                        @change="Blocks.CheckedOptimumFN"
+                        label="今日红框"
+                        size="large"
+                    />
+                </div>
             </div>
             <!-- 行业table -->
             <el-container v-if="!isMobile()" class="table_container" v-loading="Blocks.loading">
@@ -184,6 +192,7 @@
                                     style="width: 120px; min-width: 60px"
                                     :class="(Blocks.checked.type==(BlocksKey>0?'概念':'行业')&&Blocks.checked.name==item['指数简称'])?'fs16 f600 table_cnText':'table_cnText'"
                                     @click="CheckedBlock(BlocksKey>0?'概念':'行业',item['指数简称'],item)"
+                                    :style="item['ts_指数'].includes(item['指数简称'])?'border:2px solid #ac2024':''"
                                 >
                                     {{item['指数简称']}}
                                 </td>
