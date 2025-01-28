@@ -1040,32 +1040,25 @@ function BlocksClickauto() {
         Blocks.CheckedOptimumFN()
     }
 
-    // Blocks.CheckedOptimumFN()
-    // if (Blocks.Data[0].default.length == 0 && Blocks.Data[1].default.length == 0) {
-    //     Blocks.CheckedOptimum.LongTrend = false
-    //     Blocks.CheckedOptimum.YesterdayTrend = false
-    // }
-    // Blocks.CheckedOptimumFN()
+    if (Blocks.Data[0].default.length == 0 && Blocks.Data[1].default.length == 0) {
+        Blocks.CheckedOptimum = {
+            LongTrend: false,
+            _p10: false,
+            YangXian: false,
+            TodayTrend: true,
+            YesterdayTrend: false,
+            _0935: false,
+            _0935Red: true,
+        }
+        Blocks.CheckedOptimumFN()
+        // CheckedBlock('100', '100')
+    }
     if (Blocks.Data[0].default.length > 0) {
         //console.log(Blocks.Data[0].default[0]['指数简称'], '行业')
         CheckedBlock('行业', Blocks.Data[0].default[0]['指数简称'], Blocks.Data[0].default[0])
     } else if (Blocks.Data[1].default.length > 0) {
         //console.log(Blocks.Data[1].default[0]['指数简称'], '概念')
         CheckedBlock('概念', Blocks.Data[1].default[0]['指数简称'], Blocks.Data[1].default[0])
-    }
-
-    if (Blocks.Data[0].default.length == 0 && Blocks.Data[1].default.length == 0) {
-        Blocks.CheckedOptimum = {
-            LongTrend: false,
-            _p10: false,
-            YangXian: false,
-            TodayTrend: false,
-            YesterdayTrend: false,
-            _0935: false,
-            _0935Red: false,
-        }
-        Blocks.CheckedOptimumFN()
-        CheckedBlock('100', '100')
     }
 }
 function StocksClickauto() {
