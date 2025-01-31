@@ -77,6 +77,18 @@
                 <div style="width: 100%">当前时间： {{Intervals.time}}</div>
                 <el-button type="danger" size="small" @click="submit('当日')">{{submitTime}}</el-button>
                 <div>
+                    <div
+                    style="
+                        display: inline-block;
+                        cursor: pointer;
+                        background-color: #ac2024;
+                        color: #fff;
+                        padding: 0 5px;
+                    "
+                    @click="submit('历史-1')"
+                >
+                    <-
+                </div>
                     <el-date-picker
                         style="width: 133px"
                         size="small"
@@ -93,6 +105,18 @@
                       }"
                     >
                     </el-date-picker>
+                    <div
+                        style="
+                            display: inline-block;
+                            cursor: pointer;
+                            background-color: #ac2024;
+                            color: #fff;
+                            padding: 0 5px;
+                        "
+                        @click="submit('历史+1')"
+                    >
+                        ->
+                    </div>
                     <el-button type="danger" size="small" style="margin: 0 10px" @click="submit('历史')"
                         >查询</el-button
                     >
