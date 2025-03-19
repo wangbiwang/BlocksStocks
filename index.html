@@ -68,6 +68,7 @@
                                 v-for="(item,key) in BlocksItem.default"
                                 style="text-align: center"
                                 :class="Stocks.hoverBlocks.includes(item['指数简称'])?'hoverStyle':''"
+                                :style="item['昨日涨停数']>0?{'border':'2px solid #ff0000'} : {}"
                             >
                                 <td style="width: 30px">{{item['序号']}}</td>
                                 <td

@@ -287,6 +287,7 @@ async function SubmitBlocks(block, catche) {
 }
 async function handleBlocksData(res) {
     function handleArr(arr1, arr2) {
+        console.log(arr1, arr2)
         let { td, pd1 } = Dates.shareDate
         let resArr = []
         arr1.forEach((el) => {
@@ -299,6 +300,7 @@ async function handleBlocksData(res) {
             obj['code'] = ele['code']
             obj['指数简称'] = ele['指数简称']
             obj['板块类别'] = ele['指数@所属同花顺行业级别'] ? '二级行业' : '概念'
+            obj['昨日涨停数'] = ele[`指数@涨停家数[${pd1}]`]
             handleVM(obj, ele, 'block', pd1)
             handleRate(obj, ele, 'block', td, pd1)
 
