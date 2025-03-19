@@ -12,174 +12,32 @@
     <body>
         <div id="app">
             <!-- TOP -->
-            <div
-                v-if="!isMobile()"
-                style="
-                    font-weight: 600;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-around;
-                    flex-wrap: wrap;
-                "
-            >
-                <div style="width: 220px; margin: 10px">当前时间： {{Intervals.time}}</div>
-                <el-button style="margin: 10px" type="danger" @click="submit('当日')"
-                    >当日查询（查询时间： {{submitTime}}）</el-button
-                >
-                <div style="margin: 10px">
-                    历史数据查询：
+            <el-container style="flex-wrap: wrap">
+                <div style="width: 220px; margin: 10px">{{Intervals.time}}</div>
+                <div style="margin: 10px; display: flex; align-items: center; gap: 8px">
+                    <div @click="Submit(-1)" style="font-size: 20px; cursor: pointer">◀️</div>
                     <el-date-picker
                         style="width: 133px"
-                        v-model="Dates.HistoryDate"
+                        v-model="Dates.SelectedDate"
                         type="date"
                         format="YYYY/MM/DD"
                         placeholder="选择日期"
-                        :disabled-date="(time) => {
-                            const minDate = new Date('2021-01-01');
-                            const maxDate = new Date()
-                            const week = time.getDay();// 周六是6，周日是0
-                            return time.getTime() > maxDate.getTime()||time.getTime() < minDate.getTime()||week === 6 || week === 0|| !Dates.isHoliday(time)
-                          }"
+                        :disabled-date="Dates.disabledDate"
                     >
                     </el-date-picker>
-                    <div
-                        style="
-                            display: inline-block;
-                            cursor: pointer;
-                            background-color: #ac2024;
-                            color: #fff;
-                            padding: 0 5px;
-                        "
-                        @click="submit('历史-1')"
-                    >
-                        <-
-                    </div>
-                    <el-button type="danger" style="margin: 0 10px" @click="submit('历史')">查询</el-button>
-                    <div
-                        style="
-                            display: inline-block;
-                            cursor: pointer;
-                            background-color: #ac2024;
-                            color: #fff;
-                            padding: 0 5px;
-                        "
-                        @click="submit('历史+1')"
-                    >
-                        ->
-                    </div>
+                    <div @click="Submit(1)" style="font-size: 20px; cursor: pointer">▶️</div>
+                    <el-button type="danger" style="margin: 0 10px" @click="Submit()">查询</el-button>
                 </div>
-            </div>
-            <!-- / -->
-            <div
-                v-if="isMobile()"
-                style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-bottom: 5px"
-            >
-                <div style="width: 100%">当前时间： {{Intervals.time}}</div>
-                <el-button type="danger" size="small" @click="submit('当日')">{{submitTime}}</el-button>
-                <div>
-                    <div
-                    style="
-                        display: inline-block;
-                        cursor: pointer;
-                        background-color: #ac2024;
-                        color: #fff;
-                        padding: 0 5px;
-                    "
-                    @click="submit('历史-1')"
-                >
-                    <-
-                </div>
-                    <el-date-picker
-                        style="width: 133px"
-                        size="small"
-                        v-model="Dates.HistoryDate"
-                        type="date"
-                        format="YYYY/MM/DD"
-                        placeholder="选择历史日期"
-                        :editable="false"
-                        :disabled-date="(time) => {
-                        const minDate = new Date('2021-01-01');
-                        const maxDate = new Date()
-                        const week = time.getDay();// 周六是6，周日是0
-                        return time.getTime() > maxDate.getTime()||time.getTime() < minDate.getTime()||week === 6 || week === 0|| !Dates.isHoliday(time)
-                      }"
-                    >
-                    </el-date-picker>
-                    <div
-                        style="
-                            display: inline-block;
-                            cursor: pointer;
-                            background-color: #ac2024;
-                            color: #fff;
-                            padding: 0 5px;
-                        "
-                        @click="submit('历史+1')"
-                    >
-                        ->
-                    </div>
-                    <el-button type="danger" size="small" style="margin: 0 10px" @click="submit('历史')"
-                        >查询</el-button
-                    >
-                </div>
-            </div>
+            </el-container>
+
             <!-- 行业筛选条件 -->
             <div style="display: flex; flex-wrap: wrap">
-                <div>
-                    <el-checkbox
-                        v-model="Blocks.CheckedOptimum.LongTrend"
-                        @change="Blocks.CheckedOptimumFN"
-                        label="长期趋势"
-                        size="large"
-                    />
-                </div>
-                <div>
-                    <el-checkbox
-                        v-model="Blocks.CheckedOptimum._p10"
-                        @change="Blocks.CheckedOptimumFN"
-                        label="前10"
-                        size="large"
-                    />
-                </div>
-                <div>
-                    <el-checkbox
-                        v-model="Blocks.CheckedOptimum.YangXian"
-                        @change="Blocks.CheckedOptimumFN"
-                        label="阳线趋势"
-                        size="large"
-                    />
-                </div>
-                <div>
-                    <el-checkbox
-                        v-model="Blocks.CheckedOptimum.TodayTrend"
-                        @change="Blocks.CheckedOptimumFN"
-                        label="今日趋势"
-                        size="large"
-                    />
-                </div>
-                <div>
-                    <el-checkbox
-                        v-model="Blocks.CheckedOptimum.YesterdayTrend"
-                        @change="Blocks.CheckedOptimumFN"
-                        label="昨日趋势"
-                        size="large"
-                    />
-                </div>
-                <div>
-                    <el-checkbox
-                        v-model="Blocks.CheckedOptimum._0935"
-                        @change="Blocks.CheckedOptimumFN"
-                        label="今日趋势强势"
-                        size="large"
-                    />
-                </div>
-                <div>
-                    <el-checkbox
-                        v-model="Blocks.CheckedOptimum._0935Red"
-                        @change="Blocks.CheckedOptimumFN"
-                        label="今日红框"
-                        size="large"
-                    />
-                </div>
+                <el-checkbox
+                    v-for="item in Blocks.checkboxList"
+                    v-model="item.model"
+                    @change="Blocks.CheckedOptimumFN"
+                    :label="item.name"
+                />
             </div>
             <!-- 行业table -->
             <el-container v-if="!isMobile()" class="table_container" v-loading="Blocks.loading">
@@ -208,7 +66,7 @@
                         <tbody>
                             <tr
                                 v-for="(item,key) in BlocksItem.default"
-                                :style="item['9:35打分']>=7?'text-align: center':'text-align: center;opacity: 1'"
+                                style="text-align: center"
                                 :class="Stocks.hoverBlocks.includes(item['指数简称'])?'hoverStyle':''"
                             >
                                 <td style="width: 30px">{{item['序号']}}</td>
@@ -216,7 +74,6 @@
                                     style="width: 120px; min-width: 60px"
                                     :class="(Blocks.checked.type==(BlocksKey>0?'概念':'行业')&&Blocks.checked.name==item['指数简称'])?'fs16 f600 table_cnText':'table_cnText'"
                                     @click="CheckedBlock(BlocksKey>0?'概念':'行业',item['指数简称'],item)"
-                                    :style="item['ts_指数'].includes(item['指数简称'])?'border:2px solid #ac2024':''"
                                 >
                                     {{item['指数简称']}}
                                 </td>
@@ -297,13 +154,6 @@
                                         {{formatNumber(item['v60'],'shizhi')}}
                                     </div>
                                 </td>
-
-                                <td
-                                    style="min-width: 45px; text-align: center"
-                                    :class="item['9:35打分']>0?'red fs16 f600' :'green fs16 f600' "
-                                >
-                                    {{item['9:35打分']}}
-                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -322,11 +172,7 @@
                     v-for="(BlocksItem,BlocksKey) in Blocks.Data"
                     v-if="!Blocks.loading"
                 >
-                    <div
-                        v-for="(item,key) in BlocksItem.default"
-                        class="table_hy_Mobile_tr"
-                        :style="item['9:35打分']>=7?'':'opacity: 1'"
-                    >
+                    <div v-for="(item,key) in BlocksItem.default" class="table_hy_Mobile_tr">
                         <div
                             class="table_hy_Mobile_td"
                             @click="CheckedBlock(BlocksKey>0?'概念':'行业',item['指数简称'],item)"
@@ -344,16 +190,6 @@
                             <div v-if="item[hdItem]['资金流向']" v-html="formatNumber(item[hdItem]['资金流向'])"></div>
                             <div v-if="item[hdItem]['大单净额']" v-html="formatNumber(item[hdItem]['大单净额'])"></div>
                             <div v-html="formatNumber(item[hdItem]['大单净量'])" v-if="item[hdItem]['大单净量']"></div>
-                        </div>
-                        <div class="table_hy_Mobile_td" :class="item['9:35打分']>0?'red fs16 f600' :'green fs16 f600' ">
-                            <div style="font-size: 4px">
-                                <div :class="item['M05达成']?'red' :'green' ">M05</div>
-                                <div :class="item['M10达成']?'red' :'green' ">M10</div>
-                                <div :class="item['M30达成']?'red' :'green' ">M30</div>
-                                <div :class="item['M60达成']?'red' :'green' ">M60</div>
-                            </div>
-                            <div style="max-width: 20px">{{item['前40日']?'✓':''}}</div>
-                            <div style="width: 25px; text-align: end">{{item['9:35打分']}}</div>
                         </div>
                     </div>
                 </div>
@@ -373,69 +209,15 @@
                 >
                     已选择：[ 类型：{{Blocks.checked.type}} , 名称：{{Blocks.checked.name}} ]
                 </div>
-                <button
-                    type="button"
-                    style="display: flex; justify-content: center; color: #ac2024"
-                    @click="CheckedBlock('100','100')"
-                >
-                    热门100个股查询
-                </button>
-                <!-- <button
-                    type="button"
-                    style="display: flex; justify-content: center; color: #ac2024"
-                    @click="CheckedBlock('Max','Max')"
-                >
-                    首板突破个股查询
-                </button> -->
             </div>
             <!-- 个股筛选条件 -->
             <div style="display: flex; flex-wrap: wrap">
-                <!-- <el-checkbox
-                        v-model="Stocks.CheckedOptimum.分值"
-                        @change="Stocks.CheckedOptimumFN"
-                        label="分值7及以上"
-                        size="large"
-                       /> -->
-                <div>
-                    <el-checkbox
-                        v-model="Stocks.CheckedOptimum.LongTrend"
-                        @change="Stocks.CheckedOptimumFN"
-                        label="长期趋势"
-                        size="large"
-                    />
-                </div>
-                <div>
-                    <el-checkbox
-                        v-model="Stocks.CheckedOptimum.YangXian"
-                        @change="Stocks.CheckedOptimumFN"
-                        label="阳线趋势"
-                        size="large"
-                    />
-                </div>
-                <div>
-                    <el-checkbox
-                        v-model="Stocks.CheckedOptimum.YesterdayTrend"
-                        @change="Stocks.CheckedOptimumFN"
-                        label="昨日趋势"
-                        size="large"
-                    />
-                </div>
-                <div>
-                    <el-checkbox
-                        v-model="Stocks.CheckedOptimum.TodayTrend"
-                        @change="Stocks.CheckedOptimumFN"
-                        label="今日趋势"
-                        size="large"
-                    />
-                </div>
-                <div>
-                    <el-checkbox
-                        v-model="Stocks.CheckedOptimum._0935"
-                        @change="Stocks.CheckedOptimumFN"
-                        label="今日趋势强势"
-                        size="large"
-                    />
-                </div>
+                <el-checkbox
+                    v-for="item in Stocks.checkboxList"
+                    v-model="item.model"
+                    @change="Stocks.CheckedOptimumFN"
+                    :label="item.name"
+                />
             </div>
             <!-- 个股table -->
             <el-container v-if="!isMobile()" class="table_container" v-loading="Stocks.loading">
@@ -462,6 +244,7 @@
                                 style="text-align: center"
                                 @mouseover="Stocks.handleMouseOver(item)"
                                 @mouseleave="Stocks.handleMouseLeave(item)"
+                                :style="item['涨停']?{'background-color':'rgb(250 ,255 ,0 ,0.2)'} : {}"
                             >
                                 <td style="width: 30px">{{item['序号']}}</td>
                                 <td style="min-width: 50px; width: 50px">{{item['code']}}</td>
@@ -523,9 +306,6 @@
                                             v-if="String(item[hdItem]['资金流向'])!='undefined'"
                                             @click="Stocks.mySort(hdItem,'资金流向')"
                                         >
-                                            <!-- <b
-                                                :class="item[hdItem]['资金流向趋势']=='j1'?'up-triangle':item[hdItem]['资金流向趋势']=='-j1'?'down-triangle':''"
-                                            ></b> -->
                                             <span
                                                 :style="Stocks.Sort_selected[0]==hdItem&&Stocks.Sort_selected[1]=='资金流向'?'border-bottom:2px solid #000':''"
                                                 v-html="formatNumber(item[hdItem]['资金流向'])"
@@ -535,9 +315,6 @@
                                             v-if="String(item[hdItem]['大单净额'])!='undefined'"
                                             @click="Stocks.mySort(hdItem,'大单净额')"
                                         >
-                                            <!-- <b
-                                                :class="item[hdItem]['大单净额趋势']=='j1'?'up-triangle':item[hdItem]['大单净额趋势']=='-j1'?'down-triangle':''"
-                                            ></b> -->
                                             <span
                                                 :style="Stocks.Sort_selected[0]==hdItem&&Stocks.Sort_selected[1]=='大单净额'?'border-bottom:2px solid #000':''"
                                                 v-html="formatNumber(item[hdItem]['大单净额'])"
@@ -620,12 +397,6 @@
                                     <span style="margin-right: 5px" v-html="precentformater(item['后2日'][1])"> </span>
                                 </td>
                                 <td style="min-width: 45px" class="table_cnText">{{item['前40日']?'√':''}}</td>
-                                <td
-                                    style="min-width: 45px; text-align: center"
-                                    :class="item['9:35打分']>0?'red fs16 f600' :'green fs16 f600' "
-                                >
-                                    {{item['9:35打分']}}
-                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -641,6 +412,8 @@
                         >
                             {{item['股票简称']}}
                         </div>
+                        <div class="table_hy_Mobile_td fs14 red">{{item['昨热度排名']}}</div>
+                        <div class="table_hy_Mobile_td fs14 red">{{item['今热度排名']}}</div>
                         <div
                             class="table_hy_Mobile_td"
                             v-for="hdItem in [...Stocks.headerData.slice(9,13),...Stocks.headerData.slice(14,15)]"
@@ -652,16 +425,6 @@
                             <div v-if="item[hdItem]['资金流向']" v-html="formatNumber(item[hdItem]['资金流向'])"></div>
                             <div v-if="item[hdItem]['大单净额']" v-html="formatNumber(item[hdItem]['大单净额'])"></div>
                             <div v-html="formatNumber(item[hdItem]['大单净量'])" v-if="item[hdItem]['大单净量']"></div>
-                        </div>
-                        <div class="table_hy_Mobile_td" :class="item['9:35打分']>0?'red fs16 f600' :'green fs16 f600' ">
-                            <div style="font-size: 4px">
-                                <div :class="item['M05达成']?'red' :'green' ">M05</div>
-                                <div :class="item['M10达成']?'red' :'green' ">M10</div>
-                                <div :class="item['M30达成']?'red' :'green' ">M30</div>
-                                <div :class="item['M60达成']?'red' :'green' ">M60</div>
-                            </div>
-                            <div style="max-width: 20px">{{item['前40日']?'✓':''}}</div>
-                            <div style="width: 25px; text-align: end">{{item['9:35打分']}}</div>
                         </div>
                     </div>
                 </div>
