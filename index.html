@@ -173,7 +173,11 @@
                     v-for="(BlocksItem,BlocksKey) in Blocks.Data"
                     v-if="!Blocks.loading"
                 >
-                    <div v-for="(item,key) in BlocksItem.default" class="table_hy_Mobile_tr">
+                    <div
+                        v-for="(item,key) in BlocksItem.default"
+                        class="table_hy_Mobile_tr"
+                        :style="item['昨日涨停数']>0?{'border':'2px solid #ff0000'} : {}"
+                    >
                         <div
                             class="table_hy_Mobile_td"
                             @click="CheckedBlock(BlocksKey>0?'概念':'行业',item['指数简称'],item)"
@@ -406,7 +410,11 @@
             <el-container v-if="isMobile()" class="table_container" v-loading="Stocks.loading">
                 <span @click="Stocks.setCache('clean')" v-if="Stocks.isCache" style="color: #ac2024">缓存</span>
                 <div class="table_gu" v-for="StocksItem in Stocks.Data" v-if="!Stocks.loading">
-                    <div v-for="(item,key) in StocksItem.default" class="table_hy_Mobile_tr">
+                    <div
+                        v-for="(item,key) in StocksItem.default"
+                        class="table_hy_Mobile_tr"
+                        :style="item['涨停']?{'background-color':'rgb(250 ,255 ,0 ,0.2)'} : {}"
+                    >
                         <div
                             class="table_hy_Mobile_td"
                             @click="Stocks.openUrl('https://pqa9p2.smartapps.baidu.com/pages/quote/quote?market=ab&jumpToNav=1&type=stock&from=aladdin&code='+item['code'])"
