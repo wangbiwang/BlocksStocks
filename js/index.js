@@ -81,6 +81,20 @@ const Questions = {
 
 //指数板块相关
 const Blocks = reactive({
+    timer: undefined,
+    run: () => {
+        console.log('Blocks.timer', Blocks.timer)
+        if (!Blocks.timer) {
+            Blocks.timer = setInterval(() => {
+                console.log('执行Submit(1)')
+                Submit(1)
+            }, 60000)
+        } else {
+            clearInterval(Blocks.timer)
+            Blocks.timer = undefined
+        }
+        console.log('Blocks.timer', Blocks.timer)
+    },
     loading: false,
     setCache: async (e) => {
         let FetchLog = (await getLocalStorage('FetchLog')) || {}
@@ -288,6 +302,7 @@ async function SubmitBlocks(block, catche) {
 }
 //处理板块数据
 async function handleBlocksData(res) {
+    console.log('handleBlocksData', res)
     function handleArr(arr1, arr2) {
         console.log(arr1, arr2)
         let { td, pd1 } = Dates.shareDate
@@ -395,7 +410,7 @@ async function CheckedBlock(type, name, item = null) {
         let d = FetchLog[`${tdcn}-Stocks-${name}`]
         if (d && d.length > 0) {
             //使用缓存数据
-            handleBlocksData(d)
+            handleStocksData(d, item)
         } else {
             //处理Questions
             let newQ_stock = Questions.stock.map((el) => {
@@ -409,12 +424,12 @@ async function CheckedBlock(type, name, item = null) {
                     .replaceAll('后2交易日涨跌幅', `${nd1}涨跌幅${nd2}涨跌幅`)
                 return el
             })
-            SubmitStocks(newQ_stock, type, name, item,'缓存')
+            SubmitStocks(newQ_stock, type, name, item, '缓存')
         }
     }
 }
 //获取个股数据
-async function SubmitStocks(stock, blockType, blockName, blockItem,catche) {
+async function SubmitStocks(stock, blockType, blockName, blockItem, catche) {
     if (Stocks.loading) return
     Stocks.loading = true
     let { pd2, pd3 } = Dates.shareDate
@@ -441,7 +456,7 @@ async function SubmitStocks(stock, blockType, blockName, blockItem,catche) {
                     setTimeout(() => goToTHSUrl(), 3000)
                 }
             })
-            if(catche)Stocks.setCache(res)
+            if (catche) Stocks.setCache(res)
             handleStocksData(res, blockItem)
         })
         .catch((err) => ElNotification({ title: err, type: 'error' }))
