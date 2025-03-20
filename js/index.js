@@ -84,7 +84,7 @@ const Blocks = reactive({
     loading: false,
     setCache: async (e) => {
         let FetchLog = (await getLocalStorage('FetchLog')) || {}
-        FetchLog[`${Dates.tdcn}-Blocks-${Blocks.RateSort_selected}`] = e == 'clean' ? null : e
+        FetchLog[`${Dates.shareDate.tdcn}-Blocks-${Blocks.RateSort_selected}`] = e == 'clean' ? null : e
         setLocalStorage('FetchLog', FetchLog)
     },
     checkboxList: [
@@ -140,7 +140,7 @@ const Stocks = reactive({
     loading: false,
     setCache: async (e) => {
         let FetchLog = (await getLocalStorage('FetchLog')) || {}
-        FetchLog[`${Dates.tdcn}-Stocks-${Blocks.checked.name}`] = e == 'clean' ? null : e
+        FetchLog[`${Dates.shareDate.tdcn}-Stocks-${Blocks.checked.name}`] = e == 'clean' ? null : e
         setLocalStorage('FetchLog', FetchLog)
     },
     headerData: [],
@@ -266,6 +266,7 @@ async function beforeSubmitBlocks() {
         }
     }
 }
+//获取板块数据
 async function SubmitBlocks(block, catche) {
     if (Blocks.loading) return
     Blocks.loading = true
@@ -285,6 +286,7 @@ async function SubmitBlocks(block, catche) {
         .catch((err) => ElNotification({ title: err, type: 'error' }))
         .finally(() => (Blocks.loading = false))
 }
+//处理板块数据
 async function handleBlocksData(res) {
     function handleArr(arr1, arr2) {
         console.log(arr1, arr2)
@@ -376,13 +378,14 @@ async function handleBlocksData(res) {
     Stocks.Data = [{ name: '实时策略', base: [], default: [] }]
     BlocksClickauto()
 }
+//点击选中板块
 async function CheckedBlock(type, name, item = null) {
     if (Blocks.loading) return
     Blocks.checked.type = type ? type : '-'
     Blocks.checked.name = name ? name : '-'
     Blocks.checked.item = item
     // //判断入口来源 当日查询 历史查询
-    let { pd3, pd2, pd1, tdcn, nd1, nd2 } = Dates.shareDate
+    let { tdcn, nd1, nd2 } = Dates.shareDate
     if (dayjs(Dates.SelectedDate || new Date()).format('YYYYMMDD') == dayjs(new Date()).format('YYYYMMDD')) {
         SubmitStocks(Questions.stock, type, name, item)
     } else {
@@ -406,11 +409,12 @@ async function CheckedBlock(type, name, item = null) {
                     .replaceAll('后2交易日涨跌幅', `${nd1}涨跌幅${nd2}涨跌幅`)
                 return el
             })
-            SubmitStocks(newQ_stock, type, name, item)
+            SubmitStocks(newQ_stock, type, name, item,'缓存')
         }
     }
 }
-async function SubmitStocks(stock, blockType, blockName, blockItem) {
+//获取个股数据
+async function SubmitStocks(stock, blockType, blockName, blockItem,catche) {
     if (Stocks.loading) return
     Stocks.loading = true
     let { pd2, pd3 } = Dates.shareDate
@@ -437,11 +441,13 @@ async function SubmitStocks(stock, blockType, blockName, blockItem) {
                     setTimeout(() => goToTHSUrl(), 3000)
                 }
             })
+            if(catche)Stocks.setCache(res)
             handleStocksData(res, blockItem)
         })
         .catch((err) => ElNotification({ title: err, type: 'error' }))
         .finally(() => (Stocks.loading = false))
 }
+//处理个股数据
 async function handleStocksData(res, blockItem) {
     console.log(res, blockItem)
     let { td, pd1, pd2, pd3, nd1, nd2 } = Dates.shareDate
