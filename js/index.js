@@ -342,7 +342,7 @@ async function handleBlocksData(res) {
             )
                 昨日趋势 = true
 
-            // if (obj['指数简称'] == '小金属') debugger
+            // if (obj['指数简称'] == '抽水蓄能') debugger
 
             let 今日趋势 = false
             let 涨跌31 = obj['09:31']['涨跌幅'],
@@ -469,9 +469,9 @@ async function handleStocksData(res, blockItem) {
             obj['股价'] = Number(ele[`收盘价:不复权[${td}]`] || ele[`最新价`])
             obj['涨停'] = ele[`涨停价[${pd1}]`] == ele[`收盘价:不复权[${pd1}]`]
             obj['macd'] = {
-                pd1: Number(ele[`macd(macd值)[${pd1}]`]),
-                pd2: Number(ele[`macd(macd值)[${pd2}]`]),
-                pd3: Number(ele[`macd(macd值)[${pd3}]`]),
+                pd1: Number(Number(ele[`macd(macd值)[${pd1}]`]).toFixed(2)),
+                pd2: Number(Number(ele[`macd(macd值)[${pd2}]`]).toFixed(2)),
+                pd3: Number(Number(ele[`macd(macd值)[${pd3}]`]).toFixed(2)),
             }
             handleVM(obj, ele, 'stock', pd1)
             handleRate(obj, ele, 'stock', td, pd1)
@@ -482,19 +482,22 @@ async function handleStocksData(res, blockItem) {
             obj[pd3] = {
                 涨跌幅: num(ele[`涨跌幅:前复权[${pd3}]`]),
             }
-            // if (obj['股票简称'] == '赤峰黄金') debugger
+            // if (obj['股票简称'] == '海立股份') debugger
             obj['后2日'] = [num(ele[`涨跌幅:前复权[${nd1}]`]), num(ele[`涨跌幅:前复权[${nd2}]`])]
             let 区间最高价 = Number(ele[findKeysWithPattern(ele, '区间最高价:不复权[', ']')[0]])
             let _35收盘价 = ele[`分时收盘价:不复权[${td} 09:35]`]
             obj['前40日'] = _35收盘价 ? Number(_35收盘价) >= 区间最高价 : obj['股价'] >= 区间最高价
 
             let 昨日趋势 = 0
-            if (obj[pd1]['大单净额'] > 0 && obj[pd1]['涨跌幅'] > blockItem[pd1]['涨跌幅']) {
+            if (obj[pd1]['大单净额'] > 0 && (obj[pd1]['涨跌幅'] > blockItem[pd1]['涨跌幅'] || obj[pd1]['涨跌幅'] > 2)) {
                 if (obj['macd']['pd1'] >= obj['macd']['pd2'] && obj['macd']['pd2'] >= obj['macd']['pd3']) {
                     if (Number(ele[`rsi(rsi12值)[${pd1}]`]) >= 60) 昨日趋势 = 4
                 }
             }
             if (obj[pd1]['大单净额'] > 0 && obj['涨停']) 昨日趋势 = 4
+            if (!(blockItem['09:35']['资金流向'] > 0 && blockItem['09:35']['大单净额'] > 0) && (obj['09:35']['资金流向'] < 0 && obj['09:35']['大单净额'] < 0)) {
+                昨日趋势 = 0
+            }
 
             let 今日趋势 = 0
             if (
