@@ -345,7 +345,7 @@ async function handleBlocksData(res) {
                 昨日大单净额 > 0 &&
                 昨日大单净额排名 <= 20 &&
                 昨日涨幅 > 0 &&
-                (昨日涨跌幅排名 <= 10 || obj[pd1]['涨跌幅'] > 2) &&
+                (昨日涨跌幅排名 <= 10 || obj[pd1]['涨跌幅'] > 1.5) &&
                 昨日涨停数 > 0
             )
                 昨日趋势 = true
@@ -516,7 +516,7 @@ async function handleStocksData(res, blockItem) {
                 }
             }
             if (obj[pd1]['大单净额'] > 0 && obj['涨停']) 昨日趋势 = 4
-            if (!(blockItem['09:35']['资金流向'] > 0 && blockItem['09:35']['大单净额'] > 0) && (obj['09:35']['资金流向'] < 0 && obj['09:35']['大单净额'] < 0)) {
+            if (!(blockItem['09:35']['资金流向'] > 0 && blockItem['09:35']['大单净额'] > 0) && (obj['09:35']['资金流向'] < 0 && obj['09:35']['大单净额'] < 0)&&!obj['涨停']) {
                 昨日趋势 = 0
             }
 
@@ -546,7 +546,10 @@ async function handleStocksData(res, blockItem) {
                 今日趋势 = 0
             }
 
-            let 长期趋势 = obj['v60达成'] && obj['M60达成'] && obj['前40日'] ? 3 : 0
+            let 长期趋势 = 0
+            if (obj['v60达成'] && obj['M60达成'] && obj['前40日']) 长期趋势 = 3
+            if (obj['v60达成'] && obj['M60达成'] && obj['涨停']) 长期趋势 = 3
+            if (obj['前40日'] && obj['涨停']) 长期趋势 = 3
             obj['昨日趋势'] = Boolean(昨日趋势)
             obj['今日趋势'] = Boolean(今日趋势)
             obj['长期趋势'] = Boolean(长期趋势)
