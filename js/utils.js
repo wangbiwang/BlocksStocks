@@ -7,7 +7,7 @@ const myIndexedDB = localforage.createInstance({
 
 function setLocalStorage(key, value) {
     myIndexedDB
-        .setItem(key, value)
+        .setItem(key, JSON.stringify(value))
         .then(() => {
             console.log(`${key} has been set to IndexedDB`)
         })
@@ -20,7 +20,7 @@ async function getLocalStorage(key) {
     try {
         const value = await myIndexedDB.getItem(key)
         if (value == null) return false
-        return value
+        return JSON.parse(value)
     } catch (err) {
         console.error(`Error getting ${key} from IndexedDB:`, err)
         return false
@@ -92,7 +92,6 @@ function findDuplicates(arr) {
 }
 
 function handle_requestsData(type, url, page = 1, perpage = 100) {
-    console.log(type, url, url?.length)
     let cc =
         'ta_random_userid=i9gckljzq8; other_uid=Ths_iwencai_Xuangu_ekk7bbaq04em50q1rbydne1z3c0s2r17; cid=f32efed578dca091636a4a63317c86421712223556; cid=f32efed578dca091636a4a63317c86421712223556; ComputerID=f32efed578dca091636a4a63317c86421712223556; WafStatus=0; THSSESSID=a4564673bfe08fb605c87b7b0d; wencai_pc_version=0; PHPSESSID=85a0e6842b16ce5899d28de4052ba362; guideState=1; user_status=0; u_ukey=A10702B8689642C6BE607730E11E6E4A; u_uver=1.0.0; u_dpass=swxA0gmX9nGRADXCBbyV2yDAYMp3ljhxYyTTzMjHLBRhjIs9J4BbNt613W%2FLnxN4Hi80LrSsTFH9a%2B6rtRvqGg%3D%3D; u_did=820280EB012C4B03ACBC3AA6864D5AFD; u_ttype=WEB; user=MDpteF82MzgyODE1MDg6Ok5vbmU6NTAwOjY0ODI4MTUwODoxMDMsMDAwMDAwMTAwMDAwMDAxLDI2MTsxMTMsMDExMDAwLDI2MTsxMTQsMTEsMjYxOzExNSwwMDAwMDAwMDAwMDAwMDEwMDAwMDAwMDAwMDAwMDAwMCwyNjE7MTE5LDAwMDAwMDAwMDAwMDAwMDAwMDAwMTAwMDAwLDI2MTs3LDExMTExMTExMTExLDQwOzQ0LDExLDQwOzYsMSw0MDs1LDEsNDA7MSwxMDEsNDA7MiwxLDQwOzMsMSw0MDs4LDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAxLDQwOzEwMiwxLDQwOjE5Ojo6NjM4MjgxNTA4OjE3MjQzMDE3MzI6OjoxNjU1NzE3MTYwOjQwMDY2ODowOjExY2IxYmE3NTk4YmFiOGYyZDk3OThhYzRhN2VmYWQxODpkZWZhdWx0XzQ6MA%3D%3D; userid=638281508; u_name=mx_638281508; escapename=mx_638281508; ticket=c085ae91cca27ad515244798d3b2ed70; utk=698759daef9c09116f1b1941853c0356; v=' //vip URL  起服务使用
     return {
@@ -1242,7 +1241,6 @@ var _red
                 c = s = v = r
                 var f = b
                 if (((f = En), Wn(v[205], s[206]) in t)) {
-                    // //console.log(t,n,e,'错误debugger',e[v[56]],f , En)
                     return t.apply(n, e)
                 }
                 switch (e[v[56]]) {

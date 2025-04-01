@@ -81,24 +81,29 @@ const Questions = {
 
 //指数板块相关
 const Blocks = reactive({
+    isCache: false,
     timer: undefined,
     run: () => {
-        console.log('Blocks.timer', Blocks.timer)
         if (!Blocks.timer) {
             Blocks.timer = setInterval(() => {
-                console.log('执行Submit(1)')
                 Submit(1)
             }, 60000)
         } else {
             clearInterval(Blocks.timer)
             Blocks.timer = undefined
         }
-        console.log('Blocks.timer', Blocks.timer)
+    },
+    getLog:async () => {
+        console.log(await getLocalStorage('FetchLog'),await getLocalStorage('FinalOperatingState'))
     },
     loading: false,
     setCache: async (e) => {
         let FetchLog = (await getLocalStorage('FetchLog')) || {}
-        FetchLog[`${Dates.shareDate.tdcn}-Blocks-${Blocks.RateSort_selected}`] = e == 'clean' ? null : e
+        if (e == 'clean') {
+            delete FetchLog[`${Dates.shareDate.tdcn}-Blocks-${Blocks.RateSort_selected}`]
+        } else {
+            FetchLog[`${Dates.shareDate.tdcn}-Blocks-${Blocks.RateSort_selected}`] = e
+        }
         setLocalStorage('FetchLog', FetchLog)
     },
     checkboxList: [
@@ -151,10 +156,15 @@ const Blocks = reactive({
 })
 //个股相关
 const Stocks = reactive({
+    isCache: false,
     loading: false,
     setCache: async (e) => {
         let FetchLog = (await getLocalStorage('FetchLog')) || {}
-        FetchLog[`${Dates.shareDate.tdcn}-Stocks-${Blocks.checked.name}`] = e == 'clean' ? null : e
+        if (e == 'clean') {
+            delete FetchLog[`${Dates.shareDate.tdcn}-Stocks-${Blocks.checked.name}`]
+        } else {
+            FetchLog[`${Dates.shareDate.tdcn}-Stocks-${Blocks.checked.name}`] = e
+        }
         setLocalStorage('FetchLog', FetchLog)
     },
     headerData: [],
@@ -213,6 +223,8 @@ function goToTHSUrl() {
         '_blank'
     )
     goToTHSUrl_flag = true
+    clearInterval(Blocks.timer)
+    Blocks.timer = undefined
 }
 
 //-----------------------------
@@ -256,6 +268,7 @@ async function Submit(direction) {
     beforeSubmitBlocks()
 }
 async function beforeSubmitBlocks() {
+    Blocks.isCache = false
     // //判断入口来源 当日查询 历史查询
     if (dayjs(Dates.SelectedDate || new Date()).format('YYYYMMDD') == dayjs(new Date()).format('YYYYMMDD')) {
         SubmitBlocks(Questions.block)
@@ -266,6 +279,7 @@ async function beforeSubmitBlocks() {
         let res = FetchLog[`${tdcn}-Blocks-${Blocks.RateSort_selected}`]
         if (res && res.length > 0) {
             //使用缓存数据
+            Blocks.isCache = true
             handleBlocksData(res)
         } else {
             //处理Questions
@@ -291,7 +305,8 @@ async function SubmitBlocks(block, catche) {
                 if (el.data && el.data.data && el.data.data.answer && el.data.data.answer.length > 0) {
                     return el.data.data.answer[0].txt[0].content.components[0].data.datas
                 } else {
-                    return ElNotification({ title: '刷新官网测试连通性！', type: 'error' })
+                    ElNotification({ title: '刷新官网测试连通性！', type: 'error' })
+                    setTimeout(() => goToTHSUrl(), 3000)
                 }
             })
             if (catche) Blocks.setCache(res) // 缓存数据
@@ -302,9 +317,7 @@ async function SubmitBlocks(block, catche) {
 }
 //处理板块数据
 async function handleBlocksData(res) {
-    console.log('handleBlocksData', res)
     function handleArr(arr1, arr2) {
-        console.log(arr1, arr2)
         let { td, pd1 } = Dates.shareDate
         let resArr = []
         arr1.forEach((el) => {
@@ -397,6 +410,7 @@ async function handleBlocksData(res) {
 //点击选中板块
 async function CheckedBlock(type, name, item = null) {
     if (Blocks.loading) return
+    Stocks.isCache = false
     Blocks.checked.type = type ? type : '-'
     Blocks.checked.name = name ? name : '-'
     Blocks.checked.item = item
@@ -405,12 +419,12 @@ async function CheckedBlock(type, name, item = null) {
     if (dayjs(Dates.SelectedDate || new Date()).format('YYYYMMDD') == dayjs(new Date()).format('YYYYMMDD')) {
         SubmitStocks(Questions.stock, type, name, item)
     } else {
-        console.log(2)
         //是否存在历史缓存数据
         let FetchLog = (await getLocalStorage('FetchLog')) || {}
         let d = FetchLog[`${tdcn}-Stocks-${name}`]
         if (d && d.length > 0) {
             //使用缓存数据
+            Stocks.isCache = true
             handleStocksData(d, item)
         } else {
             //处理Questions
@@ -465,7 +479,6 @@ async function SubmitStocks(stock, blockType, blockName, blockItem, catche) {
 }
 //处理个股数据
 async function handleStocksData(res, blockItem) {
-    console.log(res, blockItem)
     let { td, pd1, pd2, pd3, nd1, nd2 } = Dates.shareDate
     const num = (e) => (e ? Number(Number(e).toFixed(2)) : 0)
     Stocks.Data[0].base = res[0]
@@ -572,7 +585,6 @@ async function handleStocksData(res, blockItem) {
 
 function BlocksClickauto() {
     if (Blocks.Data[0].default.length > 0) {
-        //console.log(Blocks.Data[0].default[0]['指数简称'], '行业')
         CheckedBlock('行业', Blocks.Data[0].default[0]['指数简称'], Blocks.Data[0].default[0])
     } else if (Blocks.Data[1].default.length > 0) {
         CheckedBlock('概念', Blocks.Data[1].default[0]['指数简称'], Blocks.Data[1].default[0])
