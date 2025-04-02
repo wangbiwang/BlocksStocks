@@ -73,7 +73,7 @@ const textB = `当日涨跌幅;09:35涨跌幅降序；${text1}；${text2}；前1
 const Questions = {
     block: [`${textA}二级行业`, `${textB}二级行业`, `${textA}概念`, `${textB}概念`],
     stock: [
-        `当日涨跌幅资金流向大单净额收盘价；09:30涨跌幅；前1交易日热度排名升序当日热度排名流通市值非st；前1交易日涨跌幅资金流向大单净额rsi12;前2交易日涨跌幅大单净额macd；行业概念`,
+        `当日涨跌幅资金流向大单净额收盘价；09:30涨跌幅；前1交易日热度排名升序当日热度排名流通市值；前1交易日涨跌幅资金流向大单净额rsi12;前2交易日涨跌幅大单净额macd；行业概念`,
         `前1交易日热度排名升序前40交易日区间最高价不复权;09:31涨跌幅资金流向大单净额；09:33涨跌幅资金流向大单净额；09:35涨跌幅资金流向大单净额股价；前3交易日涨跌幅macd；前1交易日涨停价；行业概念`,
         `前1交易日热度排名升序；${text1}；${text2}；后2交易日涨跌幅;前1交易日开盘价前1交易日收盘价macd;行业概念`,
     ],
@@ -93,18 +93,16 @@ const Blocks = reactive({
             Blocks.timer = undefined
         }
     },
-    getLog:async () => {
-        console.log(await getLocalStorage('FetchLog'),await getLocalStorage('FinalOperatingState'))
-    },
     loading: false,
     setCache: async (e) => {
-        let FetchLog = (await getLocalStorage('FetchLog')) || {}
+        let logName = 'FetchLog-Blocks-' + Dates.shareDate.tdcn.slice(0, 5)
+        let logValue = (await getLocalStorage(logName)) || {}
         if (e == 'clean') {
-            delete FetchLog[`${Dates.shareDate.tdcn}-Blocks-${Blocks.RateSort_selected}`]
+            delete logValue[`${Dates.shareDate.tdcn}-Blocks-${Blocks.RateSort_selected}`]
         } else {
-            FetchLog[`${Dates.shareDate.tdcn}-Blocks-${Blocks.RateSort_selected}`] = e
+            logValue[`${Dates.shareDate.tdcn}-Blocks-${Blocks.RateSort_selected}`] = e
         }
-        setLocalStorage('FetchLog', FetchLog)
+        setLocalStorage(logName, logValue)
     },
     checkboxList: [
         { name: '长期趋势', model: true },
@@ -159,13 +157,14 @@ const Stocks = reactive({
     isCache: false,
     loading: false,
     setCache: async (e) => {
-        let FetchLog = (await getLocalStorage('FetchLog')) || {}
+        let logName = 'FetchLog-Stocks-' + Dates.shareDate.tdcn.slice(0, 5)
+        let logValue = (await getLocalStorage(logName)) || {}
         if (e == 'clean') {
-            delete FetchLog[`${Dates.shareDate.tdcn}-Stocks-${Blocks.checked.name}`]
+            delete logValue[`${Dates.shareDate.tdcn}-Stocks-${Blocks.checked.name}`]
         } else {
-            FetchLog[`${Dates.shareDate.tdcn}-Stocks-${Blocks.checked.name}`] = e
+            logValue[`${Dates.shareDate.tdcn}-Stocks-${Blocks.checked.name}`] = e
         }
-        setLocalStorage('FetchLog', FetchLog)
+        setLocalStorage(logName, logValue)
     },
     headerData: [],
     Data: [{ name: '实时策略', base: [], default: [] }],
@@ -274,9 +273,10 @@ async function beforeSubmitBlocks() {
         SubmitBlocks(Questions.block)
     } else {
         //是否存在历史缓存数据
-        let FetchLog = (await getLocalStorage('FetchLog')) || {}
+        let logName = 'FetchLog-Blocks-' + Dates.shareDate.tdcn.slice(0, 5)
+        let logValue = (await getLocalStorage(logName)) || {}
         let { tdcn, td } = Dates.shareDate
-        let res = FetchLog[`${tdcn}-Blocks-${Blocks.RateSort_selected}`]
+        let res = logValue[`${tdcn}-Blocks-${Blocks.RateSort_selected}`]
         if (res && res.length > 0) {
             //使用缓存数据
             Blocks.isCache = true
@@ -420,8 +420,9 @@ async function CheckedBlock(type, name, item = null) {
         SubmitStocks(Questions.stock, type, name, item)
     } else {
         //是否存在历史缓存数据
-        let FetchLog = (await getLocalStorage('FetchLog')) || {}
-        let d = FetchLog[`${tdcn}-Stocks-${name}`]
+        let logName = 'FetchLog-Stocks-' + Dates.shareDate.tdcn.slice(0, 5)
+        let logValue = (await getLocalStorage(logName)) || {}
+        let d = logValue[`${tdcn}-Stocks-${name}`]
         if (d && d.length > 0) {
             //使用缓存数据
             Stocks.isCache = true

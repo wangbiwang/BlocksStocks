@@ -7,9 +7,9 @@ const myIndexedDB = localforage.createInstance({
 
 function setLocalStorage(key, value) {
     myIndexedDB
-        .setItem(key, JSON.stringify(value))
+        .setItem(key, value)
         .then(() => {
-            console.log(`${key} has been set to IndexedDB`)
+            // console.log(`${key} has been set to IndexedDB`)
         })
         .catch((err) => {
             console.error(`Error setting ${key} to IndexedDB:`, err)
@@ -20,7 +20,7 @@ async function getLocalStorage(key) {
     try {
         const value = await myIndexedDB.getItem(key)
         if (value == null) return false
-        return JSON.parse(value)
+        return value
     } catch (err) {
         console.error(`Error getting ${key} from IndexedDB:`, err)
         return false
