@@ -26,12 +26,20 @@ const Dates = reactive({
             TradingDay: [], //历史可交易日组
             updateTradingDay: '', //上次请求可交易日期时间
         }
+        let { baseUrl, SelectedDate } = Dates
         const oldYear = 2021,
             newyYear = Number(dayjs().format('YYYY')) + 1
         // 第一次请求获取[2021至今]历史所有数据 每年余量270day,之后每天请求一次当年数据
-        let url = `${Dates.baseUrl}sh000001,day,,,320,qfq`
+        let url = `${baseUrl}sh000001,day,,,320,qfq`
         if (FD.TradingDay.length == 0) {
-            url = `${Dates.baseUrl}sh000001,day,,,${Number((newyYear - oldYear) * 270)},qfq`
+            url = `${baseUrl}sh000001,day,,,${Number((newyYear - oldYear) * 270)},qfq`
+        } else {
+            let sd = dayjs(SelectedDate || new Date()).format('YYYYMMDD')
+            if (SelectedDate != '' && sd != dayjs().format('YYYYMMDD') && FD.TradingDay.includes(sd)) {
+                Dates.DateList = [...FD.TradingDay]
+                Dates.keyDate = FD.keyDate
+                return
+            }
         }
         let { status, data } = await axios({ method: 'get', url })
         if (status == 200 && data) {
@@ -41,7 +49,7 @@ const Dates = reactive({
                 d = d.sh000001.day.map((e) => dayjs(e[0]).format('YYYYMMDD'))
                 if (mt[2].includes('open')) d.push(dayjs().format('YYYYMMDD'))
                 FD.TradingDay = Dates.DateList = [...new Set([...FD.TradingDay, ...d])]
-                if (dayjs(Dates.SelectedDate).format('YYYYMMDD') == '20221121') FD.keyDate = '20221121'
+                if (dayjs(SelectedDate).format('YYYYMMDD') == '20221121') FD.keyDate = '20221121'
                 if (FD.keyDate) Dates.keyDate = FD.keyDate
                 setLocalStorage('FinalOperatingState', FD)
             }
@@ -87,7 +95,7 @@ const Blocks = reactive({
         if (!Blocks.timer) {
             Blocks.timer = setInterval(() => {
                 Submit(1)
-            }, 60000)
+            }, 5000)
         } else {
             clearInterval(Blocks.timer)
             Blocks.timer = undefined
@@ -99,6 +107,7 @@ const Blocks = reactive({
         let logValue = (await getLocalStorage(logName)) || {}
         if (e == 'clean') {
             delete logValue[`${Dates.shareDate.tdcn}-Blocks-${Blocks.RateSort_selected}`]
+            Blocks.isCache = false
         } else {
             logValue[`${Dates.shareDate.tdcn}-Blocks-${Blocks.RateSort_selected}`] = e
         }
@@ -161,6 +170,7 @@ const Stocks = reactive({
         let logValue = (await getLocalStorage(logName)) || {}
         if (e == 'clean') {
             delete logValue[`${Dates.shareDate.tdcn}-Stocks-${Blocks.checked.name}`]
+            Stocks.isCache = false
         } else {
             logValue[`${Dates.shareDate.tdcn}-Stocks-${Blocks.checked.name}`] = e
         }
@@ -584,7 +594,19 @@ async function handleStocksData(res, blockItem) {
     Stocks.mySort(...Stocks.Sort_selected)
 }
 
-function BlocksClickauto() {
+async function BlocksClickauto() {
+    let { tdcn, td } = Dates.shareDate
+    const allModelTrue = Blocks.checkboxList.every((item) => item.model === true)
+    if (td != dayjs().format('YYYYMMDD') && allModelTrue) {
+        let logName = 'FetchLog-Blocks-Click-' + tdcn.slice(0, 5)
+        let logValue = (await getLocalStorage(logName)) || []
+        if (Blocks.Data[0].default.length > 0 || Blocks.Data[1].default.length > 0) {
+            logValue.push(td)
+            logValue = [...new Set(logValue)].sort((a, b) => Number(a) - Number(b))
+            setLocalStorage(logName, logValue)
+        }
+    }
+
     if (Blocks.Data[0].default.length > 0) {
         CheckedBlock('行业', Blocks.Data[0].default[0]['指数简称'], Blocks.Data[0].default[0])
     } else if (Blocks.Data[1].default.length > 0) {

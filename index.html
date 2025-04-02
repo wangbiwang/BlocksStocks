@@ -27,7 +27,9 @@
                     </el-date-picker>
                     <div @click="Submit(1)" style="font-size: 20px; cursor: pointer">▶️</div>
                     <el-button type="danger" style="margin: 0 10px" @click="Submit()">查询</el-button>
-                    <el-button :type="Blocks.timer?'primary':'danger'" style="margin: 0 10px" @click="Blocks.run()">run</el-button>
+                    <el-button :type="Blocks.timer?'primary':'danger'" style="margin: 0 10px" @click="Blocks.run()"
+                        >run</el-button
+                    >
                 </div>
             </el-container>
 
@@ -49,7 +51,7 @@
                                 <th :colspan="Blocks.headerData.length">
                                     {{BlocksItem.name}} (总数：{{BlocksItem.base.length}})
                                     (筛选：{{BlocksItem.default.length}})
-                                    <span @click="Blocks.setCache('clean')" v-if="Blocks.isCache" style="color: #ac2024"
+                                    <span @click="Blocks.setCache('clean')" v-if="Blocks.isCache" style="color: #ac2024; cursor: pointer"
                                         >缓存</span
                                     >
                                 </th>
@@ -168,7 +170,9 @@
                 style="margin-bottom: 10px; display: flex; flex-direction: column; min-height: 352px"
                 v-loading="Blocks.loading"
             >
-                <span @click="Blocks.setCache('clean')" v-if="Blocks.isCache" style="color: #ac2024">缓存</span>
+                <span @click="Blocks.setCache('clean')" v-if="Blocks.isCache" style="color: #ac2024; cursor: pointer"
+                    >缓存</span
+                >
                 <div
                     class="table_hy table_hy_Mobile"
                     v-for="(BlocksItem,BlocksKey) in Blocks.Data"
@@ -235,7 +239,10 @@
                                     {{StocksItem.name}} (总数：{{StocksItem.base.length}})
                                     (筛选：{{StocksItem.default.length}})
                                     ({{Number((StocksItem.base.length/3).toFixed(2))}})
-                                    <span @click="Stocks.setCache('clean')" v-if="Stocks.isCache" style="color: #ac2024"
+                                    <span
+                                        @click="Stocks.setCache('clean')"
+                                        v-if="Stocks.isCache"
+                                        style="color: #ac2024; cursor: pointer"
                                         >缓存</span
                                     >
                                 </th>
@@ -409,7 +416,7 @@
                 </div>
             </el-container>
             <el-container v-if="isMobile()" class="table_container" v-loading="Stocks.loading">
-                <span @click="Stocks.setCache('clean')" v-if="Stocks.isCache" style="color: #ac2024">缓存</span>
+                <span @click="Stocks.setCache('clean')" v-if="Stocks.isCache" style="color: #ac2024; cursor: pointer">缓存</span>
                 <div class="table_gu" v-for="StocksItem in Stocks.Data" v-if="!Stocks.loading">
                     <div
                         v-for="(item,key) in StocksItem.default"
