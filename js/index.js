@@ -184,6 +184,7 @@ const Stocks = reactive({
         { name: '今日趋势', model: true },
     ],
     CheckedOptimumFN: () => {
+        // debugger
         Stocks.Data = Stocks.Data.map((el) => {
             el.default = el.base
             return el
@@ -237,15 +238,33 @@ function goToTHSUrl() {
 }
 
 //-----------------------------
-async function Submit(direction) {
+async function Submit(direction, catche) {
     if (Blocks.loading) return
     await Dates.getDateList()
     let directionDate = dayjs(Dates.SelectedDate || new Date()).format('YYYYMMDD')
-    if (direction == -1) {
-        Dates.SelectedDate = Dates.DateList[Dates.DateList.findIndex((el) => el == directionDate) - 1]
-    } else if (direction == 1) {
-        Dates.SelectedDate = Dates.DateList[Dates.DateList.findIndex((el) => el == directionDate) + 1]
+    let DateList = Dates.DateList
+    let m_SelectedDate = dayjs(Dates.SelectedDate || new Date()).format('YYYYMMDD')
+    if (catche) {
+        DateList = [
+            ...(await getLocalStorage('FetchLog-Blocks-Click-2021年')),
+            ...(await getLocalStorage('FetchLog-Blocks-Click-2022年')),
+            ...(await getLocalStorage('FetchLog-Blocks-Click-2023年')),
+            ...(await getLocalStorage('FetchLog-Blocks-Click-2024年')),
+            ...(await getLocalStorage('FetchLog-Blocks-Click-2025年')),
+        ]
+        if (Dates.SelectedDate && DateList.includes(m_SelectedDate)) {
+            directionDate = m_SelectedDate
+        } else {
+            directionDate = DateList[DateList.length - 1]
+        }
     }
+    if (direction == -1) {
+        Dates.SelectedDate = DateList[DateList.findIndex((el) => el == directionDate) - 1]
+    } else if (direction == 1) {
+        Dates.SelectedDate = DateList[DateList.findIndex((el) => el == directionDate) + 1]
+    }
+    if (catche && !DateList.includes(m_SelectedDate)) Dates.SelectedDate = DateList[DateList.length - 1]
+
     Dates.setShareDate()
     let D = Dates.shareDate
     let VolumePriceArr = ['M05', 'M10', 'M30', 'M60']
@@ -367,7 +386,7 @@ async function handleBlocksData(res) {
                 obj['板块类别'] == '二级行业' &&
                 昨日大单净额 > 0 &&
                 昨日大单净额排名 <= 20 &&
-                昨日涨幅 > 0 &&
+                昨日涨幅 > 1 &&
                 (昨日涨跌幅排名 <= 10 || obj[pd1]['涨跌幅'] > 1.5) &&
                 昨日涨停数 > 0
             )
@@ -376,7 +395,7 @@ async function handleBlocksData(res) {
                 obj['板块类别'] == '概念' &&
                 昨日大单净额 > 0 &&
                 昨日大单净额排名 <= 80 &&
-                昨日涨幅 > 0 &&
+                昨日涨幅 > 1 &&
                 (昨日涨跌幅排名 <= 40 || obj[pd1]['涨跌幅'] > 2) &&
                 昨日涨停数 > 0
             )
@@ -394,13 +413,16 @@ async function handleBlocksData(res) {
             let 大单31 = obj['09:31']['大单净额'],
                 大单33 = obj['09:33']['大单净额'],
                 大单35 = obj['09:35']['大单净额']
-            if (涨跌35 >= 0.5 && (资金35 > 0 || 大单35 > 0) && obj['序号'] <= 20) 今日趋势 = true
-            if (涨跌35 >= 1 && (资金35 > 0 || 大单35 > 0) && obj['序号'] <= 40) 今日趋势 = true
+
+            let 条件1 = (资金35 > 0 || 大单35 > 0) && (大单35 >= 大单33 || 资金35 >= 资金33) && 涨跌35 >= 0.5
+            if (条件1 && obj['序号'] <= 20) 今日趋势 = true
+            if (条件1 && 涨跌35 >= 1.0 && obj['序号'] <= 40) 今日趋势 = true
             if ([涨跌35, 资金35, 大单35, 涨跌33, 资金33, 大单33].every((x) => x > 0)) 今日趋势 = true
-            if (涨跌35 < 0.5) 今日趋势 = false
-            if (涨跌35 < 涨跌33 && 资金35 < 资金33 && 大单35 < 大单33) 今日趋势 = false
-            if (涨跌35 < 1 && 资金33 < 0 && 大单33 < 0 && 资金31 < 0 && 大单31 < 0) 今日趋势 = false
-            if (涨跌35 < 1 && (涨跌35 < 涨跌33 || 涨跌35 < 涨跌31) && (资金35 < 0 || 大单35 < 0)) 今日趋势 = false
+            if (条件1 && 涨跌35 >= 涨跌33 && 资金35 >= 资金33 && 大单35 >= 大单33) 今日趋势 = true
+            // if (涨跌35 >= 涨跌33 && 资金35 >= 资金33 && 大单35 >= 大单33 && 涨跌35 > 0.5 && 资金35 > 0 && 大单35 > 0) {
+            //     今日趋势 = true
+            //     昨日趋势 = true
+            // }
 
             obj['长期趋势'] = Boolean(obj['v60达成'] && obj['M60达成'])
             obj['昨日趋势'] = Boolean(昨日趋势)
@@ -420,6 +442,7 @@ async function handleBlocksData(res) {
 //点击选中板块
 async function CheckedBlock(type, name, item = null) {
     if (Blocks.loading) return
+    Stocks.Data = [{ name: '实时策略', base: [], default: [] }]
     Stocks.isCache = false
     Blocks.checked.type = type ? type : '-'
     Blocks.checked.name = name ? name : '-'
@@ -463,6 +486,7 @@ async function SubmitStocks(stock, blockType, blockName, blockItem, catche) {
         let _name = blockName
         if (blockType == '概念') {
             _name = _name.replace('封装光学(CPO)', '封装光学')
+            _name = _name.replace('IP经济(谷子经济)', '谷子经济')
             el = el.replace('行业概念', `行业概念；所属概念包含${_name}；`)
         } else if (blockType == '行业') {
             el = el.replace('行业概念', `概念；所属二级行业包含${_name}；`)
@@ -528,7 +552,7 @@ async function handleStocksData(res, blockItem) {
             obj[pd3] = {
                 涨跌幅: num(ele[`涨跌幅:前复权[${pd3}]`]),
             }
-            // if (obj['股票简称'] == '海立股份') debugger
+            // if (obj['股票简称'] == '北大荒') debugger
             obj['后2日'] = [num(ele[`涨跌幅:前复权[${nd1}]`]), num(ele[`涨跌幅:前复权[${nd2}]`])]
             let 区间最高价 = Number(ele[findKeysWithPattern(ele, '区间最高价:不复权[', ']')[0]])
             let _35收盘价 = ele[`分时收盘价:不复权[${td} 09:35]`]
@@ -536,50 +560,38 @@ async function handleStocksData(res, blockItem) {
 
             let 昨日趋势 = 0
             if (obj[pd1]['大单净额'] > 0 && (obj[pd1]['涨跌幅'] > blockItem[pd1]['涨跌幅'] || obj[pd1]['涨跌幅'] > 2)) {
-                if (obj['macd']['pd1'] >= obj['macd']['pd2'] && obj['macd']['pd2'] >= obj['macd']['pd3']) {
+                if (obj['macd']['pd1'] >= obj['macd']['pd2'] && obj['macd']['pd1'] >= obj['macd']['pd3']) {
                     if (Number(ele[`rsi(rsi12值)[${pd1}]`]) >= 60) 昨日趋势 = 4
                 }
             }
-            if (obj[pd1]['大单净额'] > 0 && obj['涨停']) 昨日趋势 = 4
-            if (
-                !(blockItem['09:35']['资金流向'] > 0 && blockItem['09:35']['大单净额'] > 0) &&
-                obj['09:35']['资金流向'] < 0 &&
-                obj['09:35']['大单净额'] < 0 &&
-                !obj['涨停']
-            ) {
-                昨日趋势 = 0
-            }
+            if (obj['涨停']) 昨日趋势 = 4
 
             let 今日趋势 = 0
-            if (
-                obj['09:35']['涨跌幅'] > 0 &&
-                obj['09:35']['涨跌幅'] >= obj['09:30']['涨跌幅'] &&
-                (obj['09:35']['资金流向'] > 0 || obj['09:35']['大单净额'] > 0)
-            ) {
-                今日趋势 = 3
-            }
-            if (
-                obj['09:35']['涨跌幅'] > 0 &&
-                obj['09:35']['资金流向'] > 0 &&
-                obj['09:35']['大单净额'] > 0 &&
-                (obj['09:35']['资金流向'] > obj['09:33']['资金流向'] ||
-                    obj['09:35']['大单净额'] > obj['09:33']['大单净额'])
-            ) {
-                今日趋势 = 3
-            }
-            if (
-                obj['09:35']['资金流向'] < obj['09:33']['资金流向'] &&
-                obj['09:35']['大单净额'] < obj['09:33']['大单净额'] &&
-                obj['09:35']['资金流向'] < obj['09:31']['资金流向'] &&
-                obj['09:35']['大单净额'] < obj['09:31']['大单净额']
-            ) {
-                今日趋势 = 0
-            }
+            let 涨跌30 = obj['09:30']['涨跌幅'],
+                涨跌31 = obj['09:31']['涨跌幅'],
+                涨跌33 = obj['09:33']['涨跌幅'],
+                涨跌35 = obj['09:35']['涨跌幅']
+            let 资金31 = obj['09:31']['资金流向'],
+                资金33 = obj['09:33']['资金流向'],
+                资金35 = obj['09:35']['资金流向']
+            let 大单31 = obj['09:31']['大单净额'],
+                大单33 = obj['09:33']['大单净额'],
+                大单35 = obj['09:35']['大单净额']
+
+            let 条件1 = (资金35 > 0 || 大单35 > 0) && (大单35 >= 大单33 || 资金35 >= 资金33) && 涨跌35 >= 1
+            if (条件1) 今日趋势 = 3
+            if (obj['涨停'] && 涨跌35 > 1) 今日趋势 = 3
+            if (资金35 > 资金33 && 大单35 > 大单33 && 涨跌35 > 涨跌33) 今日趋势 = 3
+            if ([涨跌35, 资金35, 大单35, 涨跌33, 资金33, 大单33].every((x) => x > 0)) 今日趋势 = 3
+            if (涨跌35 >= 1 && 涨跌35 >= 涨跌33 && 资金35 >= 资金33 && 大单35 >= 大单33) 今日趋势 = 3
+            // if (涨跌35 >= 涨跌33 && 资金35 >= 资金33 && 大单35 >= 大单33 && 涨跌35 > 0.5 && 资金35 > 0 && 大单35 > 0) {
+            //     今日趋势 = true
+            //     昨日趋势 = true
+            // }
 
             let 长期趋势 = 0
             if (obj['v60达成'] && obj['M60达成'] && obj['前40日']) 长期趋势 = 3
             if (obj['v60达成'] && obj['M60达成'] && obj['涨停']) 长期趋势 = 3
-            if (obj['前40日'] && obj['涨停']) 长期趋势 = 3
             obj['昨日趋势'] = Boolean(昨日趋势)
             obj['今日趋势'] = Boolean(今日趋势)
             obj['长期趋势'] = Boolean(长期趋势)
@@ -602,9 +614,11 @@ async function BlocksClickauto() {
         let logValue = (await getLocalStorage(logName)) || []
         if (Blocks.Data[0].default.length > 0 || Blocks.Data[1].default.length > 0) {
             logValue.push(td)
-            logValue = [...new Set(logValue)].sort((a, b) => Number(a) - Number(b))
-            setLocalStorage(logName, logValue)
+        } else {
+            logValue = logValue.filter((item) => item !== td)
         }
+        logValue = [...new Set(logValue)].sort((a, b) => Number(a) - Number(b))
+        setLocalStorage(logName, logValue)
     }
 
     if (Blocks.Data[0].default.length > 0) {
