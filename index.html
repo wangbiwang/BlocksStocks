@@ -48,7 +48,7 @@
                 />
             </div>
             <!-- 行业table -->
-            <el-container v-if="!isMobile()" class="table_container" v-loading="Blocks.loading">
+            <el-container class="table_container" v-loading="Blocks.loading">
                 <div class="table_hy" v-for="(BlocksItem,BlocksKey) in Blocks.Data" v-if="!Blocks.loading">
                     <table>
                         <thead>
@@ -90,7 +90,7 @@
                                     {{item['指数简称']}}
                                 </td>
                                 <td class="rateTd f600" v-for="(hdItem,hdKey) in Blocks.headerData.slice(2,8)">
-                                    <div class="tb3_box" v-if="item[hdItem]" >
+                                    <div class="tb3_box" v-if="item[hdItem]">
                                         <div v-html="precentformater(item[hdItem]['涨跌幅'])"></div>
                                         <div
                                             v-if="item[hdItem]['资金流向']"
@@ -106,7 +106,6 @@
                                         ></div>
                                     </div>
                                 </td>
-                   
 
                                 <td>
                                     <div
@@ -169,47 +168,7 @@
                     </table>
                 </div>
             </el-container>
-            <!-- / -->
-            <el-container
-                v-if="isMobile()"
-                class="table_container"
-                style="margin-bottom: 10px; display: flex; flex-direction: column; min-height: 352px"
-                v-loading="Blocks.loading"
-            >
-                <span @click="Blocks.setCache('clean')" v-if="Blocks.isCache" style="color: #ac2024; cursor: pointer"
-                    >缓存</span
-                >
-                <div
-                    class="table_hy table_hy_Mobile"
-                    v-for="(BlocksItem,BlocksKey) in Blocks.Data"
-                    v-if="!Blocks.loading"
-                >
-                    <div
-                        v-for="(item,key) in BlocksItem.default"
-                        class="table_hy_Mobile_tr"
-                        :style="item['昨日涨停数']>0?{'border':'2px solid #ff0000'} : {}"
-                    >
-                        <div
-                            class="table_hy_Mobile_td"
-                            @click="CheckedBlock(BlocksKey>0?'概念':'行业',item['指数简称'],item)"
-                        >
-                            {{item['指数简称']}}
-                        </div>
-                        <div
-                            class="table_hy_Mobile_td"
-                            v-for="hdItem in [...Blocks.headerData.slice(2,6),...Blocks.headerData.slice(7,8)]"
-                        >
-                            <div
-                                style="width: 100%; font-size: 10px"
-                                v-html="precentformater(item[hdItem]['涨跌幅'])"
-                            ></div>
-                            <div v-if="item[hdItem]['资金流向']" v-html="formatNumber(item[hdItem]['资金流向'])"></div>
-                            <div v-if="item[hdItem]['大单净额']" v-html="formatNumber(item[hdItem]['大单净额'])"></div>
-                            <div v-html="formatNumber(item[hdItem]['大单净量'])" v-if="item[hdItem]['大单净量']"></div>
-                        </div>
-                    </div>
-                </div>
-            </el-container>
+
             <!-- 个股指数名称类型 -->
             <div
                 style="
@@ -236,7 +195,7 @@
                 />
             </div>
             <!-- 个股table -->
-            <el-container v-if="!isMobile()" class="table_container" v-loading="Stocks.loading">
+            <el-container class="table_container" v-loading="Stocks.loading">
                 <div class="table_gu" v-for="StocksItem in Stocks.Data" v-if="!Stocks.loading">
                     <table>
                         <thead>
@@ -419,39 +378,6 @@
                             </tr>
                         </tbody>
                     </table>
-                </div>
-            </el-container>
-            <el-container v-if="isMobile()" class="table_container" v-loading="Stocks.loading">
-                <span @click="Stocks.setCache('clean')" v-if="Stocks.isCache" style="color: #ac2024; cursor: pointer"
-                    >缓存</span
-                >
-                <div class="table_gu" v-for="StocksItem in Stocks.Data" v-if="!Stocks.loading">
-                    <div
-                        v-for="(item,key) in StocksItem.default"
-                        class="table_hy_Mobile_tr"
-                        :style="item['涨停']?{'background-color':'rgb(250 ,255 ,0 ,0.2)'} : {}"
-                    >
-                        <div
-                            class="table_hy_Mobile_td"
-                            @click="Stocks.openUrl('https://pqa9p2.smartapps.baidu.com/pages/quote/quote?market=ab&jumpToNav=1&type=stock&from=aladdin&code='+item['code'])"
-                        >
-                            {{item['股票简称']}}
-                        </div>
-                        <div class="table_hy_Mobile_td fs14 red">{{item['昨热度排名']}}</div>
-                        <div class="table_hy_Mobile_td fs14 red">{{item['今热度排名']}}</div>
-                        <div
-                            class="table_hy_Mobile_td"
-                            v-for="hdItem in [...Stocks.headerData.slice(9,13),...Stocks.headerData.slice(14,15)]"
-                        >
-                            <div
-                                style="width: 100%; font-size: 10px"
-                                v-html="precentformater(item[hdItem]['涨跌幅'])"
-                            ></div>
-                            <div v-if="item[hdItem]['资金流向']" v-html="formatNumber(item[hdItem]['资金流向'])"></div>
-                            <div v-if="item[hdItem]['大单净额']" v-html="formatNumber(item[hdItem]['大单净额'])"></div>
-                            <div v-html="formatNumber(item[hdItem]['大单净量'])" v-if="item[hdItem]['大单净量']"></div>
-                        </div>
-                    </div>
                 </div>
             </el-container>
         </div>
