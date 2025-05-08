@@ -108,6 +108,20 @@ const Blocks = reactive({
         if (e == 'clean') {
             delete logValue[`${Dates.shareDate.tdcn}-Blocks-${Blocks.RateSort_selected}`]
             Blocks.isCache = false
+            // 清除缓存后重新请求数据
+            if (dayjs(Dates.SelectedDate || new Date()).format('YYYYMMDD') == dayjs(new Date()).format('YYYYMMDD')) {
+                SubmitBlocks(Questions.block)
+            } else {
+                let { tdcn, td } = Dates.shareDate
+                let newQ_block = Questions.block.map((el) => {
+                    return el
+                        .replaceAll('当日', td)
+                        .replaceAll('09:', tdcn + '09:')
+                        .replaceAll('前1交易日', tdcn + '前1交易日')
+                        .replaceAll('流通市值', tdcn + '流通市值')
+                })
+                SubmitBlocks(newQ_block, '缓存')
+            }
         } else {
             logValue[`${Dates.shareDate.tdcn}-Blocks-${Blocks.RateSort_selected}`] = e
         }
@@ -138,7 +152,14 @@ const Blocks = reactive({
         { name: '实时行业策略排行', base: [], default: [] },
         { name: '实时行业概念排行', base: [], default: [] },
     ],
-
+    requestStatus: [],
+    updateRequestStatus: (index, status, message) => {
+        Blocks.requestStatus[index] = {
+            name: ['行业策略排行', '行业概念排行', '概念策略排行', '概念概念排行'][index],
+            status,
+            message
+        };
+    },
     RateSort: (e, i) => {
         if (i < 2 || i > 6) return
         Questions.block = Questions.block.map((el) => {
@@ -171,6 +192,24 @@ const Stocks = reactive({
         if (e == 'clean') {
             delete logValue[`${Dates.shareDate.tdcn}-Stocks-${Blocks.checked.name}`]
             Stocks.isCache = false
+            // 清除缓存后重新请求数据
+            if (dayjs(Dates.SelectedDate || new Date()).format('YYYYMMDD') == dayjs(new Date()).format('YYYYMMDD')) {
+                SubmitStocks(Questions.stock, Blocks.checked.type, Blocks.checked.name, Blocks.checked.item)
+            } else {
+                let { tdcn, nd1, nd2, pd2, pd3 } = Dates.shareDate
+                let newQ_stock = Questions.stock.map((el) => {
+                    el = el
+                        .replaceAll('当日', tdcn)
+                        .replaceAll('09:', tdcn + '09:')
+                        .replaceAll('前1交易日', tdcn + '前1交易日')
+                        .replaceAll('前20交易日', tdcn + '前20交易日')
+                        .replaceAll('前40交易日', tdcn + '前40交易日')
+                        .replaceAll('流通市值', tdcn + '流通市值')
+                        .replaceAll('后2交易日涨跌幅', `${nd1}涨跌幅${nd2}涨跌幅`)
+                    return el
+                })
+                SubmitStocks(newQ_stock, Blocks.checked.type, Blocks.checked.name, Blocks.checked.item, '缓存')
+            }
         } else {
             logValue[`${Dates.shareDate.tdcn}-Stocks-${Blocks.checked.name}`] = e
         }
@@ -221,6 +260,14 @@ const Stocks = reactive({
         Stocks.Sort_selected = [ea, eb ? eb : null]
     },
     Sort_selected: ['昨热度排名', null],
+    requestStatus: [],
+    updateRequestStatus: (index, status, message) => {
+        Stocks.requestStatus[index] = {
+            name: `个股数据请求 ${index + 1}`,
+            status,
+            message
+        };
+    },
 })
 //防爬虫点击验证
 let goToTHSUrl_flag = false
@@ -292,11 +339,16 @@ async function Submit(direction, catche) {
         el.default = []
         return el
     })
+    // 清除个股表格的请求状态
+    Stocks.requestStatus = []
+    Stocks.isCache = false
+    
     if (!Dates.keyDate) return ElNotification({ title: 'key error', type: 'error' })
     beforeSubmitBlocks()
 }
 async function beforeSubmitBlocks() {
     Blocks.isCache = false
+    Blocks.requestStatus = [] // 清空请求状态
     // //判断入口来源 当日查询 历史查询
     if (dayjs(Dates.SelectedDate || new Date()).format('YYYYMMDD') == dayjs(new Date()).format('YYYYMMDD')) {
         SubmitBlocks(Questions.block)
@@ -325,24 +377,86 @@ async function beforeSubmitBlocks() {
 }
 //获取板块数据
 async function SubmitBlocks(block, catche) {
-    if (Blocks.loading) return
-    Blocks.loading = true
-    const requests = block.map((el) => axios(handle_requestsData('zhishu', el)))
-    Promise.all(requests)
-        .then((e) => {
-            let res = e.map((el) => {
-                if (el.data && el.data.data && el.data.data.answer && el.data.data.answer.length > 0) {
-                    return el.data.data.answer[0].txt[0].content.components[0].data.datas
-                } else {
-                    ElNotification({ title: '刷新官网测试连通性！', type: 'error' })
-                    setTimeout(() => goToTHSUrl(), 3000)
+    if (Blocks.loading) return;
+    Blocks.loading = true;
+    
+    try {
+        // 初始化请求状态
+        if (!catche) {
+            Blocks.requestStatus = block.map((_, index) => ({
+                name: ['行业策略排行', '行业概念排行', '概念策略排行', '概念概念排行'][index],
+                status: 'pending',
+                message: '请求中...'
+            }));
+        }
+
+        const requests = block.map(el => axios(handle_requestsData('zhishu', el)));
+        const responses = await Promise.allSettled(requests);
+        
+        const successResponses = [];
+        const failedRequests = [];
+        
+        responses.forEach((response, index) => {
+            const data = response.value?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas;
+            if (response.status === 'fulfilled' && Array.isArray(data) && data.length > 0) {
+                successResponses.push(data);
+                if (!catche) {
+                    Blocks.updateRequestStatus(index, 'success', `请求成功 (${data.length}条数据)`);
                 }
-            })
-            if (catche) Blocks.setCache(res) // 缓存数据
-            handleBlocksData(res)
-        })
-        .catch((err) => ElNotification({ title: err, type: 'error' }))
-        .finally(() => (Blocks.loading = false))
+            } else {
+                failedRequests.push(block[index]);
+                if (!catche) {
+                    Blocks.updateRequestStatus(index, 'error', '请求失败: 数据无效或为空');
+                }
+            }
+        });
+
+        if (failedRequests.length > 0) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 更新失败请求的状态为重试中
+            if (!catche) {
+                failedRequests.forEach((_, index) => {
+                    const originalIndex = block.indexOf(failedRequests[index]);
+                    Blocks.updateRequestStatus(originalIndex, 'pending', '重试中...');
+                });
+            }
+
+            const retryRequests = failedRequests.map(el => axios(handle_requestsData('zhishu', el)));
+            const retryResponses = await Promise.allSettled(retryRequests);
+            
+            retryResponses.forEach((response, index) => {
+                const originalIndex = block.indexOf(failedRequests[index]);
+                const data = response.value?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas;
+                if (response.status === 'fulfilled' && Array.isArray(data) && data.length > 0) {
+                    successResponses.push(data);
+                    if (!catche) {
+                        Blocks.updateRequestStatus(originalIndex, 'success', `重试成功 (${data.length}条数据)`);
+                    }
+                } else {
+                    if (!catche) {
+                        Blocks.updateRequestStatus(originalIndex, 'error', '重试失败: 数据无效或为空');
+                    }
+                }
+            });
+            
+            if (successResponses.length < block.length) {
+                throw new Error(`部分请求失败，成功: ${successResponses.length}/${block.length}`);
+            }
+        }
+        
+        if (catche) Blocks.setCache(successResponses);
+        handleBlocksData(successResponses);
+    } catch (err) {
+        ElNotification({ 
+            title: '请求失败', 
+            message: err.message,
+            type: 'error' 
+        });
+        goToTHSUrl();
+    } finally {
+        Blocks.loading = false;
+    }
 }
 //处理板块数据
 async function handleBlocksData(res) {
@@ -453,6 +567,12 @@ async function CheckedBlock(type, name, item = null) {
     Blocks.checked.type = type ? type : '-'
     Blocks.checked.name = name ? name : '-'
     Blocks.checked.item = item
+    
+    // 重置Stocks的筛选状态
+    Stocks.checkboxList.forEach(item => {
+        item.model = true
+    })
+    
     // //判断入口来源 当日查询 历史查询
     let { tdcn, nd1, nd2 } = Dates.shareDate
     if (dayjs(Dates.SelectedDate || new Date()).format('YYYYMMDD') == dayjs(new Date()).format('YYYYMMDD')) {
@@ -485,52 +605,132 @@ async function CheckedBlock(type, name, item = null) {
 }
 //获取个股数据
 async function SubmitStocks(stock, blockType, blockName, blockItem, catche) {
-    if (Stocks.loading) return
-    Stocks.loading = true
-    let { pd2, pd3 } = Dates.shareDate
-    const requests = stock.map((el) => {
-        let _name = blockName
-        if (blockType == '概念') {
-            _name = _name.replace('封装光学(CPO)', '封装光学')
-            _name = _name.replace('IP经济(谷子经济)', '谷子经济')
-            el = el.replace('行业概念', `行业概念；所属概念包含${_name}；`)
-        } else if (blockType == '行业') {
-            el = el.replace('行业概念', `概念；所属二级行业包含${_name}；`)
-        }
-        el = el.replaceAll('前2交易日', pd2)
-        el = el.replaceAll('前3交易日', pd3)
-        return axios(handle_requestsData('stock', el))
-    })
+    if (Stocks.loading) return;
+    Stocks.loading = true;
+    
+    try {
+        // 初始化请求状态
+        Stocks.requestStatus = stock.map((_, index) => ({
+            name: `个股数据请求 ${index + 1}`,
+            status: 'pending',
+            message: '请求中...'
+        }));
 
-    Promise.all(requests)
-        .then(async (responses) => {
-            let res = responses.map((el) => {
-                if (el.data && el.data.data && el.data.data.answer && el.data.data.answer.length > 0) {
-                    return el.data.data.answer[0].txt[0].content.components[0].data.datas
-                } else {
-                    ElNotification({ title: '刷新官网测试连通性！', type: 'error' })
-                    setTimeout(() => goToTHSUrl(), 3000)
+        const { pd2, pd3 } = Dates.shareDate;
+        const requests = stock.map(el => {
+            let _name = blockName;
+            if (blockType === '概念') {
+                _name = _name.replace('封装光学(CPO)', '封装光学')
+                           .replace('IP经济(谷子经济)', '谷子经济');
+                el = el.replace('行业概念', `行业概念；所属概念包含${_name}；`);
+            } else if (blockType === '行业') {
+                el = el.replace('行业概念', `概念；所属二级行业包含${_name}；`);
+            }
+            el = el.replaceAll('前2交易日', pd2)
+                  .replaceAll('前3交易日', pd3);
+            return axios(handle_requestsData('stock', el));
+        });
+
+        const responses = await Promise.allSettled(requests);
+        
+        const successResponses = [];
+        const failedRequests = [];
+        
+        responses.forEach((response, index) => {
+            const data = response.value?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas;
+            if (response.status === 'fulfilled' && Array.isArray(data) && data.length > 0) {
+                successResponses.push(data);
+                Stocks.updateRequestStatus(index, 'success', `请求成功 (${data.length}条数据)`);
+            } else {
+                failedRequests.push(stock[index]);
+                Stocks.updateRequestStatus(index, 'error', '请求失败: 数据无效或为空');
+            }
+        });
+
+        if (failedRequests.length > 0) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 更新失败请求的状态为重试中
+            failedRequests.forEach((_, index) => {
+                const originalIndex = stock.indexOf(failedRequests[index]);
+                Stocks.updateRequestStatus(originalIndex, 'pending', '重试中...');
+            });
+
+            const retryRequests = failedRequests.map(el => {
+                let _name = blockName;
+                if (blockType === '概念') {
+                    _name = _name.replace('封装光学(CPO)', '封装光学')
+                               .replace('IP经济(谷子经济)', '谷子经济');
+                    el = el.replace('行业概念', `行业概念；所属概念包含${_name}；`);
+                } else if (blockType === '行业') {
+                    el = el.replace('行业概念', `概念；所属二级行业包含${_name}；`);
                 }
-            })
-            if (catche) Stocks.setCache(res)
-            handleStocksData(res, blockItem)
-        })
-        .catch((err) => ElNotification({ title: err, type: 'error' }))
-        .finally(() => (Stocks.loading = false))
+                el = el.replaceAll('前2交易日', pd2)
+                      .replaceAll('前3交易日', pd3);
+                return axios(handle_requestsData('stock', el));
+            });
+            
+            const retryResponses = await Promise.allSettled(retryRequests);
+            
+            retryResponses.forEach((response, index) => {
+                const originalIndex = stock.indexOf(failedRequests[index]);
+                const data = response.value?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas;
+                if (response.status === 'fulfilled' && Array.isArray(data) && data.length > 0) {
+                    successResponses.push(data);
+                    Stocks.updateRequestStatus(originalIndex, 'success', `重试成功 (${data.length}条数据)`);
+                } else {
+                    Stocks.updateRequestStatus(originalIndex, 'error', '重试失败: 数据无效或为空');
+                }
+            });
+            
+            if (successResponses.length < stock.length) {
+                throw new Error(`部分请求失败，成功: ${successResponses.length}/${stock.length}`);
+            }
+        }
+        
+        if (catche) Stocks.setCache(successResponses);
+        handleStocksData(successResponses, blockItem);
+    } catch (err) {
+        ElNotification({ 
+            title: '请求失败', 
+            message: err.message,
+            type: 'error' 
+        });
+        goToTHSUrl();
+    } finally {
+        Stocks.loading = false;
+    }
 }
 //处理个股数据
 async function handleStocksData(res, blockItem) {
     let { td, pd1, pd2, pd3, nd1, nd2 } = Dates.shareDate
     const num = (e) => (e ? Number(Number(e).toFixed(2)) : 0)
-    Stocks.Data[0].base = res[0]
-        .filter((el) => !/^68/.test(el.code) && !/^8/.test(el.code))
+    
+    // 确保res数组中的每个元素都是有效的
+    if (!Array.isArray(res) || res.length === 0) {
+        console.error('Invalid response data:', res);
+        return;
+    }
+
+    // 合并数据前先进行数据验证和预处理
+    const validData = res[0].filter((el) => !/^68/.test(el.code) && !/^8/.test(el.code));
+    
+    // 创建数据映射以提高查找效率
+    const dataMap1 = new Map(res[1]?.map(item => [item['股票简称'], item]) || []);
+    const dataMap2 = new Map(res[2]?.map(item => [item['股票简称'], item]) || []);
+    
+    Stocks.Data[0].base = validData
         .map((ele) => {
-            ele = {
+            // 使用Map进行数据查找和合并
+            const match1 = dataMap1.get(ele['股票简称']) || {};
+            const match2 = dataMap2.get(ele['股票简称']) || {};
+            
+            // 合并数据，确保不会覆盖原始数据
+            return {
                 ...ele,
-                ...res[1].filter((el) => el['股票简称'] === ele['股票简称'])[0],
-                ...res[2].filter((el) => el['股票简称'] === ele['股票简称'])[0],
-            }
-            return ele
+                ...match1,
+                ...match2
+            };
         })
         .map((ele, idx) => {
             let obj = {}
@@ -544,13 +744,18 @@ async function handleStocksData(res, blockItem) {
             obj['流通市值'] = ele[`a股市值(不含限售股)[${td}]`]
             obj['股价'] = Number(ele[`收盘价:不复权[${td}]`] || ele[`最新价`])
             obj['涨停'] = ele[`涨停价[${pd1}]`] == ele[`收盘价:不复权[${pd1}]`]
+            
+            // 确保MACD数据存在且为数字
             obj['macd'] = {
-                pd1: Number(Number(ele[`macd(macd值)[${pd1}]`]).toFixed(2)),
-                pd2: Number(Number(ele[`macd(macd值)[${pd2}]`]).toFixed(2)),
-                pd3: Number(Number(ele[`macd(macd值)[${pd3}]`]).toFixed(2)),
+                pd1: Number(Number(ele[`macd(macd值)[${pd1}]`] || 0).toFixed(2)),
+                pd2: Number(Number(ele[`macd(macd值)[${pd2}]`] || 0).toFixed(2)),
+                pd3: Number(Number(ele[`macd(macd值)[${pd3}]`] || 0).toFixed(2)),
             }
+            
             handleVM(obj, ele, 'stock', pd1)
             handleRate(obj, ele, 'stock', td, pd1)
+            
+            // 确保历史数据存在
             obj[pd2] = {
                 涨跌幅: num(ele[`涨跌幅:前复权[${pd2}]`]),
                 大单净额: num(ele[`dde大单净额[${pd2}]`]),
@@ -558,60 +763,71 @@ async function handleStocksData(res, blockItem) {
             obj[pd3] = {
                 涨跌幅: num(ele[`涨跌幅:前复权[${pd3}]`]),
             }
-            // if (obj['股票简称'] == '北大荒') debugger
-            obj['后2日'] = [num(ele[`涨跌幅:前复权[${nd1}]`]), num(ele[`涨跌幅:前复权[${nd2}]`])]
-            let 区间最高价 = Number(ele[findKeysWithPattern(ele, '区间最高价:不复权[', ']')[0]])
-            let _35收盘价 = ele[`分时收盘价:不复权[${td} 09:35]`]
-            obj['前40日'] = _35收盘价 ? Number(_35收盘价) >= 区间最高价 : obj['股价'] >= 区间最高价
+            
+            // 处理未来数据
+            obj['后2日'] = [
+                num(ele[`涨跌幅:前复权[${nd1}]`]),
+                num(ele[`涨跌幅:前复权[${nd2}]`])
+            ]
+            
+            // 处理区间最高价
+            const 最高价Keys = findKeysWithPattern(ele, '区间最高价:不复权[', ']');
+            let 区间最高价 = 最高价Keys.length > 0 ? Number(ele[最高价Keys[0]]) : 0;
+            let _35收盘价 = ele[`分时收盘价:不复权[${td} 09:35]`];
+            obj['前40日'] = _35收盘价 ? Number(_35收盘价) >= 区间最高价 : obj['股价'] >= 区间最高价;
 
-            let 昨日趋势 = false
+            // 计算趋势
+            let 昨日趋势 = false;
             if (obj[pd1]['大单净额'] > 0 && (obj[pd1]['涨跌幅'] > blockItem[pd1]['涨跌幅'] || obj[pd1]['涨跌幅'] > 2)) {
                 if (obj['macd']['pd1'] >= obj['macd']['pd2'] && obj['macd']['pd1'] >= obj['macd']['pd3']) {
-                    if (Number(ele[`rsi(rsi12值)[${pd1}]`]) >= 60) 昨日趋势 = true
+                    if (Number(ele[`rsi(rsi12值)[${pd1}]`] || 0) >= 60) 昨日趋势 = true;
                 }
             }
-            if (obj['涨停']) 昨日趋势 = true
-            let zuo = obj[pd1]['资金流向'] + obj[pd1]['大单净额']
-            let jin = obj['09:35']['资金流向'] + obj['09:35']['大单净额']
-            if (jin > zuo && jin + zuo > 0) 昨日趋势 = true
+            if (obj['涨停']) 昨日趋势 = true;
+            let zuo = obj[pd1]['资金流向'] + obj[pd1]['大单净额'];
+            let jin = obj['09:35']['资金流向'] + obj['09:35']['大单净额'];
+            if (jin > zuo && jin + zuo > 0) 昨日趋势 = true;
 
-            let 今日趋势 = false
-            let 涨跌30 = obj['09:30']['涨跌幅'],
-                涨跌31 = obj['09:31']['涨跌幅'],
-                涨跌33 = obj['09:33']['涨跌幅'],
-                涨跌35 = obj['09:35']['涨跌幅']
-            let 资金31 = obj['09:31']['资金流向'],
-                资金33 = obj['09:33']['资金流向'],
-                资金35 = obj['09:35']['资金流向']
-            let 大单31 = obj['09:31']['大单净额'],
-                大单33 = obj['09:33']['大单净额'],
-                大单35 = obj['09:35']['大单净额']
+            let 今日趋势 = false;
+            let 涨跌30 = obj['09:30']['涨跌幅'] || 0,
+                涨跌31 = obj['09:31']['涨跌幅'] || 0,
+                涨跌33 = obj['09:33']['涨跌幅'] || 0,
+                涨跌35 = obj['09:35']['涨跌幅'] || 0;
+            let 资金31 = obj['09:31']['资金流向'] || 0,
+                资金33 = obj['09:33']['资金流向'] || 0,
+                资金35 = obj['09:35']['资金流向'] || 0;
+            let 大单31 = obj['09:31']['大单净额'] || 0,
+                大单33 = obj['09:33']['大单净额'] || 0,
+                大单35 = obj['09:35']['大单净额'] || 0;
 
-            let 条件0 = 涨跌35 >= blockItem['09:35']['涨跌幅'] || 涨跌35 >= 1
-            let 条件1 = (资金35 > 0 || 大单35 > 0) && (大单35 >= 大单33 || 资金35 >= 资金33) && 条件0
-            if (条件1) 今日趋势 = true
-            if (条件0 && obj['涨停']) 今日趋势 = true
-            if (条件0 && 资金35 > 资金33 && 大单35 > 大单33 && 涨跌35 > 涨跌33) 今日趋势 = true
-            if (条件0 && [涨跌35, 资金35, 大单35, 涨跌33, 资金33, 大单33].every((x) => x > 0)) 今日趋势 = true
-            if (条件0 && 涨跌35 >= 涨跌33 && 资金35 >= 资金33 && 大单35 >= 大单33) 今日趋势 = true
-            let 条件2 = blockItem['09:35']['资金流向'] < 0 || blockItem['09:35']['大单净额'] < 0
-            if (条件2 && 大单35 < 0 && 资金35 < 0) 今日趋势 = false
+            let 条件0 = 涨跌35 >= blockItem['09:35']['涨跌幅'] || 涨跌35 >= 1;
+            let 条件1 = (资金35 > 0 || 大单35 > 0) && (大单35 >= 大单33 || 资金35 >= 资金33) && 条件0;
+            if (条件1) 今日趋势 = true;
+            if (条件0 && obj['涨停']) 今日趋势 = true;
+            if (条件0 && 资金35 > 资金33 && 大单35 > 大单33 && 涨跌35 > 涨跌33) 今日趋势 = true;
+            if (条件0 && [涨跌35, 资金35, 大单35, 涨跌33, 资金33, 大单33].every((x) => x > 0)) 今日趋势 = true;
+            if (条件0 && 涨跌35 >= 涨跌33 && 资金35 >= 资金33 && 大单35 >= 大单33) 今日趋势 = true;
+            let 条件2 = blockItem['09:35']['资金流向'] < 0 || blockItem['09:35']['大单净额'] < 0;
+            if (条件2 && 大单35 < 0 && 资金35 < 0) 今日趋势 = false;
 
-            let 长期趋势 = false
-            if (obj['v60达成'] && obj['M60达成'] && obj['前40日']) 长期趋势 = true
-            if (obj['v60达成'] && obj['M60达成'] && obj['涨停']) 长期趋势 = true
-            obj['昨日趋势'] = Boolean(昨日趋势)
-            obj['今日趋势'] = Boolean(今日趋势)
-            obj['长期趋势'] = Boolean(长期趋势)
-            return obj
+            let 长期趋势 = false;
+            if (obj['v60达成'] && obj['M60达成'] && obj['前40日']) 长期趋势 = true;
+            if (obj['v60达成'] && obj['M60达成'] && obj['涨停']) 长期趋势 = true;
+            
+            obj['昨日趋势'] = Boolean(昨日趋势);
+            obj['今日趋势'] = Boolean(今日趋势);
+            obj['长期趋势'] = Boolean(长期趋势);
+            
+            return obj;
         })
         .sort((a, b) => {
-            return a['昨热度排名'] - b['昨热度排名']
-        })
+            return (a['昨热度排名'] || 0) - (b['昨热度排名'] || 0);
+        });
+
     if (Dates.HistoryBtn == '历史' && Stocks.Data[0].base.length > 0) {
-        Stocks.setCache(res)
+        Stocks.setCache(res);
     }
-    Stocks.mySort(...Stocks.Sort_selected)
+    Stocks.mySort(...Stocks.Sort_selected);
 }
 
 async function BlocksClickauto() {

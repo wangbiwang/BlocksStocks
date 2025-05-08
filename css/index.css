@@ -264,8 +264,8 @@ table thead {
     border-right: 2px solid #000;
     position: relative;
     transform: rotate(45deg);
-  }
-  .checkmark::after {
+}
+.checkmark::after {
     content: '';
     position: absolute;
     left: 50%;
@@ -276,8 +276,233 @@ table thead {
     border-width: 0 3px 3px 0;
     transform: rotate(135deg);
     transform-origin: top right;
-  }
-  .el-checkbox{
+}
+.el-checkbox {
     padding-right: 5px;
     height: 30px;
-  }
+}
+
+/* 请求状态展示样式 */
+.request-status {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    background-color: #f5f7fa;
+    border-radius: 4px;
+    border: 1px solid #e4e7ed;
+    font-size: 13px;
+}
+
+.status-title {
+    font-weight: bold;
+    color: #303133;
+    white-space: nowrap;
+}
+
+.status-items {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.status-name {
+    color: #606266;
+    margin-right: 4px;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin: 0 4px;
+}
+
+.status-dot.pending {
+    background-color: #909399;
+    animation: pulse 1.5s infinite;
+}
+
+.status-dot.success {
+    background-color: #67c23a;
+}
+
+.status-dot.error {
+    background-color: #f56c6c;
+}
+
+.status-message {
+    color: #606266;
+    font-size: 12px;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* 新增类样式 */
+.time-display {
+    width: 220px;
+    margin: 10px;
+}
+
+.control-container {
+    margin: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-button {
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.date-picker {
+    width: 133px;
+}
+
+.query-button {
+    margin: 0 10px;
+}
+
+.run-button {
+    margin: 0 10px;
+}
+
+.date-filter {
+    border: 1px solid rgb(0, 0, 0);
+    display: flex;
+    align-items: center;
+    color: #333;
+}
+
+.filter-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.selected-info {
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+}
+
+.selected-type {
+    min-width: 100px;
+    display: flex;
+    justify-content: center;
+    color: #ac2024;
+    margin-right: 10px;
+}
+
+.cache-text {
+    color: #ac2024;
+    cursor: pointer;
+}
+
+.stock-code {
+    min-width: 50px;
+    width: 50px;
+}
+
+.stock-name {
+    min-width: 120px;
+    width: 120px;
+}
+
+.market-value {
+    min-width: 70px;
+    width: 70px;
+}
+
+.stock-price {
+    min-width: 50px;
+    width: 50px;
+}
+
+.industry-cell {
+    min-width: 60px;
+    width: 150px;
+    height: 26px;
+    overflow: hidden;
+}
+
+.industry-content {
+    overflow: auto;
+    height: 100%;
+}
+
+.heat-rank {
+    min-width: 75px;
+    width: 70px;
+}
+
+.concept-cell {
+    min-width: 60px;
+    width: 150px;
+    height: 26px;
+    overflow: hidden;
+}
+
+.concept-content {
+    overflow: auto;
+    height: 100%;
+}
+
+.ma-indicator {
+    display: inline-block;
+    padding: 2px;
+    transform: scale(0.7);
+}
+
+.volume-indicator {
+    display: inline-block;
+    transform: scale(0.7);
+}
+
+.future-days {
+    min-width: 80px;
+}
+
+.future-day-margin {
+    margin-right: 5px;
+}
+
+.history-days {
+    min-width: 45px;
+}
+
+.limit-up-row {
+    background-color: rgb(250, 255, 0, 0.2);
+}
+
+.large-market-value {
+    background-color: #ccc;
+}
+
+.selected-sort {
+    border-bottom: 2px solid #000;
+}
