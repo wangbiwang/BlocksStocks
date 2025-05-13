@@ -76,7 +76,7 @@ const Dates = reactive({
 const text0 = '涨跌幅降序资金流向大单净额收盘价'
 const text1 = '前1交易日(vol1和vol5和vol10和vol30和vol60)'
 const text2 = '前1交易日(1日均线和M5和M10和M30和M60)'
-const textA = `当日涨跌幅资金流向大单净额收盘价;09:30涨跌幅；09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35${text0}；前1交易日涨停家数`
+const textA = `当日涨跌幅资金流向大单净额收盘价;09:30涨跌幅；09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35${text0}；前1交易日涨停家数；前1交易日上涨家数占比`
 const textB = `当日涨跌幅;09:35涨跌幅降序；${text1}；${text2}；前1交易日开盘价前1交易日收盘价;前1交易日15:00涨跌幅资金流向大单净额；`
 const Questions = {
     block: [`${textA}二级行业`, `${textB}二级行业`, `${textA}概念`, `${textB}概念`],
@@ -312,7 +312,7 @@ async function Submit(direction, catche) {
     Stocks.requestStatus = []
     Stocks.isCache = false
 
-    if (!Dates.keyDate) return ElNotification({ title: 'key error', type: 'error' })
+    // if (!Dates.keyDate) return ElNotification({ title: 'key error', type: 'error' })
     beforeSubmitBlocks()
 }
 async function beforeSubmitBlocks() {
@@ -442,7 +442,9 @@ async function handleBlocksData(res) {
             obj['code'] = ele['code']
             obj['指数简称'] = ele['指数简称']
             obj['板块类别'] = ele['指数@所属同花顺行业级别'] ? '二级行业' : '概念'
-            obj['昨日涨停数'] = ele[`指数@涨停家数[${pd1}]`]
+            obj['昨日涨停数'] = ele[`指数@涨停家数[${pd1}]`] || 0
+            obj['昨日上涨比'] = ele[`指数@上涨家数占比[${pd1}]`] || 0
+
             handleVM(obj, ele, 'block', pd1)
             handleRate(obj, ele, 'block', td, pd1)
             let 涨跌30 = obj['09:30']['涨跌幅'],
@@ -485,6 +487,7 @@ async function handleBlocksData(res) {
                 (昨日大单净额排名 <= 20 || obj[pd1]['涨跌幅'] > 1.5) &&
                 昨日涨幅 > 0 &&
                 (昨日涨跌幅排名 <= 10 || obj[pd1]['涨跌幅'] > 1.5) &&
+                obj['昨日上涨比'] >=60 &&
                 昨日涨停数 > 0
             )
                 昨日趋势 = true
@@ -494,6 +497,7 @@ async function handleBlocksData(res) {
                 (昨日大单净额排名 <= 80 || obj[pd1]['涨跌幅'] > 2) &&
                 昨日涨幅 > 0 &&
                 (昨日涨跌幅排名 <= 40 || obj[pd1]['涨跌幅'] > 2) &&
+                obj['昨日上涨比'] >=60 &&
                 昨日涨停数 > 0
             )
                 昨日趋势 = true
