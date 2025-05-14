@@ -142,7 +142,7 @@ const Blocks = reactive({
     requestStatus: [],
     updateRequestStatus: (index, status, message) => {
         Blocks.requestStatus[index] = {
-            name: ['行业策略排行', '行业概念排行', '概念策略排行', '概念概念排行'][index],
+            name: index+1,
             status,
             message,
         }
@@ -232,7 +232,7 @@ const Stocks = reactive({
     requestStatus: [],
     updateRequestStatus: (index, status, message) => {
         Stocks.requestStatus[index] = {
-            name: `个股数据请求 ${index + 1}`,
+            name: index + 1,
             status,
             message,
         }
