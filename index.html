@@ -51,10 +51,12 @@
                     />
                 </div>
                 <div class="request-status" style="margin: 0" v-if="!Blocks.isCache && Blocks.requestStatus.length > 0">
-                    <div v-if="!isMobile()" class="status-title" style="margin: 0; margin-right: 8px">板块数据请求状态：</div>
+                    <div v-if="!isMobile()" class="status-title" style="margin: 0; margin-right: 8px">
+                        板块数据请求状态：
+                    </div>
                     <div class="status-items">
                         <div v-for="(status, index) in Blocks.requestStatus" :key="index" class="status-item">
-                            <span  class="status-name">{{status.name}}</span>
+                            <span class="status-name">{{status.name}}</span>
                             <span :class="['status-dot', status.status]"></span>
                             <span v-if="!isMobile()" class="status-message">{{status.message}}</span>
                         </div>
@@ -91,7 +93,7 @@
                                 v-for="(item,key) in BlocksItem.default"
                                 style="text-align: center"
                                 :class="Stocks.hoverBlocks.includes(item['指数简称'])?'hoverStyle':''"
-                                :style="item['昨日涨停数']>0?{'border':'2px solid #ff0000'} : {}"
+                                :style="(key!=0||item['09:35']['涨跌幅']<0||(item['09:35']['资金流向']<0&&item['09:35']['大单净额']<0&&item['09:35']['涨跌幅']<0.5))?'opacity:0.3' : ''"
                             >
                                 <td style="width: 30px">{{item['序号']}}</td>
                                 <td
@@ -174,7 +176,9 @@
                     />
                 </div>
                 <div class="request-status" style="margin: 0" v-if="!Stocks.isCache && Stocks.requestStatus.length > 0">
-                    <div v-if="!isMobile()" class="status-title" style="margin: 0; margin-right: 8px">个股数据请求状态：</div>
+                    <div v-if="!isMobile()" class="status-title" style="margin: 0; margin-right: 8px">
+                        个股数据请求状态：
+                    </div>
                     <div class="status-items">
                         <div v-for="(status, index) in Stocks.requestStatus" :key="index" class="status-item">
                             <span class="status-name">{{status.name}}</span>

@@ -142,7 +142,7 @@ const Blocks = reactive({
     requestStatus: [],
     updateRequestStatus: (index, status, message) => {
         Blocks.requestStatus[index] = {
-            name: index+1,
+            name: index + 1,
             status,
             message,
         }
@@ -447,18 +447,8 @@ async function handleBlocksData(res) {
 
             handleVM(obj, ele, 'block', pd1)
             handleRate(obj, ele, 'block', td, pd1)
-            let 涨跌30 = obj['09:30']['涨跌幅'],
-                涨跌31 = obj['09:31']['涨跌幅'],
-                涨跌33 = obj['09:33']['涨跌幅'],
-                涨跌35 = obj['09:35']['涨跌幅']
-            let 资金31 = obj['09:31']['资金流向'],
-                资金33 = obj['09:33']['资金流向'],
-                资金35 = obj['09:35']['资金流向']
-            let 大单31 = obj['09:31']['大单净额'],
-                大单33 = obj['09:33']['大单净额'],
-                大单35 = obj['09:35']['大单净额']
-            let TS35 = (涨跌35 > 0.5 || obj['序号'] <= 10) && 涨跌35 > 0
 
+            let 涨跌35 = obj['09:35']['涨跌幅']
             //获取昨日涨跌幅排名
             let 涨幅text = `指数@分时涨跌幅:前复权[${pd1} 15:00]`
             let 昨日涨幅 = num(ele[涨幅text])
@@ -469,8 +459,6 @@ async function handleBlocksData(res) {
                     .findIndex((e) => e['指数简称'] == obj['指数简称']) + 1
             let 大单净额text = `指数@分时dde大单净额[${pd1} 15:00]`
             let 昨日大单净额 = num(ele[大单净额text])
-            let 资金流向text = `指数@分时资金流向[${pd1} 15:00]`
-            let 昨日资金流向 = num(ele[资金流向text])
             let 昨日大单净额排名 =
                 [...resArr]
                     .sort((a, b) => num(b[大单净额text]) - num(a[大单净额text]))
@@ -479,7 +467,7 @@ async function handleBlocksData(res) {
             // 2. 涨跌幅排名（核心指标）强势市场（大盘指数涨幅 > 0.5%）：板块涨幅排名 前10%(二级行业目前总数90个，前10%为9个；概念目前总数397个，前10%为40个)
             // 弱势市场（大盘指数涨幅 ≤ 0.5%）：板块涨幅排名 前5%(二级行业目前总数90个，前5%为5个；概念目前总数397个，前5%为20个)
             // 3. 涨停数量（动态要求）强势市场：板块内涨停个股 ≥ 1只（需真实封板，非炸板）；弱势市场：允许涨停数量 = 0，但需满足：板块内涨幅TOP3个股平均涨幅 ≥ 5%；板块内无个股跌停。
-            // 4. 如果当日09：35 资金流向和大单净额的和大于昨日资金流向和大单净额的和，则昨日趋势为true
+
             let 昨日趋势 = false
             if (
                 obj['板块类别'] == '二级行业' &&
@@ -487,7 +475,7 @@ async function handleBlocksData(res) {
                 (昨日大单净额排名 <= 20 || obj[pd1]['涨跌幅'] > 1.5) &&
                 昨日涨幅 > 0 &&
                 (昨日涨跌幅排名 <= 10 || obj[pd1]['涨跌幅'] > 1.5) &&
-                obj['昨日上涨比'] >=60 &&
+                obj['昨日上涨比'] >= 60 &&
                 昨日涨停数 > 0
             )
                 昨日趋势 = true
@@ -497,26 +485,17 @@ async function handleBlocksData(res) {
                 (昨日大单净额排名 <= 80 || obj[pd1]['涨跌幅'] > 2) &&
                 昨日涨幅 > 0 &&
                 (昨日涨跌幅排名 <= 40 || obj[pd1]['涨跌幅'] > 2) &&
-                obj['昨日上涨比'] >=60 &&
+                obj['昨日上涨比'] >= 60 &&
                 昨日涨停数 > 0
             )
                 昨日趋势 = true
-            // if (昨日大单净额 > 0 && 昨日资金流向 > 0 && obj[pd1]['涨跌幅'] > 0 && 昨日涨停数 > 0) 昨日趋势 = true
-
-            let zuo = 昨日资金流向 + 昨日大单净额
-            let jin = 资金35 + 大单35
-            if (jin > zuo && jin + zuo > 0 && TS35 && 大单35 > 0 && 资金35 > 0) 昨日趋势 = true
 
             // if (obj['指数简称'] == '贵金属') debugger
 
             let 今日趋势 = false
-            let 条件1 = (资金35 > 0 || 大单35 > 0) && (大单35 >= 大单33 || 资金35 >= 资金33) && 涨跌35 >= 0.5
-            if (条件1 && obj['序号'] <= 20) 今日趋势 = true
-            if (条件1 && 涨跌35 >= 1.0 && obj['序号'] <= 40) 今日趋势 = true
-            if ([涨跌35, 资金35, 大单35, 涨跌33, 资金33, 大单33].every((x) => x > 0)) 今日趋势 = true
-            if (条件1 && 涨跌35 >= 涨跌33 && 资金35 >= 资金33 && 大单35 >= 大单33) 今日趋势 = true
-            if (涨跌30 > 0 && 涨跌31 < 0) 今日趋势 = false
-            if (!TS35) 今日趋势 = false
+            if (涨跌35 >= 0.5 && obj['序号'] <= 20) 今日趋势 = true
+            if (涨跌35 >= 1.0 && obj['序号'] <= 40) 今日趋势 = true
+            if (涨跌35 >= 1.5) 今日趋势 = true
 
             obj['长期趋势'] = Boolean(obj['v60达成'] && obj['M60达成'])
             obj['昨日趋势'] = Boolean(昨日趋势)
@@ -559,7 +538,7 @@ async function CheckedBlock(type, name, item = null) {
         if (d && d.length > 0) {
             //使用缓存数据
             Stocks.isCache = true
-            handleStocksData(d, item)
+            handleStocksData(d, item, type, name)
         } else {
             //处理Questions
             let newQ_stock = Questions.stock.map((el) => {
@@ -659,7 +638,7 @@ async function SubmitStocks(stock, blockType, blockName, blockItem, catche) {
         }
 
         if (catche) Stocks.setCache(successResponses)
-        handleStocksData(successResponses, blockItem)
+        handleStocksData(successResponses, blockItem, blockType, blockName)
     } catch (err) {
         ElNotification({
             title: '请求失败',
@@ -672,7 +651,7 @@ async function SubmitStocks(stock, blockType, blockName, blockItem, catche) {
     }
 }
 //处理个股数据
-async function handleStocksData(res, blockItem) {
+async function handleStocksData(res, blockItem, blockType, blockName) {
     let { td, pd1, pd2, pd3, nd1, nd2 } = Dates.shareDate
     const num = (e) => (e ? Number(Number(e).toFixed(2)) : 0)
 
@@ -688,6 +667,7 @@ async function handleStocksData(res, blockItem) {
     // 创建数据映射以提高查找效率
     const dataMap1 = new Map(res[1]?.map((item) => [item['股票简称'], item]) || [])
     const dataMap2 = new Map(res[2]?.map((item) => [item['股票简称'], item]) || [])
+    let ztArr = 0 // 涨停符合数
 
     Stocks.Data[0].base = validData
         .map((ele) => {
@@ -724,6 +704,7 @@ async function handleStocksData(res, blockItem) {
 
             handleVM(obj, ele, 'stock', pd1)
             handleRate(obj, ele, 'stock', td, pd1)
+            if (obj['涨停'] && obj[pd1]['涨跌幅'] >= 9.5) ztArr++
 
             // 确保历史数据存在
             obj[pd2] = {
@@ -745,39 +726,19 @@ async function handleStocksData(res, blockItem) {
 
             // 计算趋势
             let 昨日趋势 = false
-            if (obj[pd1]['大单净额'] > 0 && (obj[pd1]['涨跌幅'] > blockItem[pd1]['涨跌幅'] || obj[pd1]['涨跌幅'] > 2)) {
+            if (obj[pd1]['大单净额'] > 0 && (obj[pd1]['涨跌幅'] > blockItem[pd1]['涨跌幅']*1.5 || obj[pd1]['涨跌幅'] > 5)) {
                 if (obj['macd']['pd1'] >= obj['macd']['pd2'] && obj['macd']['pd1'] >= obj['macd']['pd3']) {
                     if (Number(ele[`rsi(rsi12值)[${pd1}]`] || 0) >= 60) 昨日趋势 = true
                 }
             }
             if (obj['涨停']) 昨日趋势 = true
-            let zuo = obj[pd1]['资金流向'] + obj[pd1]['大单净额']
-            let jin = obj['09:35']['资金流向'] + obj['09:35']['大单净额']
-            if (jin > zuo && jin + zuo > 0) 昨日趋势 = true
+
 
             let 今日趋势 = false
-            let 涨跌30 = obj['09:30']['涨跌幅'] || 0,
-                涨跌31 = obj['09:31']['涨跌幅'] || 0,
-                涨跌33 = obj['09:33']['涨跌幅'] || 0,
-                涨跌35 = obj['09:35']['涨跌幅'] || 0
-            let 资金31 = obj['09:31']['资金流向'] || 0,
-                资金33 = obj['09:33']['资金流向'] || 0,
-                资金35 = obj['09:35']['资金流向'] || 0
-            let 大单31 = obj['09:31']['大单净额'] || 0,
-                大单33 = obj['09:33']['大单净额'] || 0,
-                大单35 = obj['09:35']['大单净额'] || 0
+            let 涨跌35 = obj['09:35']['涨跌幅'] || 0
 
-            let 条件0 = 涨跌35 >= blockItem['09:35']['涨跌幅'] || 涨跌35 >= 1
-            let 条件1 = (资金35 > 0 || 大单35 > 0) && (大单35 >= 大单33 || 资金35 >= 资金33) && 条件0
-            if (条件1) 今日趋势 = true
-            if (条件0 && obj['涨停']) 今日趋势 = true
-            if (条件0 && 资金35 > 资金33 && 大单35 > 大单33 && 涨跌35 > 涨跌33) 今日趋势 = true
-            if (条件0 && [涨跌35, 资金35, 大单35, 涨跌33, 资金33, 大单33].every((x) => x > 0)) 今日趋势 = true
-            if (条件0 && 涨跌35 >= 涨跌33 && 资金35 >= 资金33 && 大单35 >= 大单33) 今日趋势 = true
-            let 条件2 =
-                (blockItem['09:35']['资金流向'] < 0 || blockItem['09:35']['大单净额'] < 0) &&
-                blockItem['09:35']['资金流向'] + blockItem['09:35']['大单净额'] < 0
-            if (条件2 && 大单35 < 0 && 资金35 < 0) 今日趋势 = false
+            if (涨跌35 >= blockItem['09:35']['涨跌幅'] || 涨跌35 >= 5) 今日趋势 = true
+
 
             let 长期趋势 = false
             if (obj['v60达成'] && obj['M60达成'] && obj['前40日']) 长期趋势 = true
@@ -793,6 +754,19 @@ async function handleStocksData(res, blockItem) {
         .sort((a, b) => {
             return (a['昨热度排名'] || 0) - (b['昨热度排名'] || 0)
         })
+    // if (ztArr == 0) {
+    //     debugger
+    //     if (blockType === '行业') {
+    //         Blocks.Data[0].base = Blocks.Data[0].base.filter((item) => blockItem['code'] != item['code'])
+    //     } else {
+    //         Blocks.Data[1].base = Blocks.Data[1].base.filter((item) => blockItem['code'] != item['code'])
+    //     }
+    //     Blocks.loading = false
+    //     Blocks.CheckedOptimumFN()
+    //     Blocks.checked = { type: '-', name: '-', item: null }
+    //     Stocks.Data = [{ name: '实时策略', base: [], default: [] }]
+    //     BlocksClickauto()
+    // }
 
     Stocks.mySort(...Stocks.Sort_selected)
 }
