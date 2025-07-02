@@ -502,6 +502,9 @@ async function handleBlocksData(res) {
             obj['今日趋势'] = Boolean(今日趋势)
 
             return obj
+        }).filter((el) => {
+            // 过滤名称为：科创次新股
+            return el['指数简称'] === '科创次新股' ? false : true
         })
     }
     Blocks.Data[0].base = handleArr(res[0], res[1])
@@ -662,7 +665,7 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
     }
 
     // 合并数据前先进行数据验证和预处理
-    const validData = res[0].filter((el) => !/^68/.test(el.code) && !/^8/.test(el.code))
+    const validData = res[0].filter(el => /^(60|30)/.test(el.code))
 
     // 创建数据映射以提高查找效率
     const dataMap1 = new Map(res[1]?.map((item) => [item['股票简称'], item]) || [])
