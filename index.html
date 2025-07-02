@@ -48,6 +48,7 @@
                         v-model="item.model"
                         @change="Blocks.CheckedOptimumFN"
                         :label="item.name"
+                        :disabled="item.name != '今日趋势'"  
                     />
                 </div>
                 <div class="request-status" style="margin: 0" v-if="!Blocks.isCache && Blocks.requestStatus.length > 0">
@@ -173,6 +174,7 @@
                         v-model="item.model"
                         @change="Stocks.CheckedOptimumFN"
                         :label="item.name"
+                        :disabled="item.name != '今日趋势'"  
                     />
                 </div>
                 <div class="request-status" style="margin: 0" v-if="!Stocks.isCache && Stocks.requestStatus.length > 0">
