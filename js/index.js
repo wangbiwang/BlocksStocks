@@ -664,15 +664,13 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
         return
     }
 
-    // 合并数据前先进行数据验证和预处理
-    const validData = res[0].filter(el => /^(60|30)/.test(el.code))
 
     // 创建数据映射以提高查找效率
     const dataMap1 = new Map(res[1]?.map((item) => [item['股票简称'], item]) || [])
     const dataMap2 = new Map(res[2]?.map((item) => [item['股票简称'], item]) || [])
     let ztArr = 0 // 涨停符合数
 
-    Stocks.Data[0].base = validData
+    Stocks.Data[0].base = res[0]
         .map((ele) => {
             // 使用Map进行数据查找和合并
             const match1 = dataMap1.get(ele['股票简称']) || {}
