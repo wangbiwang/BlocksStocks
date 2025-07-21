@@ -94,7 +94,7 @@
                                 v-for="(item,key) in BlocksItem.default"
                                 style="text-align: center"
                                 :class="Stocks.hoverBlocks.includes(item['指数简称'])?'hoverStyle':''"
-                                :style="(key!=0||item['09:35']['涨跌幅']<0||(item['09:35']['资金流向']<0&&item['09:35']['大单净额']<0&&item['09:35']['涨跌幅']<0.5))?'opacity:0.3' : ''"
+                                :style="(key!=0||item['09:35']['涨跌幅']<0||(item['09:35']['资金流向']<0&&item['09:35']['大单净额']<0))?'opacity:0.3' : ''"
                             >
                                 <td style="width: 30px">{{item['序号']}}</td>
                                 <td

@@ -436,76 +436,78 @@ async function handleBlocksData(res) {
             let foundItem2 = arr2.find((ele) => ele['指数简称'] == el['指数简称'])
             if (foundItem2) resArr.push(Object.assign({}, el, foundItem2))
         })
-        return resArr.map((ele, idx) => {
-            let obj = {}
-            obj['序号'] = idx + 1
-            obj['code'] = ele['code']
-            obj['指数简称'] = ele['指数简称']
-            obj['板块类别'] = ele['指数@所属同花顺行业级别'] ? '二级行业' : '概念'
-            obj['昨日涨停数'] = ele[`指数@涨停家数[${pd1}]`] || 0
-            obj['昨日上涨比'] = ele[`指数@上涨家数占比[${pd1}]`] || 0
+        return resArr
+            .map((ele, idx) => {
+                let obj = {}
+                obj['序号'] = idx + 1
+                obj['code'] = ele['code']
+                obj['指数简称'] = ele['指数简称']
+                obj['板块类别'] = ele['指数@所属同花顺行业级别'] ? '二级行业' : '概念'
+                obj['昨日涨停数'] = ele[`指数@涨停家数[${pd1}]`] || 0
+                obj['昨日上涨比'] = ele[`指数@上涨家数占比[${pd1}]`] || 0
 
-            handleVM(obj, ele, 'block', pd1)
-            handleRate(obj, ele, 'block', td, pd1)
+                handleVM(obj, ele, 'block', pd1)
+                handleRate(obj, ele, 'block', td, pd1)
 
-            let 涨跌35 = obj['09:35']['涨跌幅']
-            //获取昨日涨跌幅排名
-            let 涨幅text = `指数@分时涨跌幅:前复权[${pd1} 15:00]`
-            let 昨日涨幅 = num(ele[涨幅text])
-            let 昨日涨停数 = ele[`指数@涨停家数[${pd1}]`]
-            let 昨日涨跌幅排名 =
-                [...resArr]
-                    .sort((a, b) => num(b[涨幅text]) - num(a[涨幅text]))
-                    .findIndex((e) => e['指数简称'] == obj['指数简称']) + 1
-            let 大单净额text = `指数@分时dde大单净额[${pd1} 15:00]`
-            let 昨日大单净额 = num(ele[大单净额text])
-            let 昨日大单净额排名 =
-                [...resArr]
-                    .sort((a, b) => num(b[大单净额text]) - num(a[大单净额text]))
-                    .findIndex((e) => e['指数简称'] == obj['指数简称']) + 1
-            // 1. 主力资金介入（必要条件） 大单净流入排名：板块大单净流入额在全市场板块中排名 前20%   (二级行业目前总数90个，前20%为20个；概念目前总数397个，前20%为80个)
-            // 2. 涨跌幅排名（核心指标）强势市场（大盘指数涨幅 > 0.5%）：板块涨幅排名 前10%(二级行业目前总数90个，前10%为9个；概念目前总数397个，前10%为40个)
-            // 弱势市场（大盘指数涨幅 ≤ 0.5%）：板块涨幅排名 前5%(二级行业目前总数90个，前5%为5个；概念目前总数397个，前5%为20个)
-            // 3. 涨停数量（动态要求）强势市场：板块内涨停个股 ≥ 1只（需真实封板，非炸板）；弱势市场：允许涨停数量 = 0，但需满足：板块内涨幅TOP3个股平均涨幅 ≥ 5%；板块内无个股跌停。
+                let 涨跌35 = obj['09:35']['涨跌幅']
+                //获取昨日涨跌幅排名
+                let 涨幅text = `指数@分时涨跌幅:前复权[${pd1} 15:00]`
+                let 昨日涨幅 = num(ele[涨幅text])
+                let 昨日涨停数 = ele[`指数@涨停家数[${pd1}]`]
+                let 昨日涨跌幅排名 =
+                    [...resArr]
+                        .sort((a, b) => num(b[涨幅text]) - num(a[涨幅text]))
+                        .findIndex((e) => e['指数简称'] == obj['指数简称']) + 1
+                let 大单净额text = `指数@分时dde大单净额[${pd1} 15:00]`
+                let 昨日大单净额 = num(ele[大单净额text])
+                let 昨日大单净额排名 =
+                    [...resArr]
+                        .sort((a, b) => num(b[大单净额text]) - num(a[大单净额text]))
+                        .findIndex((e) => e['指数简称'] == obj['指数简称']) + 1
+                // 1. 主力资金介入（必要条件） 大单净流入排名：板块大单净流入额在全市场板块中排名 前20%   (二级行业目前总数90个，前20%为20个；概念目前总数397个，前20%为80个)
+                // 2. 涨跌幅排名（核心指标）强势市场（大盘指数涨幅 > 0.5%）：板块涨幅排名 前10%(二级行业目前总数90个，前10%为9个；概念目前总数397个，前10%为40个)
+                // 弱势市场（大盘指数涨幅 ≤ 0.5%）：板块涨幅排名 前5%(二级行业目前总数90个，前5%为5个；概念目前总数397个，前5%为20个)
+                // 3. 涨停数量（动态要求）强势市场：板块内涨停个股 ≥ 1只（需真实封板，非炸板）；弱势市场：允许涨停数量 = 0，但需满足：板块内涨幅TOP3个股平均涨幅 ≥ 5%；板块内无个股跌停。
 
-            let 昨日趋势 = false
-            if (
-                obj['板块类别'] == '二级行业' &&
-                昨日大单净额 > 0 &&
-                (昨日大单净额排名 <= 20 || obj[pd1]['涨跌幅'] > 1.5) &&
-                昨日涨幅 > 0 &&
-                (昨日涨跌幅排名 <= 10 || obj[pd1]['涨跌幅'] > 1.5) &&
-                obj['昨日上涨比'] >= 60 &&
-                昨日涨停数 > 0
-            )
-                昨日趋势 = true
-            if (
-                obj['板块类别'] == '概念' &&
-                昨日大单净额 > 0 &&
-                (昨日大单净额排名 <= 80 || obj[pd1]['涨跌幅'] > 2) &&
-                昨日涨幅 > 0 &&
-                (昨日涨跌幅排名 <= 40 || obj[pd1]['涨跌幅'] > 2) &&
-                obj['昨日上涨比'] >= 60 &&
-                昨日涨停数 > 0
-            )
-                昨日趋势 = true
+                let 昨日趋势 = false
+                if (
+                    obj['板块类别'] == '二级行业' &&
+                    昨日大单净额 > 0 &&
+                    (昨日大单净额排名 <= 20 || obj[pd1]['涨跌幅'] > 1.5) &&
+                    昨日涨幅 > 0 &&
+                    (昨日涨跌幅排名 <= 10 || obj[pd1]['涨跌幅'] > 1.5) &&
+                    obj['昨日上涨比'] >= 60 &&
+                    昨日涨停数 > 0
+                )
+                    昨日趋势 = true
+                if (
+                    obj['板块类别'] == '概念' &&
+                    昨日大单净额 > 0 &&
+                    (昨日大单净额排名 <= 80 || obj[pd1]['涨跌幅'] > 2) &&
+                    昨日涨幅 > 0 &&
+                    (昨日涨跌幅排名 <= 40 || obj[pd1]['涨跌幅'] > 2) &&
+                    obj['昨日上涨比'] >= 60 &&
+                    昨日涨停数 > 0
+                )
+                    昨日趋势 = true
 
-            // if (obj['指数简称'] == '贵金属') debugger
+                // if (obj['指数简称'] == '贵金属') debugger
 
-            let 今日趋势 = false
-            if (涨跌35 >= 0.5 && obj['序号'] <= 20) 今日趋势 = true
-            if (涨跌35 >= 1.0 && obj['序号'] <= 40) 今日趋势 = true
-            if (涨跌35 >= 1.5) 今日趋势 = true
+                let 今日趋势 = false
+                if (涨跌35 >= 0.5 && obj['序号'] <= 20) 今日趋势 = true
+                if (涨跌35 >= 1.0 && obj['序号'] <= 40) 今日趋势 = true
+                if (涨跌35 >= 1.5) 今日趋势 = true
 
-            obj['长期趋势'] = Boolean(obj['v60达成'] && obj['M60达成'])
-            obj['昨日趋势'] = Boolean(昨日趋势)
-            obj['今日趋势'] = Boolean(今日趋势)
+                obj['长期趋势'] = Boolean(obj['v60达成'] && obj['M60达成'])
+                obj['昨日趋势'] = Boolean(昨日趋势)
+                obj['今日趋势'] = Boolean(今日趋势)
 
-            return obj
-        }).filter((el) => {
-            // 过滤名称为：科创次新股
-            return el['指数简称'] === '科创次新股' ? false : true
-        })
+                return obj
+            })
+            .filter((el) => {
+                // 过滤名称为：科创次新股
+                return el['指数简称'] === '科创次新股' ? false : true
+            })
     }
     Blocks.Data[0].base = handleArr(res[0], res[1])
     Blocks.Data[1].base = handleArr(res[2], res[3])
@@ -664,7 +666,6 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
         return
     }
 
-
     // 创建数据映射以提高查找效率
     const dataMap1 = new Map(res[1]?.map((item) => [item['股票简称'], item]) || [])
     const dataMap2 = new Map(res[2]?.map((item) => [item['股票简称'], item]) || [])
@@ -684,6 +685,14 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             }
         })
         .map((ele, idx) => {
+            let obj = ele
+            let t = ''
+            let rate = num(ele[`${t}涨跌幅:前复权[${pd1}]`] || ele[`${t}分时涨跌幅:前复权[${pd1} 15:00]`])
+            obj['涨停'] = ele[`涨停价[${pd1}]`] == ele[`收盘价:不复权[${pd1}]`] && rate >= 9.5
+            if (obj['涨停']) ztArr++
+            return obj
+        })
+        .map((ele, idx) => {
             let obj = {}
             obj['序号'] = idx + 1
             obj['股票简称'] = ele['股票简称']
@@ -694,8 +703,7 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             obj['今热度排名'] = ele[`个股热度排名[${td}]`]
             obj['流通市值'] = ele[`a股市值(不含限售股)[${td}]`]
             obj['股价'] = Number(ele[`收盘价:不复权[${td}]`] || ele[`最新价`])
-            obj['涨停'] = ele[`涨停价[${pd1}]`] == ele[`收盘价:不复权[${pd1}]`]
-
+            obj['涨停'] = ele['涨停']
             // 确保MACD数据存在且为数字
             obj['macd'] = {
                 pd1: Number(Number(ele[`macd(macd值)[${pd1}]`] || 0).toFixed(2)),
@@ -705,7 +713,6 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
 
             handleVM(obj, ele, 'stock', pd1)
             handleRate(obj, ele, 'stock', td, pd1)
-            if (obj['涨停'] && obj[pd1]['涨跌幅'] >= 9.5) ztArr++
 
             // 确保历史数据存在
             obj[pd2] = {
@@ -727,19 +734,21 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
 
             // 计算趋势
             let 昨日趋势 = false
-            if (obj[pd1]['大单净额'] > 0 && (obj[pd1]['涨跌幅'] > blockItem[pd1]['涨跌幅']*1.5 || obj[pd1]['涨跌幅'] > 5)) {
+            if (
+                obj[pd1]['大单净额'] > 0 &&
+                (obj[pd1]['涨跌幅'] > blockItem[pd1]['涨跌幅'] * 1.5 || obj[pd1]['涨跌幅'] > 5||(obj[pd1]['涨跌幅'] > 2 && obj[pd1]['大单净额'] > 0 && obj[pd1]['资金流向'] > 0 ))
+            ) {
                 if (obj['macd']['pd1'] >= obj['macd']['pd2'] && obj['macd']['pd1'] >= obj['macd']['pd3']) {
                     if (Number(ele[`rsi(rsi12值)[${pd1}]`] || 0) >= 60) 昨日趋势 = true
                 }
             }
             if (obj['涨停']) 昨日趋势 = true
-
+            if (ztArr == 0) 昨日趋势 = false
 
             let 今日趋势 = false
             let 涨跌35 = obj['09:35']['涨跌幅'] || 0
 
             if (涨跌35 >= blockItem['09:35']['涨跌幅'] || 涨跌35 >= 5) 今日趋势 = true
-
 
             let 长期趋势 = false
             if (obj['v60达成'] && obj['M60达成'] && obj['前40日']) 长期趋势 = true
