@@ -84,6 +84,7 @@ const Questions = {
         `当日涨跌幅资金流向大单净额收盘价；09:30涨跌幅；前1交易日热度排名升序当日热度排名流通市值；前1交易日涨跌幅资金流向大单净额rsi12;前2交易日涨跌幅大单净额macd；行业概念`,
         `前1交易日热度排名升序前40交易日区间最高价不复权;09:31涨跌幅资金流向大单净额；09:33涨跌幅资金流向大单净额；09:35涨跌幅资金流向大单净额股价；前3交易日涨跌幅macd；前1交易日涨停价；行业概念`,
         `前1交易日热度排名升序；${text1}；${text2}；后2交易日涨跌幅;前1交易日开盘价前1交易日收盘价macd;行业概念`,
+        `前1交易日热度排名升序；前15交易日的涨停次数;行业概念`, //原因：2025-07-22 股票代码 002654 股票名称 华宏科技  前面连扳，涨幅太高，接盘亏钱，所以不买入15天有超过3个涨停的股票！
     ],
 }
 
@@ -95,7 +96,7 @@ const Blocks = reactive({
         if (!Blocks.timer) {
             Blocks.timer = setInterval(() => {
                 Submit(1)
-            }, 5000)
+            }, 50000)
         } else {
             clearInterval(Blocks.timer)
             Blocks.timer = undefined
@@ -551,6 +552,7 @@ async function CheckedBlock(type, name, item = null) {
                     .replaceAll('当日', tdcn)
                     .replaceAll('09:', tdcn + '09:')
                     .replaceAll('前1交易日', tdcn + '前1交易日')
+                    .replaceAll('前15交易日', tdcn + '前15交易日')
                     .replaceAll('前20交易日', tdcn + '前20交易日')
                     .replaceAll('前40交易日', tdcn + '前40交易日')
                     .replaceAll('流通市值', tdcn + '流通市值')
@@ -596,10 +598,15 @@ async function SubmitStocks(stock, blockType, blockName, blockItem, catche) {
             const data = response.value?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas
             if (response.status === 'fulfilled' && Array.isArray(data) && data.length > 0) {
                 successResponses.push(data)
-                Stocks.updateRequestStatus(index, 'success', `请求成功 (${data.length}条数据)`)
+                Stocks.updateRequestStatus(index, 'success', `请求成功 f'v(${data.length}条数据)`)
             } else {
-                failedRequests.push(stock[index])
-                Stocks.updateRequestStatus(index, 'error', '请求失败: 数据无效或为空')
+                if (response.status === 'fulfilled' && stock[index].includes('涨停次数') && Array.isArray(data) && data.length == 0) { // 特殊处理：如果请求的是涨停次数且数据为空，则可以认为是成功
+                    successResponses.push(data)
+                    Stocks.updateRequestStatus(index, 'success', `请求成功 (${data.length}条数据)`)
+                } else {
+                    failedRequests.push(stock[index])
+                    Stocks.updateRequestStatus(index, 'error', '请求失败: 数据无效或为空')
+                }
             }
         })
 
@@ -669,6 +676,7 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
     // 创建数据映射以提高查找效率
     const dataMap1 = new Map(res[1]?.map((item) => [item['股票简称'], item]) || [])
     const dataMap2 = new Map(res[2]?.map((item) => [item['股票简称'], item]) || [])
+    const dataMap3 = new Map(res[3]?.map((item) => [item['股票简称'], item]) || [])
     let ztArr = 0 // 涨停符合数
 
     Stocks.Data[0].base = res[0]
@@ -676,12 +684,14 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             // 使用Map进行数据查找和合并
             const match1 = dataMap1.get(ele['股票简称']) || {}
             const match2 = dataMap2.get(ele['股票简称']) || {}
+            const match3 = dataMap3.get(ele['股票简称']) || {}
 
             // 合并数据，确保不会覆盖原始数据
             return {
                 ...ele,
                 ...match1,
                 ...match2,
+                ...match3,
             }
         })
         .map((ele, idx) => {
@@ -704,6 +714,7 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             obj['流通市值'] = ele[`a股市值(不含限售股)[${td}]`]
             obj['股价'] = Number(ele[`收盘价:不复权[${td}]`] || ele[`最新价`])
             obj['涨停'] = ele['涨停']
+            obj['前15涨停数'] = getLimitUpValue(ele)
             // 确保MACD数据存在且为数字
             obj['macd'] = {
                 pd1: Number(Number(ele[`macd(macd值)[${pd1}]`] || 0).toFixed(2)),
@@ -732,11 +743,17 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             let _35收盘价 = ele[`分时收盘价:不复权[${td} 09:35]`]
             obj['前40日'] = _35收盘价 ? Number(_35收盘价) >= 区间最高价 : obj['股价'] >= 区间最高价
 
+            // if(obj['股票简称'] == '中京电子') {
+            //     debugger
+            // }
+
             // 计算趋势
             let 昨日趋势 = false
             if (
                 obj[pd1]['大单净额'] > 0 &&
-                (obj[pd1]['涨跌幅'] > blockItem[pd1]['涨跌幅'] * 1.5 || obj[pd1]['涨跌幅'] > 5||(obj[pd1]['涨跌幅'] > 2 && obj[pd1]['大单净额'] > 0 && obj[pd1]['资金流向'] > 0 ))
+                (obj[pd1]['涨跌幅'] > blockItem[pd1]['涨跌幅'] * 1.5 ||
+                    obj[pd1]['涨跌幅'] > 5 ||
+                    (obj[pd1]['涨跌幅'] > 2 && obj[pd1]['大单净额'] > 0 && obj[pd1]['资金流向'] > 0))
             ) {
                 if (obj['macd']['pd1'] >= obj['macd']['pd2'] && obj['macd']['pd1'] >= obj['macd']['pd3']) {
                     if (Number(ele[`rsi(rsi12值)[${pd1}]`] || 0) >= 60) 昨日趋势 = true
@@ -744,6 +761,7 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             }
             if (obj['涨停']) 昨日趋势 = true
             if (ztArr == 0) 昨日趋势 = false
+            if (obj['前15涨停数'] > 3) 昨日趋势 = false
 
             let 今日趋势 = false
             let 涨跌35 = obj['09:35']['涨跌幅'] || 0
@@ -811,6 +829,17 @@ function findKeysWithPattern(obj, start, end) {
         })
     }
     return res
+}
+function getLimitUpValue(obj) {
+    for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            if (key.includes('涨停次数')) {
+                const value = obj[key]
+                return Number(value)
+            }
+        }
+    }
+    return 0 // 没找到 key，返回 0
 }
 function num(e) {
     return e ? Number(Number(e).toFixed(2)) : '-'
