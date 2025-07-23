@@ -84,7 +84,8 @@ const Questions = {
         `当日涨跌幅资金流向大单净额收盘价；09:30涨跌幅；前1交易日热度排名升序当日热度排名流通市值；前1交易日涨跌幅资金流向大单净额rsi12;前2交易日涨跌幅大单净额macd；行业概念`,
         `前1交易日热度排名升序前40交易日区间最高价不复权;09:31涨跌幅资金流向大单净额；09:33涨跌幅资金流向大单净额；09:35涨跌幅资金流向大单净额股价；前3交易日涨跌幅macd；前1交易日涨停价；行业概念`,
         `前1交易日热度排名升序；${text1}；${text2}；后2交易日涨跌幅;前1交易日开盘价前1交易日收盘价macd;行业概念`,
-        `前1交易日热度排名升序；前15交易日的涨停次数;行业概念`, //原因：2025-07-22 股票代码 002654 股票名称 华宏科技  前面连扳，涨幅太高，接盘亏钱，所以不买入15天有超过3个涨停的股票！
+        `前1交易日热度排名升序；前5交易日的涨停次数;前15交易日的涨停次数;行业概念`, //原因1：2025-07-22 股票代码 002654 股票名称 华宏科技  前面连扳，小长期涨幅太高，接盘亏钱，所以不买入15天有超过3个涨停的股票！
+        //原因2：2025-06-12 股票代码 003040 股票名称 楚 天 龙  前面连扳，近短期涨幅太高，接盘亏钱，所以也不买入5天有超过2个涨停的股票！
     ],
 }
 
@@ -500,12 +501,15 @@ async function handleBlocksData(res) {
                 if (涨跌35 >= 1.5) 今日趋势 = true
 
                 obj['长期趋势'] = Boolean(obj['v60达成'] && obj['M60达成'])
-                if (昨日涨幅 > 5 && ((obj['M10'] && obj['v10']) || (obj['M60'] == '-' && obj['v60'] == '-'))) {
+                if (昨日涨幅 > 5 && ((obj['M10达成'] && obj['v10达成']) || (obj['M60'] == '-' && obj['v60'] == '-'))) {
                     obj['长期趋势'] = true // 2025-07-22 指数长期趋势补充条件
                 }
 
                 obj['昨日趋势'] = Boolean(昨日趋势)
                 obj['今日趋势'] = Boolean(今日趋势)
+                if (涨跌35 < 2 && obj['09:35']['大单净额'] < 0 && obj['09:35']['资金流向'] < 0) {
+                    obj['今日趋势'] = false // 2025-07-22 今日趋势补充条件
+                }
 
                 return obj
             })
@@ -556,6 +560,7 @@ async function CheckedBlock(type, name, item = null) {
                     .replaceAll('当日', tdcn)
                     .replaceAll('09:', tdcn + '09:')
                     .replaceAll('前1交易日', tdcn + '前1交易日')
+                    .replaceAll('前5交易日', tdcn + '前5交易日')
                     .replaceAll('前15交易日', tdcn + '前15交易日')
                     .replaceAll('前20交易日', tdcn + '前20交易日')
                     .replaceAll('前40交易日', tdcn + '前40交易日')
@@ -724,7 +729,8 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             obj['流通市值'] = ele[`a股市值(不含限售股)[${td}]`]
             obj['股价'] = Number(ele[`收盘价:不复权[${td}]`] || ele[`最新价`])
             obj['涨停'] = ele['涨停']
-            obj['前15涨停数'] = getLimitUpValue(ele)
+            obj['前5涨停数'] = getLimitUpArrayDynamic(ele)[0] || 0 // 获取前5日涨停数
+            obj['前15涨停数'] = getLimitUpArrayDynamic(ele)[1] || 0 // 获取前15日涨停数
             // 确保MACD数据存在且为数字
             obj['macd'] = {
                 pd1: Number(Number(ele[`macd(macd值)[${pd1}]`] || 0).toFixed(2)),
@@ -753,8 +759,9 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             let _35收盘价 = ele[`分时收盘价:不复权[${td} 09:35]`]
             obj['前40日'] = _35收盘价 ? Number(_35收盘价) >= 区间最高价 : obj['股价'] >= 区间最高价
 
-            // if(obj['股票简称'] == '中京电子') {
+            // if(obj['股票简称'] == '中国电建') {
             //     debugger
+            //     console.log(obj['前5涨停数'], obj['前15涨停数'], ele)
             // }
 
             // 计算趋势
@@ -771,7 +778,7 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             }
             if (obj['涨停']) 昨日趋势 = true
             if (ztArr == 0) 昨日趋势 = false
-            if (obj['前15涨停数'] > 3) 昨日趋势 = false
+            if (obj['前15涨停数'] > 3 || obj['前5涨停数'] > 2) 昨日趋势 = false
 
             let 今日趋势 = false
             let 涨跌35 = obj['09:35']['涨跌幅'] || 0
@@ -854,6 +861,39 @@ function getLimitUpValue(obj) {
         }
     }
     return 0 // 没找到 key，返回 0
+}
+function getLimitUpArrayDynamic(obj) {
+    const results = []
+
+    // 正则匹配：匹配 "涨停次数[YYYYMMDD-YYYYMMDD]" 格式
+    const regex = /^涨停次数\[(\d{8})-(\d{8})\]$/
+
+    for (const key in obj) {
+        if (!obj.hasOwnProperty(key)) continue
+
+        const match = key.match(regex)
+        if (match) {
+            const startDate = match[1] // 开始日期字符串
+            const endDate = match[2] // 结束日期字符串
+            const value = Number(obj[key]) || 0
+
+            results.push({
+                start: startDate,
+                end: endDate,
+                value: value,
+                rawKey: key,
+            })
+        }
+    }
+
+    // 按开始日期排序（升序：从早到晚）
+    results.sort((a, b) => a.start.localeCompare(b.start))
+
+    // 提取排序后的 value 数组
+    const values = results.map((item) => item.value)
+
+    // 确保返回长度为2的数组，不足补0
+    return [values[0] || 0, values[1] || 0]
 }
 function num(e) {
     return e ? Number(Number(e).toFixed(2)) : '-'
