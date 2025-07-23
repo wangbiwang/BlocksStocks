@@ -500,6 +500,10 @@ async function handleBlocksData(res) {
                 if (涨跌35 >= 1.5) 今日趋势 = true
 
                 obj['长期趋势'] = Boolean(obj['v60达成'] && obj['M60达成'])
+                if (昨日涨幅 > 5 && ((obj['M10'] && obj['v10']) || (obj['M60'] == '-' && obj['v60'] == '-'))) {
+                    obj['长期趋势'] = true // 2025-07-22 指数长期趋势补充条件
+                }
+
                 obj['昨日趋势'] = Boolean(昨日趋势)
                 obj['今日趋势'] = Boolean(今日趋势)
 
@@ -600,7 +604,13 @@ async function SubmitStocks(stock, blockType, blockName, blockItem, catche) {
                 successResponses.push(data)
                 Stocks.updateRequestStatus(index, 'success', `请求成功 f'v(${data.length}条数据)`)
             } else {
-                if (response.status === 'fulfilled' && stock[index].includes('涨停次数') && Array.isArray(data) && data.length == 0) { // 特殊处理：如果请求的是涨停次数且数据为空，则可以认为是成功
+                if (
+                    response.status === 'fulfilled' &&
+                    stock[index].includes('涨停次数') &&
+                    Array.isArray(data) &&
+                    data.length == 0
+                ) {
+                    // 特殊处理：如果请求的是涨停次数且数据为空，则可以认为是成功
                     successResponses.push(data)
                     Stocks.updateRequestStatus(index, 'success', `请求成功 (${data.length}条数据)`)
                 } else {
@@ -776,6 +786,10 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             obj['昨日趋势'] = Boolean(昨日趋势)
             obj['今日趋势'] = Boolean(今日趋势)
             obj['长期趋势'] = Boolean(长期趋势)
+
+            if (Number(obj['流通市值']) > 100000000000) {
+                obj['长期趋势'] = false // 流通市值大于1000亿的个股不考虑
+            }
 
             return obj
         })
