@@ -120,12 +120,30 @@ const Blocks = reactive({
         { name: '长期趋势', model: true },
         { name: '昨日趋势', model: true },
         { name: '今日趋势', model: true },
+        { name: '特殊趋势', model: false },
     ],
     CheckedOptimumFN: () => {
         Blocks.Data = Blocks.Data.map((el) => {
             el.default = el.base
             return el
         })
+        // debugger
+        if (Blocks.checkboxList[3].model == true) {
+            //特殊趋势操作
+            Blocks.checkboxList[0].model = false
+            Blocks.checkboxList[1].model = false
+            Blocks.checkboxList[2].model = false
+            Stocks.checkboxList[3].model = true // 同步Stocks的特殊趋势
+            Stocks.checkboxList[0].model = false
+            Stocks.checkboxList[1].model = false
+            Stocks.checkboxList[2].model = false
+        } else {
+            Stocks.checkboxList[3].model = false
+            Stocks.checkboxList[0].model = true
+            Stocks.checkboxList[1].model = true
+            Stocks.checkboxList[2].model = true
+        }
+
         Blocks.checkboxList.forEach((item) => {
             if (item.model) {
                 Blocks.Data = Blocks.Data.map((el) => {
@@ -193,6 +211,7 @@ const Stocks = reactive({
         { name: '长期趋势', model: true },
         { name: '昨日趋势', model: true },
         { name: '今日趋势', model: true },
+        { name: '特殊趋势', model: false },
     ],
     CheckedOptimumFN: () => {
         Stocks.Data = Stocks.Data.map((el) => {
@@ -519,10 +538,16 @@ async function handleBlocksData(res) {
                         今日趋势 = false
                     }
                 }
+                let 特殊趋势 = false
+                if (涨跌35 > 3 && obj['09:35']['大单净额'] > 0) {
+                    特殊趋势 = true // 2025-07-22 指数趋势补充条件
+                }
 
                 obj['长期趋势'] = Boolean(长期趋势)
                 obj['昨日趋势'] = Boolean(昨日趋势)
                 obj['今日趋势'] = Boolean(今日趋势)
+
+                obj['特殊趋势'] = Boolean(特殊趋势)
 
                 return obj
             })
@@ -547,11 +572,23 @@ async function CheckedBlock(type, name, item = null) {
     Blocks.checked.type = type ? type : '-'
     Blocks.checked.name = name ? name : '-'
     Blocks.checked.item = item
-
     // 重置Stocks的筛选状态
     Stocks.checkboxList.forEach((item) => {
         item.model = true
     })
+    if (Blocks.checkboxList[3].model == true) {
+        //特殊趋势操作
+        Stocks.checkboxList[0].model = false
+        Stocks.checkboxList[1].model = false
+        Stocks.checkboxList[2].model = false
+        Stocks.checkboxList[3].model = true // 同步Stocks的特殊趋势状态
+    }else {
+        //特殊趋势操作
+        Stocks.checkboxList[0].model = true
+        Stocks.checkboxList[1].model = true
+        Stocks.checkboxList[2].model = true
+        Stocks.checkboxList[3].model = false // 同步Stocks的特殊趋势状态
+    }
 
     // //判断入口来源 当日查询 历史查询
     let { tdcn, nd1, nd2 } = Dates.shareDate
@@ -775,7 +812,7 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             obj['前40日'] = _35收盘价 ? Number(_35收盘价) >= 区间最高价 : obj['股价'] >= 区间最高价
             //---------------------------------------
 
-            if (obj['股票简称'] == '凯莱英') debugger
+            // if (obj['股票简称'] == '凯莱英') debugger
 
             // 计算趋势
             let 昨日趋势 = false
@@ -805,9 +842,19 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             if (obj['v30达成'] && obj['M30达成'] && obj['涨停'] && obj['前40日']) 长期趋势 = true
             if (Number(obj['流通市值']) > 100000000000) 长期趋势 = false // 流通市值大于1000亿的个股不考虑
 
+            let 特殊趋势 = false
+            if (
+                涨跌35 > blockItem['09:35']['涨跌幅'] ||
+                (涨跌35 > 0 && obj['09:35']['资金流向'] > 0 && obj['09:35']['大单净额'] > 0)
+            ) {
+                特殊趋势 = true // 2025-07-22 指数趋势补充条件
+            }
+
             obj['昨日趋势'] = Boolean(昨日趋势)
             obj['今日趋势'] = Boolean(今日趋势)
             obj['长期趋势'] = Boolean(长期趋势)
+
+            obj['特殊趋势'] = Boolean(特殊趋势)
 
             return obj
         })
