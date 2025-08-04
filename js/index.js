@@ -142,6 +142,9 @@ const Blocks = reactive({
             Stocks.checkboxList[0].model = true
             Stocks.checkboxList[1].model = true
             Stocks.checkboxList[2].model = true
+            Blocks.checkboxList[0].model = true // 同步Blocks的长期趋势
+            Blocks.checkboxList[1].model = true
+            Blocks.checkboxList[2].model = true
         }
 
         Blocks.checkboxList.forEach((item) => {
@@ -536,6 +539,7 @@ async function handleBlocksData(res) {
 }
 //点击选中板块
 async function CheckedBlock(type, name, item = null) {
+    debugger
     if (Blocks.loading) return
     Stocks.Data = [{ name: '实时策略', base: [], default: [] }]
     Stocks.isCache = false
