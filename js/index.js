@@ -127,7 +127,6 @@ const Blocks = reactive({
             el.default = el.base
             return el
         })
-        // debugger
         if (Blocks.checkboxList[3].model == true) {
             //特殊趋势操作
             Blocks.checkboxList[0].model = false
@@ -539,7 +538,6 @@ async function handleBlocksData(res) {
 }
 //点击选中板块
 async function CheckedBlock(type, name, item = null) {
-    debugger
     if (Blocks.loading) return
     Stocks.Data = [{ name: '实时策略', base: [], default: [] }]
     Stocks.isCache = false
@@ -836,7 +834,6 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             return (a['昨热度排名'] || 0) - (b['昨热度排名'] || 0)
         })
     // if (ztArr == 0) {
-    //     debugger
     //     if (blockType === '行业') {
     //         Blocks.Data[0].base = Blocks.Data[0].base.filter((item) => blockItem['code'] != item['code'])
     //     } else {
