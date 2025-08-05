@@ -122,28 +122,30 @@ const Blocks = reactive({
         { name: '今日趋势', model: true },
         { name: '特殊趋势', model: false },
     ],
-    CheckedOptimumFN: () => {
+    CheckedOptimumFN: (name) => {
         Blocks.Data = Blocks.Data.map((el) => {
             el.default = el.base
             return el
         })
-        if (Blocks.checkboxList[3].model == true) {
-            //特殊趋势操作
-            Blocks.checkboxList[0].model = false
-            Blocks.checkboxList[1].model = false
-            Blocks.checkboxList[2].model = false
-            Stocks.checkboxList[3].model = true // 同步Stocks的特殊趋势
-            Stocks.checkboxList[0].model = false
-            Stocks.checkboxList[1].model = false
-            Stocks.checkboxList[2].model = false
-        } else {
-            Stocks.checkboxList[3].model = false
-            Stocks.checkboxList[0].model = true
-            Stocks.checkboxList[1].model = true
-            Stocks.checkboxList[2].model = true
-            Blocks.checkboxList[0].model = true // 同步Blocks的长期趋势
-            Blocks.checkboxList[1].model = true
-            Blocks.checkboxList[2].model = true
+        if (name == '特殊趋势') {
+            if (Blocks.checkboxList[3].model == true) {
+                //特殊趋势操作
+                Blocks.checkboxList[0].model = false
+                Blocks.checkboxList[1].model = false
+                Blocks.checkboxList[2].model = false
+                Stocks.checkboxList[3].model = true // 同步Stocks的特殊趋势
+                Stocks.checkboxList[0].model = false
+                Stocks.checkboxList[1].model = false
+                Stocks.checkboxList[2].model = false
+            } else {
+                Stocks.checkboxList[3].model = false
+                Stocks.checkboxList[0].model = true
+                Stocks.checkboxList[1].model = true
+                Stocks.checkboxList[2].model = true
+                Blocks.checkboxList[0].model = true // 同步Blocks的长期趋势
+                Blocks.checkboxList[1].model = true
+                Blocks.checkboxList[2].model = true
+            }
         }
 
         Blocks.checkboxList.forEach((item) => {
@@ -509,6 +511,10 @@ async function handleBlocksData(res) {
                 if (涨跌35 >= 0.5 && obj['序号'] <= 20) 今日趋势 = true
                 if (涨跌35 >= 1.0 && obj['序号'] <= 40) 今日趋势 = true
                 if (涨跌35 >= 1.5) 今日趋势 = true
+                let 特殊判断1 = obj['09:35']['大单净额'] < 0 && obj['09:35']['资金流向'] < 0
+                let 特殊判断2 = obj['09:30']['涨跌幅'] < 0 || obj['09:31']['涨跌幅'] < 0 || obj['09:33']['涨跌幅'] < 0
+                if (特殊判断1 && 特殊判断2) 今日趋势 = false
+                if (特殊判断1 && obj['09:35']['涨跌幅'] < obj['09:30']['涨跌幅']) 今日趋势 = false
 
                 let 特殊趋势 = false
                 if (涨跌35 > 3 && obj['09:35']['大单净额'] > 0) {
