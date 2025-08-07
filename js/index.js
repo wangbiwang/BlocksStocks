@@ -73,11 +73,10 @@ const Dates = reactive({
 })
 
 //查询问题相关
-const text0 = '涨跌幅降序资金流向大单净额收盘价'
 const text1 = '前1交易日(vol1和vol5和vol10和vol30和vol60)'
 const text2 = '前1交易日(1日均线和M5和M10和M30和M60)'
-const textA = `当日涨跌幅资金流向大单净额收盘价;09:30涨跌幅；09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35${text0}；前1交易日涨停家数；前1交易日上涨家数占比`
-const textB = `当日涨跌幅;09:35涨跌幅降序；${text1}；${text2}；前1交易日开盘价前1交易日收盘价;前1交易日15:00涨跌幅资金流向大单净额；`
+const textA = `当日涨跌幅资金流向大单净额收盘价;09:30涨跌幅；09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅降序资金流向大单净额；`
+const textB = `前1交易日涨跌幅降序；${text1}；${text2}；前1交易日开盘价前1交易日收盘价;前1交易日15:00涨跌幅资金流向大单净额；前1交易日涨停家数；`
 const Questions = {
     block: [`${textA}二级行业`, `${textB}二级行业`, `${textA}概念`, `${textB}概念`],
     stock: [
@@ -362,7 +361,7 @@ async function beforeSubmitBlocks() {
                 return el
                     .replaceAll('当日', td)
                     .replaceAll('09:', tdcn + '09:')
-                    .replaceAll('前1交易日', tdcn + '前1交易日')
+                    .replaceAll('前1交易日', td + '前1交易日')
                     .replaceAll('流通市值', tdcn + '流通市值')
             })
             SubmitBlocks(newQ_block, '缓存')
@@ -455,6 +454,10 @@ async function SubmitBlocks(block, catche) {
 //处理板块数据
 async function handleBlocksData(res) {
     function handleArr(arr1, arr2) {
+        arr2 = arr2.map((mel, mkey) => {
+            mel['昨日涨跌幅排名'] = mkey + 1
+            return mel
+        })
         let { td, pd1 } = Dates.shareDate
         let resArr = []
         arr1.forEach((el) => {
@@ -469,7 +472,7 @@ async function handleBlocksData(res) {
                 obj['指数简称'] = ele['指数简称']
                 obj['板块类别'] = ele['指数@所属同花顺行业级别'] ? '二级行业' : '概念'
                 obj['昨日涨停数'] = ele[`指数@涨停家数[${pd1}]`] || 0
-                obj['昨日上涨比'] = ele[`指数@上涨家数占比[${pd1}]`] || 0
+                // obj['昨日上涨比'] = ele[`指数@上涨家数占比[${pd1}]`] || 0
 
                 handleVM(obj, ele, 'block', pd1)
                 handleRate(obj, ele, 'block', td, pd1)
@@ -479,10 +482,8 @@ async function handleBlocksData(res) {
                 let 涨幅text = `指数@分时涨跌幅:前复权[${pd1} 15:00]`
                 let 昨日涨幅 = num(ele[涨幅text])
                 let 昨日涨停数 = ele[`指数@涨停家数[${pd1}]`]
-                let 昨日涨跌幅排名 =
-                    [...resArr]
-                        .sort((a, b) => num(b[涨幅text]) - num(a[涨幅text]))
-                        .findIndex((e) => e['指数简称'] == obj['指数简称']) + 1
+                let 昨日涨跌幅排名 = ele['昨日涨跌幅排名'] || 1000
+
                 // 1. 主力资金介入（必要条件） 大单净流入值 > 0
                 // 2. 涨跌幅排名（核心指标）强势市场（大盘指数涨幅 > 0.5%）：板块涨幅排名 前10%(二级行业目前总数90个，前10%为9个；概念目前总数397个，前10%为40个)
                 // 3. 涨停数量（动态要求）强势市场：板块内涨停个股 ≥ 1只（需真实封板，非炸板）；弱势市场：允许涨停数量 = 0，但需满足：板块内涨幅TOP3个股平均涨幅 ≥ 5%；板块内无个股跌停。
