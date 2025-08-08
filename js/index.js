@@ -454,6 +454,10 @@ async function SubmitBlocks(block, catche) {
 //处理板块数据
 async function handleBlocksData(res) {
     function handleArr(arr1, arr2) {
+        arr1 = arr1.map((mel, mkey) => {
+            mel['今日涨跌幅排名'] = mkey + 1
+            return mel
+        })
         arr2 = arr2.map((mel, mkey) => {
             mel['昨日涨跌幅排名'] = mkey + 1
             return mel
@@ -483,43 +487,37 @@ async function handleBlocksData(res) {
                 let 昨日涨幅 = num(ele[涨幅text])
                 let 昨日涨停数 = ele[`指数@涨停家数[${pd1}]`]
                 let 昨日涨跌幅排名 = ele['昨日涨跌幅排名'] || 1000
+                let 今日涨跌幅排名 = ele['今日涨跌幅排名'] || 1000
 
                 // 1. 主力资金介入（必要条件） 大单净流入值 > 0
                 // 2. 涨跌幅排名（核心指标）强势市场（大盘指数涨幅 > 0.5%）：板块涨幅排名 前10%(二级行业目前总数90个，前10%为9个；概念目前总数397个，前10%为40个)
                 // 3. 涨停数量（动态要求）强势市场：板块内涨停个股 ≥ 1只（需真实封板，非炸板）；弱势市场：允许涨停数量 = 0，但需满足：板块内涨幅TOP3个股平均涨幅 ≥ 5%；板块内无个股跌停。
 
-                // if (obj['指数简称'] == '辅助生殖') debugger
+                // if (obj['指数简称'] == '成飞概念') debugger
 
                 let 长期趋势 = false
                 if (obj['v60达成'] && obj['M60达成']) 长期趋势 = true
-                if (昨日涨幅 > 5 && obj['M60'] == '-' && obj['v60'] == '-') {
+                if (昨日涨幅 > 4 && obj['M60'] == '-' && obj['v60'] == '-') {
                     长期趋势 = true // 2025-07-22 指数长期趋势补充条件
                 }
 
                 let 昨日趋势 = false
-                let 昨日趋势补充1 = obj[pd1]['大单净额'] + obj[pd1]['资金流向'] > 0 || 涨跌35 > 昨日涨幅  // 2025/01/23  	铜缆高速连接 长飞光纤 指数昨日趋势补充条件
+                let 昨日趋势补充1 =
+                    obj[pd1]['大单净额'] + obj[pd1]['资金流向'] > 0 ||
+                    obj['09:35']['趋势上'] ||
+                    obj['09:35']['涨跌幅'] > 3 // 2025/01/23  	铜缆高速连接 长飞光纤 指数昨日趋势补充条件
                 if (obj[pd1]['大单净额'] > 0 && 昨日趋势补充1 && 昨日涨幅 > 1 && 昨日涨停数 > 0) {
                     if (obj['板块类别'] == '二级行业' && (昨日涨跌幅排名 <= 10 || 昨日涨幅 > 2)) 昨日趋势 = true
-
                     if (obj['板块类别'] == '概念' && (昨日涨跌幅排名 <= 20 || 昨日涨幅 > 3)) 昨日趋势 = true
                 }
 
                 let 今日趋势 = false
-                if (涨跌35 >= 0.5 && obj['序号'] <= 20) 今日趋势 = true
-                if (涨跌35 >= 1.0 && obj['序号'] <= 40) 今日趋势 = true
+                if (涨跌35 >= 0.5 && 今日涨跌幅排名 <= 20) 今日趋势 = true
+                if (涨跌35 >= 1.0 && 今日涨跌幅排名 <= 40) 今日趋势 = true
                 if (涨跌35 >= 1.5) 今日趋势 = true
-                if (obj['09:35']['涨跌幅'] > 0 && obj['09:35']['大单净额'] > 0 && obj['09:35']['资金流向'] > 0) {
-                    今日趋势 = true // 20250604 指数今日趋势补充条件
-                }
-
-                let 特殊判断1 = obj['09:35']['大单净额'] < 0 && obj['09:35']['资金流向'] < 0
-                let 特殊判断1补充1 =
-                    obj['09:35']['大单净额'] < obj['09:33']['大单净额'] &&
-                    obj['09:35']['资金流向'] < obj['09:33']['资金流向']
-                let 特殊判断2 = obj['09:30']['涨跌幅'] < 0 || obj['09:31']['涨跌幅'] < 0 || obj['09:33']['涨跌幅'] < 0
-                if (特殊判断1 && 特殊判断2) 今日趋势 = false
-                if (特殊判断1 && obj['09:35']['涨跌幅'] < obj['09:30']['涨跌幅']) 今日趋势 = false
-                if (特殊判断1 && 特殊判断1补充1 && obj['09:35']['涨跌幅'] < obj['09:33']['涨跌幅']) 今日趋势 = false
+                if (obj['09:35']['趋势上']) 今日趋势 = true // 20250604 指数今日趋势补充条件
+                let 今日趋势补充1 = obj['09:35']['大单净额'] < 0 && obj['09:35']['资金流向'] < 0
+                if (今日趋势补充1 && obj[pd1]['涨跌幅'] < 3) 今日趋势 = false
 
                 let 特殊趋势 = false
                 if (涨跌35 > 3 && obj['09:35']['大单净额'] > 0) 特殊趋势 = true // 2025-07-22 指数趋势补充条件
@@ -723,8 +721,6 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
     const dataMap1 = new Map(res[1]?.map((item) => [item['股票简称'], item]) || [])
     const dataMap2 = new Map(res[2]?.map((item) => [item['股票简称'], item]) || [])
     const dataMap3 = new Map(res[3]?.map((item) => [item['股票简称'], item]) || [])
-    let ztArr = 0 // 涨停符合数
-    let _0935zhang = 0 // 0935涨跌幅>0
 
     Stocks.Data[0].base = res[0]
         .map((ele) => {
@@ -741,14 +737,10 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
                 ...match3,
             }
         })
-        .map((ele, idx) => {
-            let obj = ele
-            let t = ''
-            let rate = num(ele[`${t}涨跌幅:前复权[${pd1}]`] || ele[`${t}分时涨跌幅:前复权[${pd1} 15:00]`])
-            obj['涨停'] = ele[`涨停价[${pd1}]`] == ele[`收盘价:不复权[${pd1}]`] && rate >= 9.5
-            if (obj['涨停']) ztArr++
-            if (num(ele[`${t}分时涨跌幅:前复权[${td} 09:35]`]) > 0) _0935zhang++ // 统计0935涨跌幅>0的个股
-            return obj
+        .map((ele) => {
+            let rate = num(ele[`涨跌幅:前复权[${pd1}]`] || ele[`分时涨跌幅:前复权[${pd1} 15:00]`])
+            ele['涨停'] = ele[`涨停价[${pd1}]`] == ele[`收盘价:不复权[${pd1}]`] && rate >= 9.5
+            return ele
         })
         .map((ele, idx) => {
             let obj = {}
@@ -809,14 +801,13 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
                 }
             }
             if (obj['涨停']) 昨日趋势 = true
-            if (ztArr == 0) 昨日趋势 = false // 指数板块实际涨停数为0时，昨日趋势不成立
             if (obj['前15涨停数'] > 3 || obj['前5涨停数'] > 2) 昨日趋势 = false
-            // if (_0935zhang < Math.floor(res[0].length * 0.7)) 昨日趋势 = false //09:35 指数板块涨跌幅大于0占比率超70%
 
             let 今日趋势 = false
             let 涨跌35 = obj['09:35']['涨跌幅'] || 0
             if (涨跌35 >= blockItem['09:35']['涨跌幅'] || 涨跌35 >= 5) 今日趋势 = true
             if (涨跌35 < blockItem['09:35']['涨跌幅'] * 1.5 && 涨跌35 < 3) 今日趋势 = false //2025-07-22 今日趋势补充条件
+            if (obj['09:35']['趋势上'] && 涨跌35 > 0) 今日趋势 = true
 
             let 长期趋势 = false
             if (obj['v60达成'] && obj['M60达成'] && obj['前40日']) 长期趋势 = true
@@ -843,18 +834,6 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
         .sort((a, b) => {
             return (a['昨热度排名'] || 0) - (b['昨热度排名'] || 0)
         })
-    // if (ztArr == 0) {
-    //     if (blockType === '行业') {
-    //         Blocks.Data[0].base = Blocks.Data[0].base.filter((item) => blockItem['code'] != item['code'])
-    //     } else {
-    //         Blocks.Data[1].base = Blocks.Data[1].base.filter((item) => blockItem['code'] != item['code'])
-    //     }
-    //     Blocks.loading = false
-    //     Blocks.CheckedOptimumFN()
-    //     Blocks.checked = { type: '-', name: '-', item: null }
-    //     Stocks.Data = [{ name: '实时策略', base: [], default: [] }]
-    //     BlocksClickauto()
-    // }
 
     Stocks.mySort(...Stocks.Sort_selected)
 }
@@ -976,7 +955,7 @@ function handleRate(obj, ele, type, td, pd1) {
         资金流向: num(ele[`${t}资金流向[${td}]`]),
         大单净额: num(ele[`${t}dde大单净额[${td}]`]),
     }
-    obj['09:35'] = {
+    obj[`09:35`] = {
         涨跌幅: num(ele[`${t}分时涨跌幅:前复权[${td} 09:35]`]),
         资金流向: num(ele[`${t}分时资金流向[${td} 09:35]`]),
         大单净额: num(ele[`${t}分时dde大单净额[${td} 09:35]`]),
@@ -1000,6 +979,16 @@ function handleRate(obj, ele, type, td, pd1) {
         大单净额: num(ele[`${t}dde大单净额[${pd1}]`] || ele[`${t}分时dde大单净额[${pd1} 15:00]`]),
         收盘价: num(ele[`1日指数${t}[${pd1}]`]),
     }
+    obj['09:35']['涨跌幅上趋势'] = obj['09:35']['涨跌幅'] >= obj['09:33']['涨跌幅']
+    obj['09:35']['大单净额上趋势'] = obj['09:35']['大单净额'] >= obj['09:33']['大单净额']
+    obj['09:35']['资金流向上趋势'] = obj['09:35']['资金流向'] >= obj['09:33']['资金流向']
+    obj['09:35']['趋势上'] =
+        obj['09:35']['涨跌幅上趋势'] && obj['09:35']['大单净额上趋势'] && obj['09:35']['资金流向上趋势']
+    obj['09:33']['涨跌幅上趋势'] = obj['09:33']['涨跌幅'] >= obj['09:31']['涨跌幅']
+    obj['09:33']['大单净额上趋势'] = obj['09:33']['大单净额'] >= obj['09:31']['大单净额']
+    obj['09:33']['资金流向上趋势'] = obj['09:33']['资金流向'] >= obj['09:31']['资金流向']
+    obj['09:33']['趋势上'] =
+        obj['09:33']['涨跌幅上趋势'] && obj['09:33']['大单净额上趋势'] && obj['09:33']['资金流向上趋势']
 }
 const App = {
     setup() {
