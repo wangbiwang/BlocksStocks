@@ -96,7 +96,8 @@
                                 :class="Stocks.hoverBlocks.includes(item['指数简称'])?'hoverStyle':''"
                                 :style="(key!=0||item['09:35']['涨跌幅']<0||(item['09:35']['资金流向']<0&&item['09:35']['大单净额']<0))?'opacity:0.3' : ''"
                             >
-                                <td style="width: 30px">{{item['序号']}}</td>
+                                <td style="width: 30px">{{item['今日涨跌幅排名']}}</td>
+                                <td style="width: 30px">{{item['昨日涨跌幅排名']}}</td>
                                 <td
                                     class="stock-name"
                                     :class="(Blocks.checked.type==(BlocksKey>0?'概念':'行业')&&Blocks.checked.name==item['指数简称'])?'fs16 f600 table_cnText':'table_cnText'"
@@ -104,7 +105,7 @@
                                 >
                                     {{item['指数简称']}}
                                 </td>
-                                <td class="rateTd f600" v-for="(hdItem,hdKey) in Blocks.headerData.slice(2,8)">
+                                <td class="rateTd f600" v-for="(hdItem,hdKey) in Blocks.headerData.slice(3,9)">
                                     <div class="tb3_box" v-if="item[hdItem]">
                                         <div v-html="precentformater(item[hdItem]['涨跌幅'])"></div>
                                         <div
