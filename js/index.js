@@ -308,7 +308,7 @@ async function Submit(direction, catche) {
     Dates.setShareDate()
     let D = Dates.shareDate
     let VolumePriceArr = ['M05', 'M10', 'M30', 'M60']
-    Blocks.headerData = ['序号', '指数简称', ...D.TimeTilArr, ...VolumePriceArr]
+    Blocks.headerData = ['今涨','昨涨', '指数简称', ...D.TimeTilArr, ...VolumePriceArr]
     Stocks.headerData = [
         '序号',
         'code',
@@ -487,6 +487,7 @@ async function handleBlocksData(res) {
                 let 昨日涨幅 = num(ele[涨幅text])
                 let 昨日涨停数 = ele[`指数@涨停家数[${pd1}]`]
                 let 昨日涨跌幅排名 = ele['昨日涨跌幅排名'] || 1000
+                obj['昨日涨跌幅排名'] = 昨日涨跌幅排名
                 let 今日涨跌幅排名 = ele['今日涨跌幅排名'] || 1000
 
                 // 1. 主力资金介入（必要条件） 大单净流入值 > 0
