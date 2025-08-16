@@ -787,7 +787,7 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             obj['前40日'] = _35收盘价 ? Number(_35收盘价) >= 区间最高价 : obj['股价'] >= 区间最高价
             //---------------------------------------
 
-            // if (obj['股票简称'] == '凯莱英') debugger
+            // if (obj['股票简称'] == '亚星锚链') debugger
 
             // 计算趋势
             let 昨日趋势 = false
@@ -815,7 +815,6 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             if (obj['v60达成'] && obj['M60达成'] && obj['前40日']) 长期趋势 = true
             if (obj['v60达成'] && obj['M60达成'] && obj['涨停']) 长期趋势 = true
             if (obj['v30达成'] && obj['M30达成'] && obj['涨停'] && obj['前40日']) 长期趋势 = true
-            if (Number(obj['流通市值']) > 100000000000) 长期趋势 = false // 流通市值大于1000亿的个股不考虑
 
             let 特殊趋势 = false
             if (
