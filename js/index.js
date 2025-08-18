@@ -308,7 +308,7 @@ async function Submit(direction, catche) {
     Dates.setShareDate()
     let D = Dates.shareDate
     let VolumePriceArr = ['M05', 'M10', 'M30', 'M60']
-    Blocks.headerData = ['今涨','昨涨', '指数简称', ...D.TimeTilArr, ...VolumePriceArr]
+    Blocks.headerData = ['今涨', '昨涨', '指数简称', ...D.TimeTilArr, ...VolumePriceArr]
     Stocks.headerData = [
         '序号',
         'code',
@@ -794,6 +794,7 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             if (
                 obj[pd1]['大单净额'] > 0 &&
                 obj[pd1]['大单净额'] + obj[pd2]['大单净额'] > 0 &&
+                obj[pd1]['大单净额'] > obj[pd2]['大单净额'] &&
                 (obj[pd1]['涨跌幅'] > blockItem[pd1]['涨跌幅'] * 1.5 ||
                     obj[pd1]['涨跌幅'] > 5 ||
                     (obj[pd1]['涨跌幅'] > 2 && obj[pd1]['大单净额'] > 0 && obj[pd1]['资金流向'] > 0))
