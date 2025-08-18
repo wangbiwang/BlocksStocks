@@ -46,7 +46,7 @@
                     <el-checkbox
                         v-for="item in Blocks.checkboxList"
                         v-model="item.model"
-                        @change="Blocks.CheckedOptimumFN"
+                        @change="Blocks.CheckedOptimumFN(item.name)"
                         :label="item.name"
                         :disabled="item.name != '特殊趋势'"  
                     />
@@ -173,7 +173,7 @@
                     <el-checkbox
                         v-for="item in Stocks.checkboxList"
                         v-model="item.model"
-                        @change="Stocks.CheckedOptimumFN"
+                        @change="Stocks.CheckedOptimumFN(item.name)"
                         :label="item.name"
                         :disabled="item.name != '特殊趋势'"  
                     />
