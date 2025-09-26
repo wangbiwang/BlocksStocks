@@ -87,19 +87,36 @@ const Questions = {
         //原因2：2025-06-12 股票代码 003040 股票名称 楚 天 龙  前面连扳，近短期涨幅太高，接盘亏钱，所以也不买入5天有超过2个涨停的股票！
     ],
 }
+// 调用函数，生成1到9之间的随机数
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min
+}
 
 //指数板块相关
 const Blocks = reactive({
     isCache: false,
     timer: undefined,
     run: () => {
+        const MAX_REQUEST_COUNT = 100 // 最大请求次数
+
         if (!Blocks.timer) {
-            Blocks.timer = setInterval(() => {
+            Blocks.requestCount = 0
+            const executeRequest = () => {
                 Submit(1)
-            }, 50000)
+                Blocks.requestCount++
+                if (Blocks.requestCount >= MAX_REQUEST_COUNT) {
+                    clearTimeout(Blocks.timer)
+                    Blocks.timer = undefined
+                    Blocks.requestCount = 0
+                    return
+                }
+                Blocks.timer = setTimeout(executeRequest, 20000 + getRandomInt(1, 9) * 3000)
+            }
+            executeRequest()
         } else {
-            clearInterval(Blocks.timer)
+            clearTimeout(Blocks.timer)
             Blocks.timer = undefined
+            Blocks.requestCount = 0
         }
     },
     loading: false,
@@ -364,7 +381,7 @@ async function beforeSubmitBlocks() {
                     .replaceAll('前1交易日', td + '前1交易日')
                     .replaceAll('流通市值', tdcn + '流通市值')
             })
-            SubmitBlocks(newQ_block,'缓存数据')
+            SubmitBlocks(newQ_block, '缓存数据')
         }
     }
 }
