@@ -75,14 +75,14 @@ const Dates = reactive({
 //查询问题相关
 const text1 = '前1交易日(vol1和vol5和vol10和vol30和vol60)'
 const text2 = '前1交易日(1日均线和M5和M10和M30和M60)'
-const textA = `当日涨跌幅资金流向大单净额收盘价;09:30涨跌幅；09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅降序资金流向大单净额；`
-const textB = `前1交易日涨跌幅降序；${text1}；${text2}；前1交易日开盘价前1交易日收盘价;前1交易日15:00涨跌幅资金流向大单净额；前1交易日涨停家数；`
+const textA = `当日涨跌幅资金流向大单净额收盘价;09:30涨跌幅;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅降序资金流向大单净额；`
+const textB = `前1交易日资金流向大单净额涨跌幅降序；${text1}；${text2}；前1交易日开盘价前1交易日收盘价;前1交易日15:00涨跌幅资金流向大单净额；前1交易日涨停家数；`
 const Questions = {
     block: [`${textA}二级行业`, `${textB}二级行业`, `${textA}概念`, `${textB}概念`],
     stock: [
-        `当日涨跌幅资金流向大单净额收盘价；09:30涨跌幅；前1交易日热度排名升序当日热度排名流通市值；前1交易日涨跌幅资金流向大单净额rsi12;前2交易日涨跌幅大单净额macd；主板创业；行业概念`,
-        `前1交易日热度排名升序前40交易日区间最高价不复权;09:31涨跌幅资金流向大单净额；09:33涨跌幅资金流向大单净额；09:35涨跌幅资金流向大单净额股价；前3交易日涨跌幅macd；前1交易日涨停价；行业概念`,
-        `前1交易日热度排名升序；${text1}；${text2}；后2交易日涨跌幅;前1交易日开盘价前1交易日收盘价macd;行业概念`,
+        `当日涨跌幅资金流向大单净额收盘价；09:30涨跌幅；前1交易日热度排名升序当日热度排名流通市值；前1交易日涨跌幅资金流向大单净额rsi12;前2交易日涨跌幅大单净额macd；前5交易日区间最高价;行业概念`,
+        `前1交易日热度排名升序前40交易日区间最高价不复权；;09:31涨跌幅资金流向大单净额；09:33涨跌幅资金流向大单净额；09:35涨跌幅资金流向大单净额股价；前3交易日涨跌幅macd；前1交易日涨停价；行业概念`,
+        `前1交易日热度排名升序；${text1}；${text2}；前1交易日区间最高价后2交易日涨跌幅;前1交易日收盘价macd;行业概念`,
         `前1交易日热度排名升序；前5交易日的涨停次数;前15交易日的涨停次数;行业概念`, //原因1：2025-07-22 股票代码 002654 股票名称 华宏科技  前面连扳，小长期涨幅太高，接盘亏钱，所以不买入15天有超过3个涨停的股票！
         //原因2：2025-06-12 股票代码 003040 股票名称 楚 天 龙  前面连扳，近短期涨幅太高，接盘亏钱，所以也不买入5天有超过2个涨停的股票！
     ],
@@ -364,7 +364,7 @@ async function beforeSubmitBlocks() {
                     .replaceAll('前1交易日', td + '前1交易日')
                     .replaceAll('流通市值', tdcn + '流通市值')
             })
-            SubmitBlocks(newQ_block, '缓存')
+            SubmitBlocks(newQ_block,'缓存数据')
         }
     }
 }
@@ -375,13 +375,11 @@ async function SubmitBlocks(block, catche) {
 
     try {
         // 初始化请求状态
-        if (!catche) {
-            Blocks.requestStatus = block.map((_, index) => ({
-                name: ['行业策略排行', '行业概念排行', '概念策略排行', '概念概念排行'][index],
-                status: 'pending',
-                message: '请求中...',
-            }))
-        }
+        Blocks.requestStatus = block.map((_, index) => ({
+            name: ['行业策略排行', '行业概念排行', '概念策略排行', '概念概念排行'][index],
+            status: 'pending',
+            message: '请求中...',
+        }))
 
         const requests = block.map((el) => axios(handle_requestsData('zhishu', el)))
         const responses = await Promise.allSettled(requests)
@@ -391,16 +389,12 @@ async function SubmitBlocks(block, catche) {
 
         responses.forEach((response, index) => {
             const data = response.value?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas
-            if (response.status === 'fulfilled' && Array.isArray(data) && data.length > 0) {
+            if (response.status === 'fulfilled' && Array.isArray(data) && data.length >= 90) {
                 successResponses.push(data)
-                if (!catche) {
-                    Blocks.updateRequestStatus(index, 'success', `请求成功 (${data.length}条数据)`)
-                }
+                Blocks.updateRequestStatus(index, 'success', `请求成功 (${data.length}条数据)`)
             } else {
                 failedRequests.push(block[index])
-                if (!catche) {
-                    Blocks.updateRequestStatus(index, 'error', '请求失败: 数据无效或为空')
-                }
+                Blocks.updateRequestStatus(index, 'error', `请求失败: ${data.length} 数据无效或为空`)
             }
         })
 
@@ -408,12 +402,10 @@ async function SubmitBlocks(block, catche) {
             await new Promise((resolve) => setTimeout(resolve, 1000))
 
             // 更新失败请求的状态为重试中
-            if (!catche) {
-                failedRequests.forEach((_, index) => {
-                    const originalIndex = block.indexOf(failedRequests[index])
-                    Blocks.updateRequestStatus(originalIndex, 'pending', '重试中...')
-                })
-            }
+            failedRequests.forEach((_, index) => {
+                const originalIndex = block.indexOf(failedRequests[index])
+                Blocks.updateRequestStatus(originalIndex, 'pending', '重试中...')
+            })
 
             const retryRequests = failedRequests.map((el) => axios(handle_requestsData('zhishu', el)))
             const retryResponses = await Promise.allSettled(retryRequests)
@@ -437,8 +429,7 @@ async function SubmitBlocks(block, catche) {
                 throw new Error(`部分请求失败，成功: ${successResponses.length}/${block.length}`)
             }
         }
-
-        if (catche) Blocks.setCache(successResponses)
+        if (failedRequests.length == 0) Blocks.setCache(successResponses)
         handleBlocksData(successResponses)
     } catch (err) {
         ElNotification({
@@ -518,6 +509,7 @@ async function handleBlocksData(res) {
                 if (涨跌35 >= 1.0 && 今日涨跌幅排名 <= 40) 今日趋势 = true
                 if (涨跌35 >= 1.5) 今日趋势 = true
                 if (obj['09:35']['趋势上']) 今日趋势 = true // 20250604 指数今日趋势补充条件
+                if (涨跌35 <= 0.5 && 今日涨跌幅排名 > 5) 今日趋势 = false
                 let 今日趋势补充1 = obj['09:35']['大单净额'] < 0 && obj['09:35']['资金流向'] < 0
                 if (今日趋势补充1 && obj[pd1]['涨跌幅'] < 3) 今日趋势 = false
                 let 今日趋势补充2 = obj['09:33']['大单净额'] < 0 && obj['09:33']['资金流向'] < 0
@@ -783,6 +775,9 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             obj['后2日'] = [num(ele[`涨跌幅:前复权[${nd1}]`]), num(ele[`涨跌幅:前复权[${nd2}]`])]
 
             // 处理区间最高价
+            const 最高价日 = findKeysWithPattern(ele, '区间最高价:前复权日[', ']')
+            obj['前05日最高价日'] = ele[最高价日[0]]
+            obj['前01日最高价日'] = ele[最高价日[1]]
             const 最高价Keys = findKeysWithPattern(ele, '区间最高价:不复权[', ']')
             let 区间最高价 = 最高价Keys.length > 0 ? Number(ele[最高价Keys[0]]) : 0
             let _35收盘价 = ele[`分时收盘价:不复权[${td} 09:35]`]
@@ -815,9 +810,11 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             if (obj['09:35']['趋势上'] && 涨跌35 > 0) 今日趋势 = true
 
             let 长期趋势 = false
-            if (obj['v60达成'] && obj['M60达成'] && obj['前40日']) 长期趋势 = true
-            if (obj['v60达成'] && obj['M60达成'] && obj['涨停']) 长期趋势 = true
-            if (obj['v30达成'] && obj['M30达成'] && obj['涨停'] && obj['前40日']) 长期趋势 = true
+            let _01To_05 = obj['前01日最高价日'] === obj['前05日最高价日']
+            let _01To_40 = _01To_05 && obj['前40日']
+            if (_01To_05 && obj['v60达成'] && obj['M60达成'] && obj['涨停']) 长期趋势 = true
+            if (_01To_40 && obj['v60达成'] && obj['M60达成']) 长期趋势 = true
+            if (_01To_40 && obj['v30达成'] && obj['M30达成'] && obj['涨停']) 长期趋势 = true
 
             let 特殊趋势 = false
             if (
