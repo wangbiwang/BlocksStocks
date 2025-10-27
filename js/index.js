@@ -80,8 +80,8 @@ const textB = `前1交易日资金流向大单净额涨跌幅降序；${text1}�
 const Questions = {
     block: [`${textA}二级行业`, `${textB}二级行业`, `${textA}概念`, `${textB}概念`],
     stock: [
-        `当日涨跌幅资金流向大单净额收盘价；09:30涨跌幅；前1交易日热度排名升序当日热度排名流通市值；前1交易日涨跌幅资金流向大单净额rsi12;前2交易日涨跌幅大单净额macd；前5交易日区间最高价;行业概念`,
-        `前1交易日热度排名升序前40交易日区间最高价不复权；;09:31涨跌幅资金流向大单净额；09:33涨跌幅资金流向大单净额；09:35涨跌幅资金流向大单净额股价；前3交易日涨跌幅macd；前1交易日涨停价；行业概念`,
+        `当日涨跌幅资金流向大单净额收盘价；09:25涨跌幅；前1交易日热度排名升序当日热度排名流通市值；前1交易日涨跌幅资金流向大单净额rsi12;前2交易日涨跌幅大单净额macd；前5交易日区间最高价;行业概念`,
+        `前1交易日热度排名升序前40交易日区间最高价不复权；09:31涨跌幅资金流向大单净额；09:33涨跌幅资金流向大单净额；09:35涨跌幅资金流向大单净额股价；前3交易日涨跌幅macd；前1交易日涨停价；行业概念`,
         `前1交易日热度排名升序；${text1}；${text2}；前1交易日区间最高价后2交易日涨跌幅;前1交易日收盘价macd;行业概念`,
         `前1交易日热度排名升序；前5交易日的涨停次数;前15交易日的涨停次数;行业概念`, //原因1：2025-07-22 股票代码 002654 股票名称 华宏科技  前面连扳，小长期涨幅太高，接盘亏钱，所以不买入15天有超过3个涨停的股票！
         //原因2：2025-06-12 股票代码 003040 股票名称 楚 天 龙  前面连扳，近短期涨幅太高，接盘亏钱，所以也不买入5天有超过2个涨停的股票！
@@ -133,10 +133,10 @@ const Blocks = reactive({
         setLocalStorage(logName, logValue)
     },
     checkboxList: [
-        { name: '长期趋势', model: true },
-        { name: '昨日趋势', model: true },
-        { name: '今日趋势', model: true },
-        { name: '特殊趋势', model: false },
+        { name: '长期趋势', model: true, flag: null },
+        { name: '昨日趋势', model: true, flag: null },
+        { name: '今日趋势', model: true, flag: null },
+        { name: '特殊趋势', model: false, flag: null },
     ],
     CheckedOptimumFN: (name) => {
         Blocks.Data = Blocks.Data.map((el) => {
@@ -503,12 +503,24 @@ async function handleBlocksData(res) {
                 // 2. 涨跌幅排名（核心指标）强势市场（大盘指数涨幅 > 0.5%）：板块涨幅排名 前10%(二级行业目前总数90个，前10%为9个；概念目前总数397个，前10%为40个)
                 // 3. 涨停数量（动态要求）强势市场：板块内涨停个股 ≥ 1只（需真实封板，非炸板）；弱势市场：允许涨停数量 = 0，但需满足：板块内涨幅TOP3个股平均涨幅 ≥ 5%；板块内无个股跌停。
 
-                // if (obj['指数简称'] == '成飞概念') debugger
+                // if (obj['指数简称'] == '贵金属') debugger
 
                 let 长期趋势 = false
-                if (obj['v60达成'] && obj['M60达成']) 长期趋势 = true
-                if (昨日涨幅 > 4 && obj['M60'] == '-' && obj['v60'] == '-') {
+                if (obj['v60达成'] && obj['M60达成']) {
+                    长期趋势 = true
+                    Blocks.checkboxList[0].flag = 1
+                } else if (昨日涨幅 > 4 && obj['M60'] == '-' && obj['v60'] == '-') {
                     长期趋势 = true // 2025-07-22 指数长期趋势补充条件
+                    Blocks.checkboxList[0].flag = 2
+                } else if (
+                    昨日涨幅 > 4 &&
+                    obj['M05达成'] &&
+                    obj['v60达成'] &&
+                    obj['09:35']['大单净额'] > 0 &&
+                    obj['09:35']['大单净额'] > obj['09:33']['大单净额']
+                ) {
+                    长期趋势 = true
+                    Blocks.checkboxList[0].flag = 3
                 }
 
                 let 昨日趋势 = false
@@ -819,19 +831,39 @@ async function handleStocksData(res, blockItem, blockType, blockName) {
             }
             if (obj['涨停']) 昨日趋势 = true
             if (obj['前15涨停数'] > 3 || obj['前5涨停数'] > 2) 昨日趋势 = false
+            if (obj['涨停'] && obj[pd1]['大单净额'] > 0) 昨日趋势 = true
 
             let 今日趋势 = false
             let 涨跌35 = obj['09:35']['涨跌幅'] || 0
             if (涨跌35 >= blockItem['09:35']['涨跌幅'] || 涨跌35 >= 5) 今日趋势 = true
             if (涨跌35 < blockItem['09:35']['涨跌幅'] * 1.5 && 涨跌35 < 3) 今日趋势 = false //2025-07-22 今日趋势补充条件
             if (obj['09:35']['趋势上'] && 涨跌35 > 0) 今日趋势 = true
+            if (
+                blockItem['09:35']['资金流向'] < 0 &&
+                blockItem['09:35']['大单净额'] < 0 &&
+                obj['09:33']['大单净额'] < 0 &&
+                obj['09:35']['大单净额'] <= obj['09:33']['大单净额'] &&
+                obj[pd1]['大单净额'] + obj[pd1]['资金流向'] < 0
+            )
+                今日趋势 = false
 
             let 长期趋势 = false
             let _01To_05 = obj['前01日最高价日'] === obj['前05日最高价日']
             let _01To_40 = _01To_05 && obj['前40日']
-            if (_01To_05 && obj['v60达成'] && obj['M60达成'] && obj['涨停']) 长期趋势 = true
+            if (_01To_05 && obj['v60达成'] && obj['M60达成']) 长期趋势 = true
             if (_01To_40 && obj['v60达成'] && obj['M60达成']) 长期趋势 = true
-            if (_01To_40 && obj['v30达成'] && obj['M30达成'] && obj['涨停']) 长期趋势 = true
+            if (_01To_40 && obj['v30达成'] && obj['M30达成']) 长期趋势 = true
+            if (_01To_05 && obj['v10达成'] && obj['M10达成'] && obj['涨停']) 长期趋势 = true
+            if (
+                Blocks.checkboxList[0].flag === 3 &&
+                blockItem['09:35']['大单净额'] > 0 &&
+                obj['涨停'] &&
+                obj[pd1]['大单净额'] > 0 &&
+                obj[pd1]['资金流向'] > 0 &&
+                obj['v05达成'] &&
+                obj['M05达成']
+            )
+                长期趋势 = true
 
             let 特殊趋势 = false
             if (
@@ -989,7 +1021,7 @@ function handleRate(obj, ele, type, td, pd1) {
         大单净额: num(ele[`${t}分时dde大单净额[${td} 09:31]`]),
     }
     obj[`09:30`] = {
-        涨跌幅: num(ele[`${t}分时涨跌幅:前复权[${td} 09:30]`]),
+        涨跌幅: num(ele[`${t}分时涨跌幅:前复权[${td} 09:30]`] || ele[`${t}分时涨跌幅:前复权[${td} 09:25]`]),
     }
     obj[pd1] = {
         涨跌幅: num(ele[`${t}涨跌幅:前复权[${pd1}]`] || ele[`${t}分时涨跌幅:前复权[${pd1} 15:00]`]),
