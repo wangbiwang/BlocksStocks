@@ -27,6 +27,7 @@
                     </el-date-picker>
                     <div class="nav-button" @click="Submit(1)">▶️</div>
                     <el-button type="danger" class="query-button" @click="Submit()">查询</el-button>
+                    <el-button type="primary" class="process-data-button" @click="processData()">处理数据</el-button>
                     <div style="display: flex" v-if="!isMobile()">
                         <el-button :type="Blocks.timer?'primary':'danger'" class="run-button" @click="Blocks.run()"
                             >run</el-button
@@ -42,13 +43,12 @@
 
             <!-- 行业筛选条件 -->
             <div class="filter-container">
-                <div class="checkbox-container">
+                <div class="checkbox-container" v-if="!isTradingHours()">
                     <el-checkbox
                         v-for="item in Blocks.checkboxList"
                         v-model="item.model"
                         @change="Blocks.CheckedOptimumFN(item.name)"
                         :label="item.name"
-                        :disabled="item.name != '特殊趋势'"  
                     />
                 </div>
                 <div class="request-status" style="margin: 0" v-if="!Blocks.isCache && Blocks.requestStatus.length > 0">
@@ -169,13 +169,12 @@
             </div>
             <!-- 个股筛选条件 -->
             <div class="filter-container">
-                <div class="checkbox-container">
+                <div class="checkbox-container" v-if="!isTradingHours()">
                     <el-checkbox
                         v-for="item in Stocks.checkboxList"
                         v-model="item.model"
                         @change="Stocks.CheckedOptimumFN(item.name)"
                         :label="item.name"
-                        :disabled="item.name != '特殊趋势'"  
                     />
                 </div>
                 <div class="request-status" style="margin: 0" v-if="!Stocks.isCache && Stocks.requestStatus.length > 0">
@@ -342,15 +341,22 @@
             </el-container>
         </div>
 
-        <!-- 引入 Vue 和 Vant 的 JS 文件 -->
-        <script src="./js/vue@3.4.14.js"></script>
-        <script src="./js/axios@1.6.7.js"></script>
-        <script src="./js/vant@4.js"></script>
+        <!-- 引入 Vue -->
+        <script src="./lib/vue@3.4.14.js"></script>
+        <!-- 引入 Vant -->
+        <script src="./lib/vant@4.js"></script>
+        <!-- 引入 axios -->
+        <script src="./lib/axios@1.6.7.js"></script>
         <!-- 引入element plus中文语言包 -->
-        <script src="./js/elementplus@v2.7.7-zhCn.js"></script>
-        <script src="./js/elementplus@v2.7.7.js"></script>
-        <script src="./js/localForage.js"></script>
-        <script src="./js/day.js"></script>
+        <script src="./lib/elementplus@v2.7.7-zhCn.js"></script>
+        <script src="./lib/elementplus@v2.7.7.js"></script>
+        <!-- 引入localForage -->
+        <script src="./lib/localForage.js"></script>
+        <!-- 引入day.js 库 -->
+        <script src="./lib/day.js"></script>
+        <!-- 引入hexin-v -->
+        <script src="./lib/hexin-v.js"></script>
+        <!-- 引入自定义的工具函数 -->
         <script src="./js/utils.js"></script>
         <script src="./js/index.js"></script>
     </body>

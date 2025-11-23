@@ -1065,6 +1065,7 @@ const App = {
             formatNumber,
             nTOs,
             isMobile,
+            isTradingHours,
         }
     },
 }
