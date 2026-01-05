@@ -281,11 +281,20 @@ async function calcTodayAlignment(obj, ele, type, dates, blockItem = null) {
     obj['今日配合分'] = score
     obj['今日配合评价'] = score >= 0.4 ? '强配合' : score >= 0.2 ? '配合' : score <= -0.3 ? '背离' : '中性'
 
-    // Total score (default formula): trend(0~1)*10 + momentum(0~10) + alignment(~-1~1)*10
-    const trend10 = Number(obj['趋势总分'] || 0) * 10
+    const trend = Number(obj['趋势总分'] || 0) 
     const momentum = Number(obj['昨日动能分'] ?? obj.score?.['昨日动能分'] ?? 0)
-    const alignment10 = Number(obj['今日配合分'] || 0) * 10
-    obj['总分'] = Number((trend10 + momentum + alignment10).toFixed(2))
+    const alignment = Number(obj['今日配合分'] || 0) 
+    let Weight1,Weight2,Weight3;
+    if(type === 'block'){
+        // 板块权重 趋势:0.45, 动能:0.35, 配合:0.20
+        Weight1=0.45,Weight2=0.35,Weight3=0.20
+        obj['总分'] = Number((trend*Weight1 + momentum*Weight2 + alignment*Weight3).toFixed(3))
+    } else {
+        // 股票权重 趋势:0.25, 动能:0.55, 配合:0.20
+        Weight1=0.25,Weight2=0.55,Weight3=0.20
+        obj['总分'] = Number((trend*Weight1 + momentum*Weight2 + alignment*Weight3).toFixed(3))
+    }
+    
 
     return obj
 }
