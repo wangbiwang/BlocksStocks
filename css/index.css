@@ -41,7 +41,7 @@ body,
 .Mobile .TOP-container .time-display {
   flex: 1;
   text-align: left;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   color: #303133;
   margin: 0;
@@ -61,7 +61,7 @@ body,
   font-size: 20px;
   cursor: pointer;
   min-width: 40px;
-  height: 30px;
+  height: 25px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -74,11 +74,11 @@ body,
 }
 .Mobile .TOP-container .control-container .date-picker {
   flex-shrink: 1;
-  height: 30px;
+  height: 25px;
 }
 .Mobile .TOP-container .control-container .date-picker.el-date-editor {
   width: 100%;
-  height: 30px;
+  height: 25px;
 }
 .Mobile .TOP-container .control-container .date-picker.el-date-editor .el-input__wrapper {
   height: 100%;
@@ -93,7 +93,7 @@ body,
 .Mobile .TOP-container .control-container .query-button {
   padding: 8px 16px;
   min-width: 80px;
-  height: 30px;
+  height: 25px;
   white-space: nowrap;
   flex-shrink: 0;
   border-radius: 4px;
