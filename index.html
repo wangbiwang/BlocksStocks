@@ -45,7 +45,7 @@
                         <el-table :data="item.filters" size="small" stripe border :height="170">
                             <!-- 序号 -->
                             <el-table-column type="index" width="10" align="center"></el-table-column>
-                            <el-table-column :label="(item.name === 'Blocks-HY' ? 'HY' : 'GN' )+'Name'" min-width="55">
+                            <el-table-column :label="(item.name === 'Blocks-HY' ? 'HY' : 'GN' )+'Name'" min-width="60">
                                 <template #default="{ row }">
                                     <span class="cell-name">{{ row['指数简称'] || '-' }}</span>
                                 </template>
