@@ -1,0 +1,15 @@
+{
+    // 开启“保存Sass文件时自动编译”
+    "liveSassCompile.settings.autoCompile": true,
+    // 开启“VS Code启动时自动监听Sass”
+    "liveSassCompile.settings.watchOnLaunch": true,
+    // 可选：配置编译后CSS的输出路径（默认和Sass文件同目录，可自定义）
+    "liveSassCompile.settings.formats": [
+        {
+            "format": "expanded", // 输出格式：expanded（未压缩）/ compressed（压缩）
+            "extensionName": ".css", // 输出文件后缀
+            "savePath": "/css" // 输出路径（相对项目根目录，如：Sass在/scss文件夹，输出到/css）
+        }
+    ],
+    "Codegeex.RepoIndex": true
+}
