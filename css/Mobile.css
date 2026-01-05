@@ -7,7 +7,7 @@
   /* Blocks tables (HY/GN) */
   /* Multi-line metrics inside cell */
   /* 评分列网格布局 - 四个项目排列为2x2网格 */
-  /* 涨跌资金大单列网格布局 - 三个项目排列为2列网格 */
+  /* 涨跌资金大单列网格布局 - 三个项目排列为一行三列 */
   /* CN market convention: red = up, green = down */
   /* Backward-compatible class names (if any old markup exists) */
   /* Make ElementPlus table more compact on mobile */
@@ -99,7 +99,7 @@
   border-radius: 6px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
   font-size: 12px;
-  line-height: 18px;
+  line-height: 14px;
   color: #303133;
   overflow: hidden;
 }
@@ -145,7 +145,8 @@
 }
 .Mobile .blocks-table-wrap {
   padding: 0 4px 6px;
-  overflow-x: hidden; /* 避免横向滚动条，列宽已收紧 */
+  overflow-x: hidden;
+  /* 避免横向滚动条，列宽已收紧 */
   -webkit-overflow-scrolling: touch;
 }
 .Mobile .cell-name {
@@ -154,8 +155,9 @@
 }
 .Mobile .metrics {
   display: flex;
-  flex-direction: column;
-  gap: 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1px;
 }
 .Mobile .metrics-score {
   display: grid;
@@ -167,16 +169,18 @@
   margin: 0;
 }
 .Mobile .el-table .metrics:not(.metrics-score) {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
-  gap: 2px;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 0px;
 }
 .Mobile .el-table .metrics:not(.metrics-score) .metric {
   margin: 0;
+  flex: 1;
+  min-width: 0;
 }
-.Mobile .el-table .metrics:not(.metrics-score) .metric:nth-child(3) {
-  grid-column: span 2;
+.Mobile .el-table .metrics:not(.metrics-score) .metric-label {
+  width: 13px;
 }
 .Mobile .metric {
   display: flex;
@@ -193,7 +197,7 @@
 .Mobile .metric-value {
   flex: none;
   text-align: left;
-  font-size: 11px;
+  font-size: 9px;
   line-height: 12px;
   color: #303133;
   white-space: nowrap;
@@ -225,7 +229,8 @@
   padding: 0 2px;
   line-height: 20px;
   min-height: 20px;
-  white-space: normal; /* allow our multi-line metrics */
+  white-space: normal;
+  /* allow our multi-line metrics */
 }
 .Mobile .el-table th.el-table__cell,
 .Mobile .el-table td.el-table__cell {

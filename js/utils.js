@@ -48,13 +48,13 @@ function formatNumber(num, type) {
     } else if (abs < 10000) {
         s = abs.toString() // 直接转换为字符串
     } else if (abs < 10 ** 7) {
-        s = (abs / 10000).toFixed(0) + '万' // 数字在一万到一千万之间
+        s = (abs / 10000).toFixed(0) + 'W' // 数字在一万到一千万之间
     } else if (abs < 10 ** 8) {
-        s = (abs / 10 ** 8).toFixed(2) + '亿' // 数字在一千万到1亿之间
+        s = (abs / 10 ** 8).toFixed(2) + 'H' // 数字在一千万到1亿之间
     } else if (abs < 10 ** 10) {
-        s = (abs / 10 ** 8).toFixed(1) + '亿' // 数字在1亿到100亿之间
+        s = (abs / 10 ** 8).toFixed(1) + 'H' // 数字在1亿到100亿之间
     } else {
-        s = (abs / 10 ** 8).toFixed(0) + '亿' // 数字在100亿以上
+        s = (abs / 10 ** 8).toFixed(0) + 'H' // 数字在100亿以上
     }
 
     // shizhi: 仍返回带单位的文本（不再返回 HTML，颜色交给外层 .metric-value.red/green 控制）

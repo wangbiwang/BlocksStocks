@@ -73,7 +73,7 @@ const Dates = reactive({
         Dates.shareDate = {
             isToday,
             td,
-            tdcn: dayjs(td).format('YYYY-MM-DD'),
+            tdcn: dayjs(td).format('YYYY年MM月DD日'),
             pd1: getSafe(-1),
             pd2: getSafe(-2),
             pd3: getSafe(-3),
@@ -381,8 +381,8 @@ const App = {
         })
 
         onUnmounted(() => clearInterval(Intervals.timer))
-
-
+        
+        
 
         return {
             Intervals,

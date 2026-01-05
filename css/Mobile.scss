@@ -86,6 +86,7 @@
             }
         }
     }
+
     .loading-status-container {
         padding: 0 10px;
 
@@ -99,7 +100,7 @@
             border-radius: 6px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
             font-size: 12px;
-            line-height: 18px;
+            line-height: 14px;
             color: #303133;
             overflow: hidden;
         }
@@ -145,7 +146,7 @@
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
         overflow: hidden;
 
-        & + .blocks-card {
+        &+.blocks-card {
             margin-top: 10px;
         }
     }
@@ -159,7 +160,8 @@
 
     .blocks-table-wrap {
         padding: 0 4px 6px;
-        overflow-x: hidden; /* 避免横向滚动条，列宽已收紧 */
+        overflow-x: hidden;
+        /* 避免横向滚动条，列宽已收紧 */
         -webkit-overflow-scrolling: touch;
     }
 
@@ -172,8 +174,9 @@
     /* Multi-line metrics inside cell */
     .metrics {
         display: flex;
-        flex-direction: column;
-        gap: 0;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 1px;
     }
 
     /* 评分列网格布局 - 四个项目排列为2x2网格 */
@@ -182,25 +185,27 @@
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto;
         gap: 2px;
-        
+
         .metric {
             margin: 0;
         }
     }
 
-    /* 涨跌资金大单列网格布局 - 三个项目排列为2列网格 */
+    /* 涨跌资金大单列网格布局 - 三个项目排列为一行三列 */
     .el-table .metrics:not(.metrics-score) {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto;
-        gap: 2px;
-        
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        gap: 0px;
+
         .metric {
             margin: 0;
+            flex: 1;
+            min-width: 0;
         }
-        
-        .metric:nth-child(3) {
-            grid-column: span 2;
+
+        .metric-label {
+            width: 13px;
         }
     }
 
@@ -221,7 +226,7 @@
     .metric-value {
         flex: none;
         text-align: left;
-        font-size: 11px;
+        font-size: 9px;
         line-height: 12px;
         color: #303133;
         white-space: nowrap;
@@ -264,7 +269,8 @@
         padding: 0 2px;
         line-height: 20px;
         min-height: 20px;
-        white-space: normal; /* allow our multi-line metrics */
+        white-space: normal;
+        /* allow our multi-line metrics */
     }
 
     .el-table th.el-table__cell,
@@ -285,4 +291,3 @@
     }
 
 }
-

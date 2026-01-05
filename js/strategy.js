@@ -19,8 +19,8 @@ function calcLongTrend(
     ele,
     type,
     dates,
-    Mw = { M05: 1.0, M10: 1.2, M20: 1.5, M30: 2.0, M60: 3.0 },
-    Vw = { v05: 1.0, v10: 1.1, v20: 1.3, v30: 1.6, v60: 2.0 },
+    Mw = { M05: 1.0, M10: 1.2, M21: 1.5, M30: 2.0, M60: 3.0 },
+    Vw = { v05: 1.0, v10: 1.1, v21: 1.3, v30: 1.6, v60: 2.0 },
     Mfactor = 0.55,
     Vfactor = 0.45
 ) {
@@ -32,7 +32,7 @@ function calcLongTrend(
     obj.M01 = num(ele[`1日${t}均线[${pd1}]`])
     obj.M05 = num(ele[`5日${t}均线[${pd1}]`])
     obj.M10 = num(ele[`10日${t}均线[${pd1}]`])
-    obj.M20 = num(ele[`20日${t}均线[${pd1}]`])
+    obj.M21 = num(ele[`21日${t}均线[${pd1}]`])
     obj.M30 = num(ele[`30日${t}均线[${pd1}]`])
     obj.M60 = num(ele[`60日${t}均线[${pd1}]`])
 
@@ -40,7 +40,7 @@ function calcLongTrend(
     obj.v01 = num(ele[`1日${t}vol[${pd1}]`])
     obj.v05 = num(ele[`5日${t}vol[${pd1}]`])
     obj.v10 = num(ele[`10日${t}vol[${pd1}]`])
-    obj.v20 = num(ele[`20日${t}vol[${pd1}]`])
+    obj.v21 = num(ele[`21日${t}vol[${pd1}]`])
     obj.v30 = num(ele[`30日${t}vol[${pd1}]`])
     obj.v60 = num(ele[`60日${t}vol[${pd1}]`])
 
@@ -60,7 +60,7 @@ function calcLongTrend(
 
     obj.M05力度 = priceStrength(obj.M05)
     obj.M10力度 = priceStrength(obj.M10)
-    obj.M20力度 = priceStrength(obj.M20)
+    obj.M21力度 = priceStrength(obj.M21)
     obj.M30力度 = priceStrength(obj.M30)
     obj.M60力度 = priceStrength(obj.M60)
 
@@ -68,10 +68,10 @@ function calcLongTrend(
     obj['趋势_M分'] =
         (obj.M05力度 * Mw.M05 +
             obj.M10力度 * Mw.M10 +
-            obj.M20力度 * Mw.M20 +
+            obj.M21力度 * Mw.M21 +
             obj.M30力度 * Mw.M30 +
             obj.M60力度 * Mw.M60) /
-        (Mw.M05 + Mw.M10 + Mw.M20 + Mw.M30 + Mw.M60)
+        (Mw.M05 + Mw.M10 + Mw.M21 + Mw.M30 + Mw.M60)
 
     // -------- 计算量能趋势力度（连续）--------
     const volumeStrength = (vLong) => {
@@ -82,7 +82,7 @@ function calcLongTrend(
 
     obj.v05力度 = volumeStrength(obj.v05)
     obj.v10力度 = volumeStrength(obj.v10)
-    obj.v20力度 = volumeStrength(obj.v20)
+    obj.v21力度 = volumeStrength(obj.v21)
     obj.v30力度 = volumeStrength(obj.v30)
     obj.v60力度 = volumeStrength(obj.v60)
 
@@ -90,10 +90,10 @@ function calcLongTrend(
     obj['趋势_V分'] =
         (obj.v05力度 * Vw.v05 +
             obj.v10力度 * Vw.v10 +
-            obj.v20力度 * Vw.v20 +
+            obj.v21力度 * Vw.v21 +
             obj.v30力度 * Vw.v30 +
             obj.v60力度 * Vw.v60) /
-        (Vw.v05 + Vw.v10 + Vw.v20 + Vw.v30 + Vw.v60)
+        (Vw.v05 + Vw.v10 + Vw.v21 + Vw.v30 + Vw.v60)
 
     // -------- 最终趋势总分（0–1）--------
     obj['趋势总分'] = obj['趋势_M分'] * Mfactor + obj['趋势_V分'] * Vfactor
@@ -272,7 +272,7 @@ async function calcTodayAlignment(obj, ele, type, dates, blockItem = null) {
     const trend10 = Number(obj['趋势总分'] || 0) * 10
     const momentum = Number(obj['昨日动能分'] ?? obj.score?.['昨日动能分'] ?? 0)
     const alignment10 = Number(obj['今日配合分'] || 0) * 10
-    obj['总分'] = Number((trend10 + momentum + alignment10).toFixed(3))
+    obj['总分'] = Number((trend10 + momentum + alignment10).toFixed(2))
 
     return obj
 }
@@ -346,12 +346,12 @@ function handleRate(obj, ele, type, datas) {
 function getQuestions(type, datas, from, fromName) {
     // debugger
     const { td, tdcn, pd2, pd3, isToday } = datas
-    const text1 = '前1交易日(vol1和vol5和vol10和vol20和vol30和vol60)'
-    const text2 = '前1交易日(1日均线和M5和M10和M20和M30和M60)'
+    const text1 = '前1交易日(vol1和vol5和vol10和vol21和vol30和vol60)' 
+    const text2 = '前1交易日(1日均线和M5和M10和M21和M30和M60)'        //备注：M20 ，THS平台不支持，所以统一改 21
     let res = []
     if (type == 'block') {
-        const textA = `当日涨跌幅资金流向大单净额收盘价;09:30涨跌幅;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅降序资金流向大单净额`
-        const textB = `前1交易日资金流向大单净额涨跌幅降序；${text1}；${text2}；前1交易日开盘价前1交易日收盘价;前1交易日15:00涨跌幅资金流向大单净额；前1交易日涨停家数`
+        const textA = `当日涨跌幅资金流向大单净额收盘价;09:30涨跌幅;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅降序资金流向大单净额;`
+        const textB = `前1交易日涨跌幅降序;前1交易日资金流向大单净额;${text1};${text2};前1交易日涨停家数;`
         res = [`${textA}二级行业`, `${textB}二级行业`, `${textA}概念`, `${textB}概念`]
         if (!isToday) {
             res = res.map((el) => {
@@ -364,10 +364,10 @@ function getQuestions(type, datas, from, fromName) {
         }
     } else if (type == 'stock') {
         res = [
-            `当日涨跌幅资金流向大单净额收盘价；09:25涨跌幅；前1交易日热度排名升序当日热度排名流通市值；前1交易日涨跌幅资金流向大单净额rsi12;前2交易日涨跌幅大单净额macd；前5交易日区间最高价;行业概念`,
-            `前1交易日热度排名升序前40交易日区间最高价不复权；09:31涨跌幅资金流向大单净额；09:33涨跌幅资金流向大单净额；09:35涨跌幅资金流向大单净额股价；前3交易日涨跌幅macd；前1交易日涨停价；行业概念`,
-            `前1交易日热度排名升序；${text1}；${text2}；前1交易日区间最高价后2交易日涨跌幅;前1交易日收盘价macd;行业概念`,
-            `前1交易日热度排名升序；前5交易日的涨停次数;前15交易日的涨停次数;行业概念`, //原因1：2025-07-22 股票代码 002654 股票名称 华宏科技  前面连扳，小长期涨幅太高，接盘亏钱，所以不买入15天有超过3个涨停的股票！//原因2：2025-06-12 股票代码 003040 股票名称 楚 天 龙  前面连扳，近短期涨幅太高，接盘亏钱，所以也不买入5天有超过2个涨停的股票！
+            `当日涨跌幅资金流向大单净额收盘价;09:25涨跌幅;前1交易日热度排名升序当日热度排名流通市值;前1交易日涨跌幅资金流向大单净额rsi12;前2交易日涨跌幅大单净额macd;前5交易日区间最高价;行业概念`,
+            `前1交易日热度排名升序前40交易日区间最高价不复权;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅资金流向大单净额股价;前3交易日涨跌幅macd;前1交易日涨停价;行业概念`,
+            `前1交易日热度排名升序;${text1};${text2};前1交易日区间最高价后2交易日涨跌幅;前1交易日收盘价macd;行业概念`,
+            `前1交易日热度排名升序;前5交易日的涨停次数;前15交易日的涨停次数;行业概念`, //原因1：2025-07-22 股票代码 002654 股票名称 华宏科技  前面连扳，小长期涨幅太高，接盘亏钱，所以不买入15天有超过3个涨停的股票！//原因2：2025-06-12 股票代码 003040 股票名称 楚 天 龙  前面连扳，近短期涨幅太高，接盘亏钱，所以也不买入5天有超过2个涨停的股票！
         ]
         if (!isToday) {
             res = res.map((el) => {
@@ -382,9 +382,9 @@ function getQuestions(type, datas, from, fromName) {
                     .replaceAll('流通市值', tdcn + '流通市值')
                     .replaceAll('后2交易日涨跌幅', `${nd1}涨跌幅${nd2}涨跌幅`)
                 if (from == '行业') {
-                    el = el.replace('行业概念', `概念；所属二级行业包含${fromName}`)
+                    el = el.replace('行业概念', `概念;所属二级行业包含${fromName}`)
                 } else if (from == '概念') {
-                    el = el.replace('行业概念', `行业概念；所属概念包含${fromName}`)
+                    el = el.replace('行业概念', `行业概念;所属概念包含${fromName}`)
                 }
                 el = el.replaceAll('前2交易日', pd2).replaceAll('前3交易日', pd3)
                 return el
