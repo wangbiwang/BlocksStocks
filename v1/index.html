@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- 引入样式文件 -->
+        <link rel="stylesheet" href="./css/vant@4.css" />
+        <link rel="stylesheet" href="./css/elementplus.css" />
+        <link rel="stylesheet" type="text/css" href="./css/index.css" />
+        <title>test</title>
+    </head>
+    <body>
+        <div id="app">
+            <!-- TOP -->
+            <el-container style="flex-wrap: wrap">
+                <div class="time-display">{{Intervals.time}}</div>
+                <div class="control-container">
+                    <div class="nav-button" @click="Submit(-1)">◀️</div>
+                    <el-date-picker
+                        class="date-picker"
+                        v-model="Dates.SelectedDate"
+                        type="date"
+                        format="YYYY/MM/DD"
+                        placeholder="选择日期"
+                        :disabled-date="Dates.disabledDate"
+                    >
+                    </el-date-picker>
+                    <div class="nav-button" @click="Submit(1)">▶️</div>
+                    <el-button type="danger" class="query-button" @click="Submit()">查询</el-button>
+                    <el-button type="primary" class="process-data-button" @click="processData()">处理数据</el-button>
+                    <div style="display: flex" v-if="!isMobile()">
+                        <el-button :type="Blocks.timer?'primary':'danger'" class="run-button" @click="Blocks.run()"
+                            >run</el-button
+                        >
+                        <div class="date-filter">
+                            <div class="nav-button" @click="Submit(-1,'1')">◀️</div>
+                            符合条件的日期
+                            <div class="nav-button" @click="Submit(1,'1')">▶️</div>
+                        </div>
+                    </div>
+                </div>
+            </el-container>
+
+            <!-- 行业筛选条件 -->
+            <div class="filter-container">
+                <div class="checkbox-container" v-if="!isTradingHours()">
+                    <el-checkbox
+                        v-for="item in Blocks.checkboxList"
+                        v-model="item.model"
+                        @change="Blocks.CheckedOptimumFN(item.name)"
+                        :label="item.name"
+                    />
+                </div>
+                <div class="request-status" style="margin: 0" v-if="!Blocks.isCache && Blocks.requestStatus.length > 0">
+                    <div v-if="!isMobile()" class="status-title" style="margin: 0; margin-right: 8px">
+                        板块数据请求状态：
+                    </div>
+                    <div class="status-items">
+                        <div v-for="(status, index) in Blocks.requestStatus" :key="index" class="status-item">
+                            <span class="status-name">{{status.name}}</span>
+                            <span :class="['status-dot', status.status]"></span>
+                            <span v-if="!isMobile()" class="status-message">{{status.message}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 行业table -->
+            <el-container class="table_container" v-loading="Blocks.loading">
+                <div class="table_hy" v-for="(BlocksItem,BlocksKey) in Blocks.Data" v-if="!Blocks.loading">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th :colspan="Blocks.headerData.length">
+                                    {{BlocksItem.name}} (总数：{{BlocksItem.base.length}})
+                                    (筛选：{{BlocksItem.default.length}})
+                                    <span @click="Blocks.setCache('clean')" v-if="Blocks.isCache" class="cache-text"
+                                        >缓存</span
+                                    >
+                                </th>
+                            </tr>
+                            <tr>
+                                <th
+                                    v-for="(item,i) in Blocks.headerData"
+                                    @click="Blocks.RateSort(item,i)"
+                                    :style="item==Blocks.RateSort_selected? 'background-color: #000;color:#fff':''"
+                                >
+                                    {{item}}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="(item,key) in BlocksItem.default"
+                                style="text-align: center"
+                                :class="Stocks.hoverBlocks.includes(item['指数简称'])?'hoverStyle':''"
+                                :style="(key!=0||item['09:35']['涨跌幅']<0||(item['09:35']['资金流向']<0&&item['09:35']['大单净额']<0))?'opacity:0.3' : ''"
+                            >
+                                <td style="width: 30px">{{item['今日涨跌幅排名']}}</td>
+                                <td style="width: 30px">{{item['昨日涨跌幅排名']}}</td>
+                                <td
+                                    class="stock-name"
+                                    :class="(Blocks.checked.type==(BlocksKey>0?'概念':'行业')&&Blocks.checked.name==item['指数简称'])?'fs16 f600 table_cnText':'table_cnText'"
+                                    @click="CheckedBlock(BlocksKey>0?'概念':'行业',item['指数简称'],item)"
+                                >
+                                    {{item['指数简称']}}
+                                </td>
+                                <td class="rateTd f600" v-for="(hdItem,hdKey) in Blocks.headerData.slice(3,9)">
+                                    <div class="tb3_box" v-if="item[hdItem]">
+                                        <div v-html="precentformater(item[hdItem]['涨跌幅'])"></div>
+                                        <div
+                                            v-if="item[hdItem]['资金流向']"
+                                            v-html="formatNumber(item[hdItem]['资金流向'])"
+                                        ></div>
+                                        <div
+                                            v-if="item[hdItem]['大单净额']"
+                                            v-html="formatNumber(item[hdItem]['大单净额'])"
+                                        ></div>
+                                        <div
+                                            v-html="formatNumber(item[hdItem]['大单净量'])"
+                                            v-if="item[hdItem]['大单净量']"
+                                        ></div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="ma-indicator" :class="item['M05达成']?'red' :'green' ">
+                                        {{formatNumber(item['M05'],'shizhi')}}
+                                    </div>
+                                    <div class="volume-indicator" :class="item['v05达成']?'red' :'green' ">
+                                        {{formatNumber(item['v05'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="ma-indicator" :class="item['M10达成']?'red' :'green' ">
+                                        {{formatNumber(item['M10'],'shizhi')}}
+                                    </div>
+                                    <div class="volume-indicator" :class="item['v10达成']?'red' :'green' ">
+                                        {{formatNumber(item['v10'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="ma-indicator" :class="item['M30达成']?'red' :'green' ">
+                                        {{formatNumber(item['M30'],'shizhi')}}
+                                    </div>
+                                    <div class="volume-indicator" :class="item['v30达成']?'red' :'green' ">
+                                        {{formatNumber(item['v30'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="ma-indicator" :class="item['M60达成']?'red' :'green' ">
+                                        {{formatNumber(item['M60'],'shizhi')}}
+                                    </div>
+                                    <div class="volume-indicator" :class="item['v60达成']?'red' :'green' ">
+                                        {{formatNumber(item['v60'],'shizhi')}}
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </el-container>
+
+            <!-- 个股指数名称类型 -->
+            <div class="selected-info">
+                <div class="selected-type">
+                    已选择：[ 类型：{{Blocks.checked.type}} , 名称：{{Blocks.checked.name}} ]
+                </div>
+            </div>
+            <!-- 个股筛选条件 -->
+            <div class="filter-container">
+                <div class="checkbox-container" v-if="!isTradingHours()">
+                    <el-checkbox
+                        v-for="item in Stocks.checkboxList"
+                        v-model="item.model"
+                        @change="Stocks.CheckedOptimumFN(item.name)"
+                        :label="item.name"
+                    />
+                </div>
+                <div class="request-status" style="margin: 0" v-if="!Stocks.isCache && Stocks.requestStatus.length > 0">
+                    <div v-if="!isMobile()" class="status-title" style="margin: 0; margin-right: 8px">
+                        个股数据请求状态：
+                    </div>
+                    <div class="status-items">
+                        <div v-for="(status, index) in Stocks.requestStatus" :key="index" class="status-item">
+                            <span class="status-name">{{status.name}}</span>
+                            <span :class="['status-dot', status.status]"></span>
+                            <span v-if="!isMobile()" class="status-message">{{status.message}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 个股table -->
+            <el-container class="table_container" v-loading="Stocks.loading">
+                <div class="table_gu" v-for="StocksItem in Stocks.Data" v-if="!Stocks.loading">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th :colspan="Stocks.headerData.length">
+                                    {{StocksItem.name}} (总数：{{StocksItem.base.length}})
+                                    (筛选：{{StocksItem.default.length}})
+                                    ({{Number((StocksItem.base.length/3).toFixed(2))}})
+                                    <span @click="Stocks.setCache('clean')" v-if="Stocks.isCache" class="cache-text"
+                                        >缓存</span
+                                    >
+                                </th>
+                            </tr>
+                            <tr>
+                                <th v-for="item in Stocks.headerData">{{item}}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="scrollable">
+                            <tr
+                                v-for="(item,key) in StocksItem.default"
+                                style="text-align: center"
+                                @mouseover="Stocks.handleMouseOver(item)"
+                                @mouseleave="Stocks.handleMouseLeave(item)"
+                                :class="item['涨停'] ? 'limit-up-row' : ''"
+                            >
+                                <td style="width: 30px">{{item['序号']}}</td>
+                                <td class="stock-code">{{item['code']}}</td>
+                                <td
+                                    class="stock-name table_cnText auto-width"
+                                    @click="Stocks.openUrl('https://gushitong.baidu.com/stock/ab-'+item['code'])"
+                                >
+                                    {{item['股票简称']}}
+                                </td>
+                                <td
+                                    class="market-value text_end"
+                                    :class="Number(item['流通市值']) >50000000000 ? 'large-market-value' : ''"
+                                >
+                                    {{formatNumber(item['流通市值'],'shizhi')}}
+                                </td>
+                                <td class="stock-price text_end">{{formatNumber(item['股价'],'gujia')}}</td>
+                                <td class="industry-cell table_cnText">
+                                    <div class="industry-content">{{item['行业']}}</div>
+                                </td>
+                                <td class="heat-rank table_cnText red f600">
+                                    <span
+                                        :class="Stocks.Sort_selected[0]=='昨热度排名' ? 'selected-sort' : ''"
+                                        @click="Stocks.mySort('昨热度排名')"
+                                        >{{item['昨热度排名']}}</span
+                                    >
+                                </td>
+                                <td class="heat-rank table_cnText red f600">
+                                    <span
+                                        :class="Stocks.Sort_selected[0]=='今热度排名' ? 'selected-sort' : ''"
+                                        @click="Stocks.mySort('今热度排名')"
+                                        >{{item['今热度排名']}}</span
+                                    >
+                                </td>
+                                <td class="concept-cell table_cnText">
+                                    <div class="concept-content">{{item['概念']}}</div>
+                                </td>
+                                <td class="rateTd f600" v-for="hdItem in Stocks.headerData.slice(9,15)">
+                                    <div class="tb3_box" v-if="item[hdItem]">
+                                        <div @click="Stocks.mySort(hdItem,'涨跌幅')">
+                                            <b
+                                                :class="item[hdItem]['涨跌幅趋势']=='j1'?'up-triangle':item[hdItem]['涨跌幅趋势']=='-j1'?'down-triangle':''"
+                                            ></b>
+                                            <span
+                                                :class="Stocks.Sort_selected[0]==hdItem&&Stocks.Sort_selected[1]=='涨跌幅' ? 'selected-sort' : ''"
+                                                v-html="precentformater(item[hdItem]['涨跌幅'])"
+                                            ></span>
+                                        </div>
+                                        <div
+                                            v-if="String(item[hdItem]['资金流向'])!='undefined'"
+                                            @click="Stocks.mySort(hdItem,'资金流向')"
+                                        >
+                                            <span
+                                                :class="Stocks.Sort_selected[0]==hdItem&&Stocks.Sort_selected[1]=='资金流向' ? 'selected-sort' : ''"
+                                                v-html="formatNumber(item[hdItem]['资金流向'])"
+                                            ></span>
+                                        </div>
+                                        <div
+                                            v-if="String(item[hdItem]['大单净额'])!='undefined'"
+                                            @click="Stocks.mySort(hdItem,'大单净额')"
+                                        >
+                                            <span
+                                                :class="Stocks.Sort_selected[0]==hdItem&&Stocks.Sort_selected[1]=='大单净额' ? 'selected-sort' : ''"
+                                                v-html="formatNumber(item[hdItem]['大单净额'])"
+                                            ></span>
+                                        </div>
+                                        <div
+                                            v-if="String(item[hdItem]['大单净量'])!='undefined'"
+                                            @click="Stocks.mySort(hdItem,'大单净量')"
+                                        >
+                                            <b
+                                                :class="item[hdItem]['大单净量趋势']=='j1'?'up-triangle':item[hdItem]['大单净量趋势']=='-j1'?'down-triangle':''"
+                                            ></b>
+                                            <span
+                                                :class="Stocks.Sort_selected[0]==hdItem&&Stocks.Sort_selected[1]=='大单净量' ? 'selected-sort' : ''"
+                                                v-html="formatNumber(item[hdItem]['大单净量'])"
+                                            ></span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="ma-indicator" :class="item['M05达成']?'red' :'green' ">
+                                        {{formatNumber(item['M05'],'shizhi')}}
+                                    </div>
+                                    <div class="volume-indicator" :class="item['v05达成']?'red' :'green' ">
+                                        {{formatNumber(item['v05'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="ma-indicator" :class="item['M10达成']?'red' :'green' ">
+                                        {{formatNumber(item['M10'],'shizhi')}}
+                                    </div>
+                                    <div class="volume-indicator" :class="item['v10达成']?'red' :'green' ">
+                                        {{formatNumber(item['v10'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="ma-indicator" :class="item['M30达成']?'red' :'green' ">
+                                        {{formatNumber(item['M30'],'shizhi')}}
+                                    </div>
+                                    <div class="volume-indicator" :class="item['v30达成']?'red' :'green' ">
+                                        {{formatNumber(item['v30'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="ma-indicator" :class="item['M60达成']?'red' :'green' ">
+                                        {{formatNumber(item['M60'],'shizhi')}}
+                                    </div>
+                                    <div class="volume-indicator" :class="item['v60达成']?'red' :'green' ">
+                                        {{formatNumber(item['v60'],'shizhi')}}
+                                    </div>
+                                </td>
+                                <td class="future-days table_cnText" v-if="item['后2日']">
+                                    <span class="future-day-margin" v-html="precentformater(item['后2日'][0])"> </span>
+                                    <span class="future-day-margin" v-html="precentformater(item['后2日'][1])"> </span>
+                                </td>
+                                <td class="history-days table_cnText">{{item['前40日']?'√':''}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </el-container>
+        </div>
+
+        <!-- 引入 Vue -->
+        <script src="./lib/vue@3.4.14.js"></script>
+        <!-- 引入 Vant -->
+        <script src="./lib/vant@4.js"></script>
+        <!-- 引入 axios -->
+        <script src="./lib/axios@1.6.7.js"></script>
+        <!-- 引入element plus中文语言包 -->
+        <script src="./lib/elementplus@v2.7.7-zhCn.js"></script>
+        <script src="./lib/elementplus@v2.7.7.js"></script>
+        <!-- 引入localForage -->
+        <script src="./lib/localForage.js"></script>
+        <!-- 引入day.js 库 -->
+        <script src="./lib/day.js"></script>
+        <!-- 引入hexin-v -->
+        <script src="./lib/hexin-v.js"></script>
+        <!-- 引入自定义的工具函数 -->
+        <script src="./js/utils.js"></script>
+        <script src="./js/index.js"></script>
+    </body>
+</html>

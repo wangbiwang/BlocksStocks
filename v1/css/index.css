@@ -1,0 +1,508 @@
+html,
+body,
+#app {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    transition: color 0.5s, background-color 0.5s;
+    line-height: 1.6;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans',
+        'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-size: 15px;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+#app {
+    width: calc(100% - 20px);
+    margin: 0 10px;
+}
+.green {
+    color: #0e9d58 !important;
+}
+.red {
+    color: #eb4436 !important;
+}
+.up-triangle {
+    opacity: 0.6;
+    position: absolute;
+    left: 50%;
+    /* bottom: 0px; */
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    border: 5px solid;
+    border-color: transparent transparent #eb4436 transparent;
+}
+.down-triangle {
+    opacity: 0.6;
+    position: absolute;
+    left: 50%;
+    bottom: 7px;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    border: 5px solid;
+    border-color: #0e9d58 transparent transparent transparent;
+}
+.f600 {
+    font-weight: 600 !important;
+}
+.f400 {
+    font-weight: 400 !important;
+}
+.fs16 {
+    font-size: 16px !important;
+}
+.fs14 {
+    font-size: 14px !important;
+}
+.fs9 {
+    font-size: 9px !important;
+}
+table {
+    width: 100%;
+    font-size: 14px;
+    border-collapse: collapse;
+}
+.hoverStyle {
+    background-color: rgba(255, 200, 209, 0.7);
+}
+.table_container {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    min-height: 345px;
+}
+.table_hy tr:hover,
+.table_gu tr:hover {
+    background-color: rgba(200, 221, 255, 0.7);
+}
+.table_cnText {
+    color: #1657d9;
+    text-align: center;
+    font-size: 12px;
+    /* white-space: nowrap;  */
+    /* 保持文本在一行内显示，不自动换行 */
+    /* overflow: hidden;  */
+    /* 当内容超出容器时显示滚动条 */
+    /* display: flex; */
+}
+.table_cnText:hover {
+    text-decoration: underline;
+    /* font-weight: 600; */
+}
+.text_end {
+    text-align: end;
+}
+
+/* 指数table css */
+.table_hy {
+    display: block;
+    width: 100%;
+    height: 181px; /* 设置一个合适的高度 */
+    overflow-y: auto; /* 或者使用 'scroll' 始终显示滚动条 */
+}
+.table_hy th,
+.table_hy td {
+    padding: 0;
+    margin: 0;
+    height: 23px;
+    overflow: hidden;
+    box-sizing: border-box;
+    border: 1px solid #dbdbdb;
+}
+.table_hy th {
+    overflow: hidden;
+    font-weight: 400;
+    color: #1e2024;
+    background-color: #f4f4f4;
+}
+
+table thead {
+    position: sticky;
+    top: 0;
+    background-color: #f4f4f4;
+}
+
+/* 个股table css */
+.table_gu {
+    display: block;
+    width: 100%;
+    height: 345px; /* 设置一个合适的高度 */
+    overflow-y: auto; /* 或者使用 'scroll' 始终显示滚动条 */
+
+    /* height: 100%;
+    min-width: 400px; */
+    /* overflow: auto; */
+}
+.table_gu th,
+.table_gu td {
+    padding: 0;
+    margin: 0;
+    height: 23px;
+    overflow: auto;
+    box-sizing: border-box;
+    border: 1px solid #dbdbdb;
+}
+.table_gu th {
+    font-weight: 400;
+    color: #1e2024;
+    background-color: #f4f4f4;
+}
+
+/* 综合日期时间涨跌幅资金流向大单净额大单净量css */
+.rateTd {
+    overflow: hidden;
+    width: 60px;
+}
+.rateTd .tb3_box {
+    display: flex;
+    align-items: center;
+}
+
+.rateTd .tb3_box div {
+    position: relative;
+    font-size: 9px;
+    width: 35px;
+    height: 25px;
+    line-height: 25px;
+    text-align: end;
+}
+.rateTd .tb3_box div:first-child {
+    font-size: 14px;
+    width: 50px;
+}
+
+/* 日历 */
+.cell {
+    height: 30px;
+    padding: 3px 0;
+    box-sizing: border-box;
+}
+.cell .text {
+    width: 24px;
+    height: 24px;
+    display: block;
+    margin: 0 auto;
+    line-height: 24px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+}
+.cell.current .text {
+    background: #626aef;
+    color: #fff;
+}
+.cell .holiday {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #f56c6c;
+    border-radius: 50%;
+    bottom: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.holiday {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #f56c6c;
+    border-radius: 50%;
+    bottom: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* 影藏当日结束数据  */
+/* .table_hy tbody tr td:nth-child(2) {
+    position: relative;
+    left: -999px;
+}
+.table_gu tbody tr td:nth-child(10) {
+    position: relative;
+    left: -999px;
+} */
+
+.table_hy_Mobile_tr {
+    display: flex;
+    justify-content: space-between;
+}
+.table_hy_Mobile {
+    margin: 5px 0;
+}
+.table_hy_Mobile_td {
+    width: 14%;
+    height: 30px;
+    font-size: 7px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    align-content: space-around;
+    justify-content: space-between;
+    overflow: hidden;
+    border: 1px solid #000;
+    padding: 2px 0;
+}
+.table_hy_Mobile_td:first-child {
+    display: block;
+    font-size: 10px;
+    line-height: 34px;
+    color: #1657d9;
+    white-space: nowrap; /* 保证文本不会换行 */
+    overflow: hidden; /* 超出容器部分隐藏 */
+    text-overflow: ellipsis; /* 超出文本显示为省略号 */
+}
+
+.checkmark {
+    width: 50px;
+    height: 100px;
+    border-top: 2px solid #000;
+    border-right: 2px solid #000;
+    position: relative;
+    transform: rotate(45deg);
+}
+.checkmark::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 25%;
+    width: 10px;
+    height: 50%;
+    border: solid #000;
+    border-width: 0 3px 3px 0;
+    transform: rotate(135deg);
+    transform-origin: top right;
+}
+.el-checkbox {
+    padding-right: 5px;
+    height: 30px;
+}
+
+/* 请求状态展示样式 */
+.request-status {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    background-color: #f5f7fa;
+    border-radius: 4px;
+    border: 1px solid #e4e7ed;
+    font-size: 13px;
+}
+
+.status-title {
+    font-weight: bold;
+    color: #303133;
+    white-space: nowrap;
+}
+
+.status-items {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.status-name {
+    color: #606266;
+    margin-right: 4px;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin: 0 4px;
+}
+
+.status-dot.pending {
+    background-color: #909399;
+    animation: pulse 1.5s infinite;
+}
+
+.status-dot.success {
+    background-color: #67c23a;
+}
+
+.status-dot.error {
+    background-color: #f56c6c;
+}
+
+.status-message {
+    color: #606266;
+    font-size: 12px;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* 新增类样式 */
+.time-display {
+    width: 220px;
+    margin: 10px;
+}
+
+.control-container {
+    margin: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-button {
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.date-picker {
+    width: 133px;
+}
+
+.query-button {
+    margin: 0 10px;
+}
+
+.run-button {
+    margin: 0 10px;
+}
+
+.date-filter {
+    border: 1px solid rgb(0, 0, 0);
+    display: flex;
+    align-items: center;
+    color: #333;
+}
+
+.filter-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.selected-info {
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+}
+
+.selected-type {
+    min-width: 100px;
+    display: flex;
+    justify-content: center;
+    color: #ac2024;
+    margin-right: 10px;
+}
+
+.cache-text {
+    color: #ac2024;
+    cursor: pointer;
+}
+
+.stock-code {
+    min-width: 50px;
+    width: 50px;
+}
+
+.stock-name {
+    min-width: 120px;
+    width: 120px;
+}
+
+.market-value {
+    min-width: 70px;
+    width: 70px;
+}
+
+.stock-price {
+    min-width: 50px;
+    width: 50px;
+}
+
+.industry-cell {
+    min-width: 60px;
+    width: 150px;
+    height: 26px;
+    overflow: hidden;
+}
+
+.industry-content {
+    overflow: auto;
+    height: 100%;
+}
+
+.heat-rank {
+    min-width: 75px;
+    width: 70px;
+}
+
+.concept-cell {
+    min-width: 60px;
+    width: 150px;
+    height: 26px;
+    overflow: hidden;
+}
+
+.concept-content {
+    overflow: auto;
+    height: 100%;
+}
+
+.ma-indicator {
+    display: inline-block;
+    padding: 2px;
+    transform: scale(0.7);
+}
+
+.volume-indicator {
+    display: inline-block;
+    transform: scale(0.7);
+}
+
+.future-days {
+    min-width: 80px;
+}
+
+.future-day-margin {
+    margin-right: 5px;
+}
+
+.history-days {
+    min-width: 45px;
+}
+
+.limit-up-row {
+    background-color: rgb(250, 255, 0, 0.2);
+}
+
+.large-market-value {
+    background-color: #ccc;
+}
+
+.selected-sort {
+    border-bottom: 2px solid #000;
+}
