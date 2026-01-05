@@ -117,7 +117,7 @@ const Blocks = reactive({
             await Blocks.getData(questions, catcheSetFunction, cache, dates)
         }
     },
-    getHistoryData: async (catcheGetFunction, catcheSetFunction, dates) => { 
+    getHistoryData: async (catcheGetFunction, catcheSetFunction, dates) => {
         // Implementation for fetching historical block data
     },
 
@@ -125,6 +125,7 @@ const Blocks = reactive({
         const { tdcn, isToday } = dates
         // debugger
         Blocks.loading = true
+        Blocks.Data[0].filters = Blocks.Data[1].filters = []
         // 初始化每个请求的状态
         Blocks.requestStatus = questions.map((_, i) => ({
             name: `Block ${i + 1}`,
@@ -381,8 +382,8 @@ const App = {
         })
 
         onUnmounted(() => clearInterval(Intervals.timer))
-        
-        
+
+
 
         return {
             Intervals,

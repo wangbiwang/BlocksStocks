@@ -143,35 +143,48 @@ function calcYesterdayMomentum(obj, ele, type, dates) {
     let momentumScore = 0
 
     // 涨幅（0~4）
-    if (涨幅 >= 4) momentumScore += 4
-    else if (涨幅 >= 2) momentumScore += 3
-    else if (涨幅 >= 1) momentumScore += 2
-    else if (涨幅 >= 0.5) momentumScore += 1
+    if (涨幅 >= 4) momentumScore += 0.4
+    else if (涨幅 >= 2) momentumScore += 0.3
+    else if (涨幅 >= 1) momentumScore += 0.2
+    else if (涨幅 >= 0.5) momentumScore += 0.1
 
     // 强度（0~3）
     if (type === 'block') {
-        if (涨停数 >= 1) momentumScore += 3
-        else if (排名 <= 10) momentumScore += 3
-        else if (排名 <= 20) momentumScore += 2
-        else if (排名 <= 40) momentumScore += 1
+        if (涨停数 >= 1) momentumScore += 0.3
+        else if (排名 <= 10) momentumScore += 0.3
+        else if (排名 <= 20) momentumScore += 0.2
+        else if (排名 <= 40) momentumScore += 0.1
     } else {
         if (涨停数 >= 1) momentumScore += 3
-        else if (热度排名 <= 20) momentumScore += 2
-        else if (热度排名 <= 40) momentumScore += 1
+        else if (热度排名 <= 20) momentumScore += 0.2
+        else if (热度排名 <= 40) momentumScore += 0.1
     }
+    //     对于行业板块（90个）：
+
+    // 前10名（前11%）：0.3分
+    // 11-20名（前22%）：0.2分
+    // 21-40名（前44%）：0.1分
+    // 涨停数≥1：+0.15分
+    // 涨停数≥3或占比>5%：+0.25分
+    // 对于概念板块（324个）：
+
+    // 前10名（前3%）：0.3分 × 规模系数（约0.8）= 0.24分
+    // 11-30名（前9%）：0.2分 × 规模系数 = 0.16分
+    // 31-60名（前19%）：0.1分 × 规模系数 = 0.08分
+    // 涨停数≥2或占比>3%：+0.2分
+    // 涨停数≥5或占比>7%：+0.3分
 
     // 资金（-1~3）
-    if (大单 > 0 && 资金 > 0) momentumScore += 3
-    else if (大单 > 0 || 资金 > 0) momentumScore += 2
-    else if (大单 < 0 && 资金 < 0) momentumScore -= 1
+    if (大单 > 0 && 资金 > 0) momentumScore += 0.3
+    else if (大单 > 0 || 资金 > 0) momentumScore += 0.2
+    else if (大单 < 0 && 资金 < 0) momentumScore -= 0.1
 
-    momentumScore = Math.max(0, Math.min(10, momentumScore))
 
     // Keep both root field and score field for compatibility
     obj['昨日动能分'] = momentumScore
     obj.score['昨日动能分'] = momentumScore
     obj.score['昨日动能等级'] =
-        momentumScore >= 7.5 ? '强启动' : momentumScore >= 6 ? '启动' : momentumScore >= 4 ? '弱动能' : '无动能'
+        momentumScore >= 0.75 ? '强启动' : momentumScore >= 0.6 ? '启动' : momentumScore >= 0.4 ? '弱动能' : '无动能'
 
 
     /* ======================
@@ -246,8 +259,8 @@ async function calcTodayAlignment(obj, ele, type, dates, blockItem = null) {
     if (obj['趋势总分'] < 0.45) score -= 0.4
 
     /* 延续昨日 */
-    if (obj['昨日动能分'] >= 6 && 涨跌35 > 0) score += 0.4
-    if (obj['昨日动能分'] >= 6 && 涨跌35 < 0) score -= 0.4
+    if (obj['昨日动能分'] >= 0.6 && 涨跌35 > 0) score += 0.4
+    if (obj['昨日动能分'] >= 0.6 && 涨跌35 < 0) score -= 0.4
 
     /* 资金确认 */
     if (大单35 > 0) score += 0.2
