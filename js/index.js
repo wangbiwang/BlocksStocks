@@ -84,6 +84,63 @@ const Dates = reactive({
     },
 })
 
+const BlockKeyArr = []
+const StockKeyArr = []
+function Edited_B(ele, key) {
+    BlockKeyArr.push(key)
+    return ele[key]
+}
+function Edited_S(ele, key) {
+    StockKeyArr.push(key)
+    return ele[key]
+}
+function validateDataArray(data, keyArr) {
+    if (!Array.isArray(data) || data.length === 0) return false
+    const keys = Array.from(new Set((keyArr || []).filter(Boolean)))
+
+    // If no keys to validate, fall back to simple non-empty check
+    if (keys.length === 0) return data.length > 0
+
+    // For each row, count how many keys are present and collect diagnostics
+    const requiredPerRow = Math.max(1, Math.min(3, Math.floor(keys.length * 0.25)))
+    let validRows = 0
+    const diagnostics = []
+    const presentCounts = Object.fromEntries(keys.map((k) => [k, 0]))
+
+    data.forEach((row, idx) => {
+        let cnt = 0
+        const missing = []
+        for (const k of keys) {
+            const ok = Object.prototype.hasOwnProperty.call(row, k) && row[k] !== undefined && row[k] !== null
+            if (ok) {
+                cnt++
+                presentCounts[k] = (presentCounts[k] || 0) + 1
+            } else {
+                missing.push(k)
+            }
+        }
+        if (cnt >= requiredPerRow) validRows++
+        else diagnostics.push({ index: idx, present: cnt, missing })
+    })
+
+    // Require at least 50% of rows (or 10 rows) to be valid
+    const threshold = Math.max(Math.floor(data.length * 0.5), Math.min(10, data.length))
+    const ok = validRows >= threshold
+
+    if (!ok) {
+        console.warn('validateDataArray: validation failed', { totalRows: data.length, validRows, threshold, requiredPerRow })
+        // show top 20 problematic rows
+        diagnostics.slice(0, 20).forEach((d) =>
+            console.warn(`Row ${d.index} - present:${d.present} missing:${d.missing.length}`, d.missing)
+        )
+        // show key presence summary
+        const keySummary = keys.map((k) => ({ key: k, present: presentCounts[k] || 0, pct: ((presentCounts[k] || 0) / data.length).toFixed(2) }))
+        console.warn('Key presence summary (key, presentCount, pct):', keySummary.filter(k => k.present < Math.max(1, Math.floor(data.length * 0.2))))
+    }
+
+    return ok
+}
+
 /** @description Block Module - Built-in retry logic */
 const Blocks = reactive({
     loading: false,
@@ -159,13 +216,16 @@ const Blocks = reactive({
                     const count = res?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.meta.extra.row_count
                     console.log('Block Data Fetched:', data)
 
-                    if (Array.isArray(data) && data.length >= expected) {
-                        results[i] = data.map(el => el.row_count = count) //设置总数
+                    if (Array.isArray(data) && (data.length >= expected || validateDataArray(data, BlockKeyArr))) {
+                        results[i] = data.map((el) => {
+                            el.row_count = count
+                            return el
+                        }) // 设置总数并返回对象
                         Blocks.requestStatus[i].status = 'success'
                         Blocks.requestStatus[i].message = `Success (${data.length})`
                         success = true
                     } else {
-                        console.log(res?.data?.data?.answer[0].txt[0].content.components[0].data.meta.extra.iwc_column_info)
+                        console.log('Invalid Length', res?.data?.data?.answer[0].txt[0].content.components[0].data.meta.extra.iwc_column_info)
                         throw new Error('Invalid Length')
                     }
                 } catch (e) {
@@ -334,6 +394,10 @@ async function handleBlocksData(res) {
             .map((ele) => {
                 const merged = { ...ele, ...map2.get(ele.code) }
                 const obj = {}
+                // if (ele['指数简称'] == "华为海思概念股") {
+                //     debugger
+                // }
+
                 // Strategy calculation consolidation
                 handleRate(obj, merged, 'block', Dates.shareDate)
                 calcLongTrend(obj, merged, 'block', Dates.shareDate)

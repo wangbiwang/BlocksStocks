@@ -95,8 +95,47 @@ function calcLongTrend(
             obj.v60力度 * Vw.v60) /
         (Vw.v05 + Vw.v10 + Vw.v21 + Vw.v30 + Vw.v60)
 
-    // -------- 最终趋势总分（0–1）--------
-    obj['趋势总分'] = obj['趋势_M分'] * Mfactor + obj['趋势_V分'] * Vfactor
+    // -------- 计算突破潜力分 --------
+    const 收盘价 = obj[pd1]?.收盘价 || 0;
+    const 区间最高价 = obj['60日区间最高价'] || 0;
+    const 区间最低价 = obj['60日区间最低价'] || 0;
+
+    if (收盘价 > 0 && 区间最高价 > 区间最低价 && 区间最低价 > 0) {
+        // 计算价格相对于60日区间的位置
+        const 相对位置 = (收盘价 - 区间最低价) / (区间最高价 - 区间最低价);
+
+        // 计算突破潜力：接近区间高点且有上涨趋势的股票得分更高
+        let 突破潜力分 = 0;
+
+        // 价格位置因子（接近高点得高分）
+        if (相对位置 > 0.9) 突破潜力分 += 0.4;
+        else if (相对位置 > 0.8) 突破潜力分 += 0.3;
+        else if (相对位置 > 0.7) 突破潜力分 += 0.2;
+        else if (相对位置 > 0.6) 突破潜力分 += 0.1;
+
+        // 趋势因子（60日均线上行得高分）
+        if (obj.M60力度 > 0.7) 突破潜力分 += 0.3;
+        else if (obj.M60力度 > 0.6) 突破潜力分 += 0.2;
+        else if (obj.M60力度 > 0.5) 突破潜力分 += 0.1;
+
+        // 量能因子（量能放大得高分）
+        if (obj.v60力度 > 0.7) 突破潜力分 += 0.3;
+        else if (obj.v60力度 > 0.6) 突破潜力分 += 0.2;
+        else if (obj.v60力度 > 0.5) 突破潜力分 += 0.1;
+
+        // 限制在0-1范围内
+        obj['突破潜力分'] = Math.max(0, Math.min(1, 突破潜力分));
+    } else {
+        obj['突破潜力分'] = 0;
+    }
+
+    // -------- 最终趋势总分（0–1），融合突破潜力分 --------
+    const Bfactor = 0.2; // 突破潜力分的权重
+    const totalWeight = Mfactor + Vfactor + Bfactor;
+    const adjustedM = Mfactor / totalWeight;
+    const adjustedV = Vfactor / totalWeight;
+    const adjustedB = Bfactor / totalWeight;
+    obj['趋势总分'] = obj['趋势_M分'] * adjustedM + obj['趋势_V分'] * adjustedV + obj['突破潜力分'] * adjustedB;
 
     return obj
 }
@@ -116,21 +155,17 @@ function calcYesterdayMomentum(obj, ele, type, dates) {
     let 热度排名 = 9999
 
     if (type === 'block') {
-        涨幅 =
-            num(ele[`指数@分时涨跌幅:前复权[${pd1} 15:00]`]) ||
-            num(ele[`指数@涨跌幅:前复权[${pd1}]`]) ||
-            num(obj[pd1]?.涨跌幅)
-
-        大单 = num(ele[`指数@dde大单净额[${pd1}]`] ?? obj[pd1]?.大单净额)
-        资金 = num(ele[`指数@资金流向[${pd1}]`] ?? obj[pd1]?.资金流向)
-        排名 = ele['昨日涨跌幅排名'] || 100
-        涨停数 = ele[`指数@涨停家数[${pd1}]`] || 0
+        涨幅 = obj[pd1]?.涨跌幅
+            obj['3日平均成交额'] = num(ele[`${t}3日平均成交额:前复权[${td}]`])
+            obj['5日平均成交额'] = num(ele[`${t}5日平均成交额:前复权[${td}]`])
+            obj['10日平均成交额'] = num(ele[`${t}10日平均成交额:前复权[${td}]`])
+            obj['20日平均成交额'] = num(ele[`${t}20日平均成交额:前复权[${td}]`])
         // calcBlockConcentration(blockItem, stockListForThisBlock, dates.pd1)
     } else {
-        涨幅 = num(obj[pd1]?.涨跌幅)
-        大单 = num(obj[pd1]?.大单净额)
-        资金 = num(obj[pd1]?.资金流向)
-        热度排名 = ele[`stock热度排名[${pd1}]`] || 9999
+        涨幅 = obj[pd1]?.涨跌幅
+        大单 = obj[pd1]?.大单净额
+        资金 = obj[pd1]?.资金流向
+        热度排名 = ele['昨热度排名'] || obj['昨热度排名']
         涨停数 = 涨幅 >= 9.8 ? 1 : 0
     }
 
@@ -173,12 +208,17 @@ async function calcTodayAlignment(obj, ele, type, dates, blockItem = null) {
     let score = 0
 
     /* 顺长期 */
-    if (obj['趋势总分'] >= 0.65) score += 0.4
-    if (obj['趋势总分'] <= 0.50) score -= 0.4
+    const 趋势阈值高 = 0.70;  // 从0.65提高到0.70，因为趋势总分包含额外因子
+    const 趋势阈值低 = 0.45;  // 从0.50降低到0.45，提供更宽的中间区域
+
+    if (obj['趋势总分'] >= 趋势阈值高) score += 0.4
+    if (obj['趋势总分'] <= 趋势阈值低) score -= 0.4
 
     /* 延续昨日 */
-    if (obj['昨日动能分'] >= 0.6 && 涨跌35 > 0) score += 0.4
-    if (obj['昨日动能分'] >= 0.6 && 涨跌35 < 0) score -= 0.4
+    const 突破增强因子 = obj['突破潜力分'] > 0.7 ? 1.2 : 1.0;  // 高突破潜力时增强评分
+
+    if (obj['昨日动能分'] >= 0.6 && 涨跌35 > 0) score += 0.4 * 突破增强因子
+    if (obj['昨日动能分'] >= 0.6 && 涨跌35 < 0) score -= 0.4 * 突破增强因子
 
     /* 资金确认 */
     if (大单35 > 0) score += 0.2
@@ -236,12 +276,12 @@ async function calcTodayAlignment(obj, ele, type, dates, blockItem = null) {
     const alignment = Number(obj['今日配合分'] || 0)
     let Weight1, Weight2, Weight3;
     if (type === 'block') {
-        // 板块权重 趋势:0.45, 动能:0.35, 配合:0.20
-        Weight1 = 0.45, Weight2 = 0.35, Weight3 = 0.20
+        // 板块权重：趋势50%（+5%）, 动能30%（-5%）, 配合20%
+        Weight1 = 0.50, Weight2 = 0.30, Weight3 = 0.20
         obj['总分'] = Number((trend * Weight1 + momentum * Weight2 + alignment * Weight3).toFixed(3))
     } else {
-        // 股票权重 趋势:0.25, 动能:0.55, 配合:0.20
-        Weight1 = 0.25, Weight2 = 0.55, Weight3 = 0.20
+        // 股票权重：趋势30%（+5%）, 动能50%（-5%）, 配合20%
+        Weight1 = 0.30, Weight2 = 0.50, Weight3 = 0.20
         obj['总分'] = Number((trend * Weight1 + momentum * Weight2 + alignment * Weight3).toFixed(3))
     }
 
@@ -287,8 +327,11 @@ function handleRate(obj, ele, type, datas) {
     const idx = Dates.historicalDate.indexOf(pd1)
     const start5 = Dates.historicalDate[idx - 4]
     const start10 = Dates.historicalDate[idx - 9]
+    const start60 = Dates.historicalDate[Math.max(0, idx - 59)]
     obj['5日区间涨跌幅'] = num(ele[`${t}区间涨跌幅:不复权[${start5}-${pd1}]`])
     obj['10日区间涨跌幅'] = num(ele[`${t}区间涨跌幅:不复权[${start10}-${pd1}]`])
+    obj['60日区间最高价'] = num(ele[`${t}区间最高价:不复权[${start60}-${pd1}]`])
+    obj['60日区间最低价'] = num(ele[`${t}区间最低价:不复权[${start60}-${pd1}]`])
 
     obj['09:35']['涨跌幅上趋势'] = obj['09:35']['涨跌幅'] >= obj['09:33']['涨跌幅']
     obj['09:35']['大单净额上趋势'] = obj['09:35']['大单净额'] >= obj['09:33']['大单净额']
@@ -321,6 +364,8 @@ function handleRate(obj, ele, type, datas) {
         obj['09:33']['资金流向下趋势']
 
     obj['code'] = ele['code']
+    obj['昨日涨跌幅排名'] = ele['昨日涨跌幅排名']
+    obj['今日涨跌幅排名'] = ele['今日涨跌幅排名']
 
     if (type === 'block') {
         obj['指数简称'] = ele['指数简称']
@@ -350,7 +395,7 @@ function getQuestions(type, datas, from, fromName) {
     const text3 = '前5交易日区间涨幅和前10交易日区间涨幅'
     let res = []
     if (type == 'block') {
-        const textA = `当日涨跌幅资金流向大单净额收盘价;09:30涨跌幅;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅降序资金流向大单净额;`
+        const textA = `当日涨跌幅资金流向大单净额收盘价;09:30涨跌幅;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅降序资金流向大单净额;前60交易日区间最高价;前60交易日区间最低价;`
         const textB = `前1交易日涨跌幅降序;前1交易日资金流向大单净额;${text1};${text2};${text3};前1交易日涨停家数;`
         res = [`${textA}二级行业`, `${textB}二级行业`, `${textA}概念`, `${textB}概念`]
         if (!isToday) {
@@ -361,6 +406,7 @@ function getQuestions(type, datas, from, fromName) {
                     .replaceAll('前1交易日', td + '前1交易日')
                     .replaceAll('前5交易日', td + '前5交易日')
                     .replaceAll('前10交易日', td + '前10交易日')
+                    .replaceAll('前60交易日', td + '前60交易日')
                     .replaceAll('流通市值', tdcn + '流通市值')
             })
         }
