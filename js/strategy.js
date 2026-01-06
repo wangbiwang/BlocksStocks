@@ -105,16 +105,13 @@ function calcYesterdayMomentum(obj, ele, type, dates) {
     const num = (e) => (e ? Number(Number(e).toFixed(3)) : 0)
     const { pd1 } = dates
 
-    obj.factor = obj.factor || {}
-    obj.score = obj.score || {}
-
     /* ======================
      *  一、读取昨日基础数据
      * ====================== */
     let 涨幅 = 0
     let 大单 = 0
     let 资金 = 0
-    let 排名 = 9999
+    let 排名 = 100
     let 涨停数 = 0
     let 热度排名 = 9999
 
@@ -126,7 +123,7 @@ function calcYesterdayMomentum(obj, ele, type, dates) {
 
         大单 = num(ele[`指数@dde大单净额[${pd1}]`] ?? obj[pd1]?.大单净额)
         资金 = num(ele[`指数@资金流向[${pd1}]`] ?? obj[pd1]?.资金流向)
-        排名 = ele['昨日涨跌幅排名'] || 9999
+        排名 = ele['昨日涨跌幅排名'] || 100
         涨停数 = ele[`指数@涨停家数[${pd1}]`] || 0
         // calcBlockConcentration(blockItem, stockListForThisBlock, dates.pd1)
     } else {
@@ -137,11 +134,8 @@ function calcYesterdayMomentum(obj, ele, type, dates) {
         涨停数 = 涨幅 >= 9.8 ? 1 : 0
     }
 
-    /* ======================
-     *  二、昨日动能分（你原逻辑，略微结构化）
-     * ====================== */
-    let momentumScore = 0
 
+    let momentumScore = 0
     // 涨幅（0~4）
     if (涨幅 >= 4) momentumScore += 0.4
     else if (涨幅 >= 2) momentumScore += 0.3
@@ -151,99 +145,23 @@ function calcYesterdayMomentum(obj, ele, type, dates) {
     // 强度（0~3）
     if (type === 'block') {
         if (涨停数 >= 1) momentumScore += 0.3
-        else if (排名 <= 10) momentumScore += 0.3
-        else if (排名 <= 20) momentumScore += 0.2
-        else if (排名 <= 40) momentumScore += 0.1
+
     } else {
         if (涨停数 >= 1) momentumScore += 3
         else if (热度排名 <= 20) momentumScore += 0.2
         else if (热度排名 <= 40) momentumScore += 0.1
     }
-    //     对于行业板块（90个）：
 
-    // 前10名（前11%）：0.3分
-    // 11-20名（前22%）：0.2分
-    // 21-40名（前44%）：0.1分
-    // 涨停数≥1：+0.15分
-    // 涨停数≥3或占比>5%：+0.25分
-    // 对于概念板块（324个）：
 
-    // 前10名（前3%）：0.3分 × 规模系数（约0.8）= 0.24分
-    // 11-30名（前9%）：0.2分 × 规模系数 = 0.16分
-    // 31-60名（前19%）：0.1分 × 规模系数 = 0.08分
-    // 涨停数≥2或占比>3%：+0.2分
-    // 涨停数≥5或占比>7%：+0.3分
 
     // 资金（-1~3）
     if (大单 > 0 && 资金 > 0) momentumScore += 0.3
-    else if (大单 > 0 || 资金 > 0) momentumScore += 0.2
+    else if (大单 > 0 && 资金 < 0) momentumScore += 0.2
     else if (大单 < 0 && 资金 < 0) momentumScore -= 0.1
 
 
     // Keep both root field and score field for compatibility
     obj['昨日动能分'] = momentumScore
-    obj.score['昨日动能分'] = momentumScore
-    obj.score['昨日动能等级'] =
-        momentumScore >= 0.75 ? '强启动' : momentumScore >= 0.6 ? '启动' : momentumScore >= 0.4 ? '弱动能' : '无动能'
-
-
-    /* ======================
-     *  三、强势日判断（核心新增）
-     * ====================== */
-
-    let strongHit = 0
-
-    if (type === 'block') {
-        if (涨幅 >= 2) strongHit++
-        if (排名 <= 20) strongHit++
-        if (大单 > 0 && 资金 > 0) strongHit++
-        if (涨停数 >= 1) strongHit++
-        obj.factor['昨日是否强势'] = strongHit >= 2
-    } else {
-        if (涨停数 >= 1) strongHit += 2 // 涨停权重更高
-        if (涨幅 >= 5) strongHit++
-        if (大单 > 0) strongHit++
-        if (热度排名 <= 30) strongHit++
-        obj.factor['昨日是否强势'] = strongHit >= 2
-    }
-
-    /* ======================
-     *  四、强势天数累计（基于历史缓存）
-     *  说明：
-     *  - 依赖 obj.strongDays 缓存
-     *  - 每天跑一次，向前累计
-     * ====================== */
-
-    const prevDays = obj.strongDays || 0
-    const todayStrong = obj.factor['昨日是否强势']
-
-    obj.strongDays = todayStrong ? prevDays + 1 : 0
-
-    /* ======================
-     *  五、阶段识别（block / stock 不同）
-     * ====================== */
-
-    let stage = '未知'
-
-    if (type === 'block') {
-        if (obj.strongDays <= 2) stage = '主升早段'
-        else if (obj.strongDays <= 4) stage = '主升中段'
-        else stage = '情绪高潮'
-    } else {
-        if (obj.strongDays <= 1) stage = '启动'
-        else if (obj.strongDays <= 2) stage = '主升'
-        else if (obj.strongDays === 3) stage = '接力'
-        else stage = '高位博弈'
-    }
-
-    obj.score['强势天数'] = obj.strongDays
-    obj.score['强势阶段'] = stage
-
-    /* ======================
-     *  六、阶段风控（直接给后续用）
-     * ====================== */
-
-    obj.score['阶段风险'] = stage === '情绪高潮' || stage === '高位博弈' ? '高' : stage === '接力' ? '中' : '低'
 
     return obj
 }
@@ -255,8 +173,8 @@ async function calcTodayAlignment(obj, ele, type, dates, blockItem = null) {
     let score = 0
 
     /* 顺长期 */
-    if (obj['趋势总分'] >= 0.6) score += 0.4
-    if (obj['趋势总分'] < 0.45) score -= 0.4
+    if (obj['趋势总分'] >= 0.65) score += 0.4
+    if (obj['趋势总分'] <= 0.50) score -= 0.4
 
     /* 延续昨日 */
     if (obj['昨日动能分'] >= 0.6 && 涨跌35 > 0) score += 0.4
@@ -265,6 +183,38 @@ async function calcTodayAlignment(obj, ele, type, dates, blockItem = null) {
     /* 资金确认 */
     if (大单35 > 0) score += 0.2
     if (大单35 < 0) score -= 0.2
+
+    /* 4. 趋势动量评分（新增，作为配合分的内在增强） */
+    let trendScore = 0
+    // 1. 09:35综合趋势方向（权重最高：±0.15）
+    if (obj['09:35']['趋势上']) {
+        trendScore += 0.15  // 三者同时向上，强势信号
+    } else if (obj['09:35']['趋势下']) {
+        trendScore -= 0.15  // 三者同时向下，弱势信号
+    }
+
+    // 2. 关键指标趋势（大单净额趋势：±0.10）
+    if (obj['09:35']['大单净额上趋势']) {
+        trendScore += 0.10  // 大单净额改善，积极信号
+    } else if (obj['09:35']['大单净额下趋势']) {
+        trendScore -= 0.10  // 大单净额恶化，消极信号
+    }
+    // 3. 涨跌幅趋势验证（±0.05）
+    if (obj['09:35']['涨跌幅上趋势']) {
+        trendScore += 0.05  // 价格短期向上
+    } else if (obj['09:35']['涨跌幅下趋势']) {
+        trendScore -= 0.05  // 价格短期向下
+    }
+    // 4. 趋势一致性奖励（09:33→09:35延续：±0.05）
+    if (obj['09:33']['趋势上'] && obj['09:35']['趋势上']) {
+        trendScore += 0.05  // 持续上升，动量强劲
+    } else if (obj['09:33']['趋势下'] && obj['09:35']['趋势下']) {
+        trendScore -= 0.05  // 持续下降，弱势延续
+    }
+    // 限制分数范围在-0.35到+0.35之间（避免过度影响）
+    trendScore = Math.max(-0.35, Math.min(0.35, trendScore))
+
+    score += trendScore
 
     // 根据类型处理特定逻辑
     if (type === 'block') {
@@ -279,22 +229,22 @@ async function calcTodayAlignment(obj, ele, type, dates, blockItem = null) {
     }
 
     obj['今日配合分'] = score
-    obj['今日配合评价'] = score >= 0.4 ? '强配合' : score >= 0.2 ? '配合' : score <= -0.3 ? '背离' : '中性'
 
-    const trend = Number(obj['趋势总分'] || 0) 
-    const momentum = Number(obj['昨日动能分'] ?? obj.score?.['昨日动能分'] ?? 0)
-    const alignment = Number(obj['今日配合分'] || 0) 
-    let Weight1,Weight2,Weight3;
-    if(type === 'block'){
+
+    const trend = Number(obj['趋势总分'] || 0)
+    const momentum = Number(obj['昨日动能分'] || 0)
+    const alignment = Number(obj['今日配合分'] || 0)
+    let Weight1, Weight2, Weight3;
+    if (type === 'block') {
         // 板块权重 趋势:0.45, 动能:0.35, 配合:0.20
-        Weight1=0.45,Weight2=0.35,Weight3=0.20
-        obj['总分'] = Number((trend*Weight1 + momentum*Weight2 + alignment*Weight3).toFixed(3))
+        Weight1 = 0.45, Weight2 = 0.35, Weight3 = 0.20
+        obj['总分'] = Number((trend * Weight1 + momentum * Weight2 + alignment * Weight3).toFixed(3))
     } else {
         // 股票权重 趋势:0.25, 动能:0.55, 配合:0.20
-        Weight1=0.25,Weight2=0.55,Weight3=0.20
-        obj['总分'] = Number((trend*Weight1 + momentum*Weight2 + alignment*Weight3).toFixed(3))
+        Weight1 = 0.25, Weight2 = 0.55, Weight3 = 0.20
+        obj['总分'] = Number((trend * Weight1 + momentum * Weight2 + alignment * Weight3).toFixed(3))
     }
-    
+
 
     return obj
 }
@@ -332,6 +282,14 @@ function handleRate(obj, ele, type, datas) {
         大单净额: num(ele[`${t}dde大单净额[${pd1}]`] || ele[`${t}分时dde大单净额[${pd1} 15:00]`]),
         收盘价: num(ele[`1日指数${t}[${pd1}]`]),
     }
+    // 计算并赋值：前5交易日、前10交易日区间涨跌幅（不复权）
+    // debugger
+    const idx = Dates.historicalDate.indexOf(pd1)
+    const start5 = Dates.historicalDate[idx - 4]
+    const start10 = Dates.historicalDate[idx - 9]
+    obj['5日区间涨跌幅'] = num(ele[`${t}区间涨跌幅:不复权[${start5}-${pd1}]`])
+    obj['10日区间涨跌幅'] = num(ele[`${t}区间涨跌幅:不复权[${start10}-${pd1}]`])
+
     obj['09:35']['涨跌幅上趋势'] = obj['09:35']['涨跌幅'] >= obj['09:33']['涨跌幅']
     obj['09:35']['大单净额上趋势'] = obj['09:35']['大单净额'] >= obj['09:33']['大单净额']
     obj['09:35']['资金流向上趋势'] = obj['09:35']['资金流向'] >= obj['09:33']['资金流向']
@@ -342,6 +300,25 @@ function handleRate(obj, ele, type, datas) {
     obj['09:33']['资金流向上趋势'] = obj['09:33']['资金流向'] >= obj['09:31']['资金流向']
     obj['09:33']['趋势上'] =
         obj['09:33']['涨跌幅上趋势'] && obj['09:33']['大单净额上趋势'] && obj['09:33']['资金流向上趋势']
+
+
+    // 09:35时间段 - 下趋势字段
+    obj['09:35']['涨跌幅下趋势'] = obj['09:35']['涨跌幅'] < obj['09:33']['涨跌幅']
+    obj['09:35']['大单净额下趋势'] = obj['09:35']['大单净额'] < obj['09:33']['大单净额']
+    obj['09:35']['资金流向下趋势'] = obj['09:35']['资金流向'] < obj['09:33']['资金流向']
+    obj['09:35']['趋势下'] =
+        obj['09:35']['涨跌幅下趋势'] &&
+        obj['09:35']['大单净额下趋势'] &&
+        obj['09:35']['资金流向下趋势']
+
+    // 09:33时间段 - 下趋势字段  
+    obj['09:33']['涨跌幅下趋势'] = obj['09:33']['涨跌幅'] < obj['09:31']['涨跌幅']
+    obj['09:33']['大单净额下趋势'] = obj['09:33']['大单净额'] < obj['09:31']['大单净额']
+    obj['09:33']['资金流向下趋势'] = obj['09:33']['资金流向'] < obj['09:31']['资金流向']
+    obj['09:33']['趋势下'] =
+        obj['09:33']['涨跌幅下趋势'] &&
+        obj['09:33']['大单净额下趋势'] &&
+        obj['09:33']['资金流向下趋势']
 
     obj['code'] = ele['code']
 
@@ -368,12 +345,13 @@ function handleRate(obj, ele, type, datas) {
 function getQuestions(type, datas, from, fromName) {
     // debugger
     const { td, tdcn, pd2, pd3, isToday } = datas
-    const text1 = '前1交易日(vol1和vol5和vol10和vol21和vol30和vol60)' 
+    const text1 = '前1交易日(vol1和vol5和vol10和vol21和vol30和vol60)'
     const text2 = '前1交易日(1日均线和M5和M10和M21和M30和M60)'        //备注：M20 ，THS平台不支持，所以统一改 21
+    const text3 = '前5交易日区间涨幅和前10交易日区间涨幅'
     let res = []
     if (type == 'block') {
         const textA = `当日涨跌幅资金流向大单净额收盘价;09:30涨跌幅;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅降序资金流向大单净额;`
-        const textB = `前1交易日涨跌幅降序;前1交易日资金流向大单净额;${text1};${text2};前1交易日涨停家数;`
+        const textB = `前1交易日涨跌幅降序;前1交易日资金流向大单净额;${text1};${text2};${text3};前1交易日涨停家数;`
         res = [`${textA}二级行业`, `${textB}二级行业`, `${textA}概念`, `${textB}概念`]
         if (!isToday) {
             res = res.map((el) => {
@@ -381,6 +359,8 @@ function getQuestions(type, datas, from, fromName) {
                     .replaceAll('当日', tdcn)
                     .replaceAll('09:', tdcn + '09:')
                     .replaceAll('前1交易日', td + '前1交易日')
+                    .replaceAll('前5交易日', td + '前5交易日')
+                    .replaceAll('前10交易日', td + '前10交易日')
                     .replaceAll('流通市值', tdcn + '流通市值')
             })
         }
@@ -421,47 +401,4 @@ function getQuestions(type, datas, from, fromName) {
     return res
 }
 
-function calcBlockConcentration(blockObj, stockList, pd1) {
-    blockObj.factor = blockObj.factor || {}
-    blockObj.score = blockObj.score || {}
 
-    // 获取昨日涨幅 ≥3%的强势股票
-    const strongStocks = stockList.filter((s) => (s[pd1]?.涨跌幅 || 0) >= 0.03)
-    const strongCount = strongStocks.length
-
-    // 获取昨日涨停股票
-    const涨停Stocks = stockList.filter((s) => s['昨日涨停'] === true)
-    const涨停Count = 涨停Stocks.length
-
-    const totalStocks = stockList.length
-
-    // 样本不足或者没有涨停
-    if (totalStocks < 3 || 涨停Count === 0) {
-        blockObj.factor['集中度'] = 0
-        blockObj.score['集中度等级'] = '样本不足或无涨停'
-        return blockObj
-    }
-
-    // α:比例权重，β:绝对数权重
-    const α = 0.7
-    const β = 0.3
-
-    // 防止除零
-    const baseStrongCount = Math.max(strongCount, 1)
-
-    // 统一集中度公式
-    const concentration = α * (涨停Count / baseStrongCount) + β * Math.log(1 + 涨停Count)
-
-    blockObj.factor['集中度'] = Number(concentration.toFixed(3))
-
-    // 集中度等级（可根据历史数据微调阈值）
-    if (concentration >= 1.0) {
-        blockObj.score['集中度等级'] = '高度集中'
-    } else if (concentration >= 0.5) {
-        blockObj.score['集中度等级'] = '中度集中'
-    } else {
-        blockObj.score['集中度等级'] = '分散'
-    }
-
-    return blockObj
-}

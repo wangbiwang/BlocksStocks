@@ -277,16 +277,16 @@
                                 <template #default="{ row }">
                                     <div class="metrics metrics-score">
                                         <div class="metric">
-                                            <span class="metric-label">1</span>
+                                            <span class="metric-label">3</span>
                                             <span class="metric-value" :class="
-                                                        row['今日配合分'] > 0
+                                                        row['趋势总分'] > 0
                                                             ? 'red'
-                                                            : row['今日配合分'] < 0
+                                                            : row['趋势总分'] < 0
                                                               ? 'green'
                                                               : 'flat'
                                                     ">
-                                                {{ row['今日配合分'] !== undefined ? formatNumber(row['今日配合分'])
-                                                : '-' }}
+                                                {{ row['趋势总分'] !== undefined ? formatNumber(row['趋势总分']) :
+                                                '-' }}
                                             </span>
                                         </div>
                                         <div class="metric">
@@ -304,16 +304,16 @@
                                             </span>
                                         </div>
                                         <div class="metric">
-                                            <span class="metric-label">3</span>
+                                            <span class="metric-label">1</span>
                                             <span class="metric-value" :class="
-                                                        row['趋势总分'] > 0
+                                                        row['今日配合分'] > 0
                                                             ? 'red'
-                                                            : row['趋势总分'] < 0
+                                                            : row['今日配合分'] < 0
                                                               ? 'green'
                                                               : 'flat'
                                                     ">
-                                                {{ row['趋势总分'] !== undefined ? formatNumber(row['趋势总分']) :
-                                                '-' }}
+                                                {{ row['今日配合分'] !== undefined ? formatNumber(row['今日配合分'])
+                                                : '-' }}
                                             </span>
                                         </div>
                                         <div class="metric">

@@ -156,14 +156,16 @@ const Blocks = reactive({
                     }
                     const res = await axios(hexin_vJsRequests('zhishu', questions[i]))
                     const data = res?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas
+                    const count = res?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.meta.extra.row_count
                     console.log('Block Data Fetched:', data)
 
                     if (Array.isArray(data) && data.length >= expected) {
-                        results[i] = data
+                        results[i] = data.map(el => el.row_count = count) //设置总数
                         Blocks.requestStatus[i].status = 'success'
                         Blocks.requestStatus[i].message = `Success (${data.length})`
                         success = true
                     } else {
+                        console.log(res?.data?.data?.answer[0].txt[0].content.components[0].data.meta.extra.iwc_column_info)
                         throw new Error('Invalid Length')
                     }
                 } catch (e) {
@@ -189,6 +191,9 @@ const Blocks = reactive({
         }
 
         if (results.filter(Boolean).length === questions.length) {
+            results[2] = results[2].map(ele => ({ ...ele, 今日涨跌幅排名: ele['今日涨跌幅排名'] }))
+            results[3] = results[3].map(ele => ({ ...ele, 昨日涨跌幅排名: ele['昨日涨跌幅排名'] }))
+
             cache[tdcn] = results
             if (!isToday) await catcheSetFunction('Blocks', cache)
 
