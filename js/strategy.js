@@ -14,6 +14,9 @@ calcTodayAlignment 中的stock数据，获取今日截至到09：35分时选中�
 最终获取的Stock数据，有可能有calcLongTrend 和 calcYesterdayMomentum 板块数据，却缺失calcTodayAlignment 板块数据，也有可能反过来。
 **/
 
+// 规则原则： 宁可少进，不可错进；一日游宁可放过，不可误判为主线。
+
+// 趋势是否成立？（calcLongTrend）不成立 → 结束
 function calcLongTrend(
     obj,
     ele,
@@ -96,7 +99,7 @@ function calcLongTrend(
         (Vw.v05 + Vw.v10 + Vw.v21 + Vw.v30 + Vw.v60)
 
     // -------- 计算突破潜力分 --------
-    const 收盘价 = obj[pd1]?.收盘价 || 0;
+    const 收盘价 = obj[pd1]?.收盘价 || obj.M01;   //收盘价取收盘价，没有则取M1
     const 区间最高价 = obj['60日区间最高价'] || 0;
     const 区间最低价 = obj['60日区间最低价'] || 0;
 
@@ -139,7 +142,7 @@ function calcLongTrend(
 
     return obj
 }
-
+// 是否值得优先关注？（calcYesterdayMomentum）决定排序，不决定生死
 function calcYesterdayMomentum(obj, ele, type, dates) {
     const num = (e) => (e ? Number(Number(e).toFixed(3)) : 0)
     const { pd1 } = dates
@@ -199,7 +202,7 @@ function calcYesterdayMomentum(obj, ele, type, dates) {
 
     return obj
 }
-
+// 今天是否被否定？（calcTodayAlignment）否定 → 暂停 / 降级
 async function calcTodayAlignment(obj, ele, type, dates, blockItem = null) {
     const 涨跌35 = obj['09:35']?.涨跌幅 || 0
     const 大单35 = obj['09:35']?.大单净额 || 0
