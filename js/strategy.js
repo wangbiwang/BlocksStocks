@@ -155,12 +155,11 @@ function calcYesterdayMomentum(obj, ele, type, dates) {
     let 热度排名 = 9999
 
     if (type === 'block') {
-        涨幅 = obj[pd1]?.涨跌幅
-            obj['3日平均成交额'] = num(ele[`${t}3日平均成交额:前复权[${td}]`])
-            obj['5日平均成交额'] = num(ele[`${t}5日平均成交额:前复权[${td}]`])
-            obj['10日平均成交额'] = num(ele[`${t}10日平均成交额:前复权[${td}]`])
-            obj['20日平均成交额'] = num(ele[`${t}20日平均成交额:前复权[${td}]`])
-        // calcBlockConcentration(blockItem, stockListForThisBlock, dates.pd1)
+        涨幅 = obj[pd1].涨跌幅
+        大单 = obj[pd1].大单净额
+        资金 = obj[pd1].资金流向
+        排名 = obj['昨日涨跌幅排名']
+        涨停数 = obj['昨日涨停数']
     } else {
         涨幅 = obj[pd1]?.涨跌幅
         大单 = obj[pd1]?.大单净额
