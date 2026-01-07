@@ -272,60 +272,33 @@
                                 </template>
                             </el-table-column>
 
-                            <el-table-column label="Score" min-width="100" align="left" sortable sort-by="总分"
-                                :sort-orders="['descending', null]">
+                            <el-table-column label="Score" min-width="100" align="left">
                                 <template #default="{ row }">
                                     <div class="metrics metrics-score">
                                         <div class="metric">
                                             <span class="metric-label">3</span>
-                                            <span class="metric-value" :class="
-                                                        row['趋势总分'] > 0
-                                                            ? 'red'
-                                                            : row['趋势总分'] < 0
-                                                              ? 'green'
-                                                              : 'flat'
-                                                    ">
-                                                {{ row['趋势总分'] !== undefined ? formatNumber(row['趋势总分']) :
-                                                '-' }}
+                                            <span class="metric-value" :class=" row['_trendQualified'] ?'green':'red' ">
+                                                {{ row['_trendCore'] }}
                                             </span>
                                         </div>
                                         <div class="metric">
                                             <span class="metric-label">2</span>
-                                            <span class="metric-value" :class="
-                                                        (row['昨日动能分'] ?? row.score?.['昨日动能分']) > 0
-                                                            ? 'red'
-                                                            : (row['昨日动能分'] ?? row.score?.['昨日动能分']) < 0
-                                                              ? 'green'
-                                                              : 'flat'
-                                                    ">
-                                                {{ row['昨日动能分'] !== undefined ? formatNumber(row['昨日动能分'])
-                                                : row.score && row.score['昨日动能分'] !== undefined ?
-                                                formatNumber(row.score['昨日动能分']) : '-' }}
+                                            <span class="metric-value"
+                                                :class=" row['_yesterdayActive'] ?'green':'red' ">
+                                                {{ row['_yesterdayActiveCore'] }}
                                             </span>
                                         </div>
                                         <div class="metric">
                                             <span class="metric-label">1</span>
-                                            <span class="metric-value" :class="
-                                                        row['今日配合分'] > 0
-                                                            ? 'red'
-                                                            : row['今日配合分'] < 0
-                                                              ? 'green'
-                                                              : 'flat'
-                                                    ">
-                                                {{ row['今日配合分'] !== undefined ? formatNumber(row['今日配合分'])
-                                                : '-' }}
+                                            <span class="metric-value" :class=" !row['_todayVeto'] ?'green':'red' ">
+                                                {{ row['_todayVetoCore'] }}
                                             </span>
                                         </div>
                                         <div class="metric">
                                             <span class="metric-label">4</span>
-                                            <span class="metric-value" :class="
-                                                        row['总分'] > 0
-                                                            ? 'red'
-                                                            : row['总分'] < 0
-                                                              ? 'green'
-                                                              : 'flat'
-                                                    " @click="()=>{console.log('Total score clicked:', row);}">
-                                                {{ row['总分'] !== undefined ? formatNumber(row['总分']) : '-' }}
+                                            <span class="metric-value"
+                                                @click="()=>{console.log('Total score clicked:', row);}">
+                                                {{ row['_blockStrength']}}
                                             </span>
                                         </div>
                                     </div>

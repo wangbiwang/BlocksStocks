@@ -389,7 +389,7 @@ async function handleBlocksData(res) {
     const process = (arr1, arr2) => {
         // Use Map for O(1) lookups, avoiding nested loops that cause O(n^2)
         const map2 = new Map(arr2.map((i) => [i.code, i]))
-        return arr1
+        let arr = arr1
             .filter((i) => map2.has(i.code))
             .map((ele) => {
                 const merged = { ...ele, ...map2.get(ele.code) }
@@ -400,11 +400,12 @@ async function handleBlocksData(res) {
 
                 // Strategy calculation consolidation
                 handleRate(obj, merged, 'block', Dates.shareDate)
-                calcLongTrend(obj, merged, 'block', Dates.shareDate)
+                calcLongTrend(obj, Dates.shareDate)
                 calcYesterdayMomentum(obj, merged, 'block', Dates.shareDate)
                 calcTodayAlignment(obj, merged, 'block', Dates.shareDate)
                 return obj
             })
+        return selectStrongBlocks(arr, maxCount = 20)
     }
     Blocks.Data[0].filters = process(res[0], res[1])
     Blocks.Data[1].filters = process(res[2], res[3])
@@ -420,7 +421,7 @@ async function handleStocksData(res, blockItem) {
         const merged = maps.reduce((acc, m) => ({ ...acc, ...(m.get(ele.code) || {}) }), { ...ele })
         const obj = {}
         handleRate(obj, merged, 'stock', Dates.shareDate)
-        calcLongTrend(obj, merged, 'stock', Dates.shareDate)
+        calcLongTrend(obj, Dates.shareDate)
         calcYesterdayMomentum(obj, merged, 'stock', Dates.shareDate)
         calcTodayAlignment(obj, merged, 'stock', Dates.shareDate, blockItem)
         return obj

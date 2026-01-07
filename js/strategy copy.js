@@ -17,13 +17,42 @@ calcTodayAlignment 中的stock数据，获取今日截至到09：35分时选中�
 // 规则原则： 宁可少进，不可错进；一日游宁可放过，不可误判为主线。
 
 // 趋势是否成立？（calcLongTrend）不成立 → 结束
-function calcLongTrend(obj, dates) {
+function calcLongTrend(
+    obj,
+    ele,
+    type,
+    dates,
+    Mw = { M05: 1.0, M10: 1.2, M21: 1.5, M30: 2.0, M60: 3.0 },
+    Vw = { v05: 1.0, v10: 1.1, v21: 1.3, v30: 1.6, v60: 2.0 },
+    Mfactor = 0.55,
+    Vfactor = 0.45
+) {
     const { pd1 } = dates
-    // -------- Sigmoid 函数（连续化趋势力度） --------
-    const sigmoid = (x) => 1 / (1 + Math.exp(-x))
+    const num = (e) => (e ? Number(Number(e).toFixed(3)) : 0)
+    const t = type === 'block' ? '指数@' : ''
+
+    // -------- 读取价格均线 --------
+    obj.M01 = num(ele[`1日${t}均线[${pd1}]`])
+    obj.M05 = num(ele[`5日${t}均线[${pd1}]`])
+    obj.M10 = num(ele[`10日${t}均线[${pd1}]`])
+    obj.M21 = num(ele[`21日${t}均线[${pd1}]`])
+    obj.M30 = num(ele[`30日${t}均线[${pd1}]`])
+    obj.M60 = num(ele[`60日${t}均线[${pd1}]`])
+
+    // -------- 读取量能均线 --------
+    obj.v01 = num(ele[`1日${t}vol[${pd1}]`])
+    obj.v05 = num(ele[`5日${t}vol[${pd1}]`])
+    obj.v10 = num(ele[`10日${t}vol[${pd1}]`])
+    obj.v21 = num(ele[`21日${t}vol[${pd1}]`])
+    obj.v30 = num(ele[`30日${t}vol[${pd1}]`])
+    obj.v60 = num(ele[`60日${t}vol[${pd1}]`])
+
     // ==== 防止 M1 或 v1 为 0 ====
     const M1 = obj.M01 > 0 ? obj.M01 : 1
     const v1 = obj.v01 > 0 ? obj.v01 : 1
+
+    // -------- Sigmoid 函数（连续化趋势力度） --------
+    const sigmoid = (x) => 1 / (1 + Math.exp(-x))
 
     // -------- 计算价格趋势力度（连续）--------
     // 趋势力度 = M_long 与 M1 的比例差
@@ -31,11 +60,21 @@ function calcLongTrend(obj, dates) {
         let diff = (M_long - M1) / M1 // 趋势斜率
         return sigmoid(-diff * 8) // K=8 可自行调节
     }
+
     obj.M05力度 = priceStrength(obj.M05)
     obj.M10力度 = priceStrength(obj.M10)
     obj.M21力度 = priceStrength(obj.M21)
     obj.M30力度 = priceStrength(obj.M30)
     obj.M60力度 = priceStrength(obj.M60)
+
+    // -------- 加权价格趋势分 --------
+    obj['趋势_M分'] =
+        (obj.M05力度 * Mw.M05 +
+            obj.M10力度 * Mw.M10 +
+            obj.M21力度 * Mw.M21 +
+            obj.M30力度 * Mw.M30 +
+            obj.M60力度 * Mw.M60) /
+        (Mw.M05 + Mw.M10 + Mw.M21 + Mw.M30 + Mw.M60)
 
     // -------- 计算量能趋势力度（连续）--------
     const volumeStrength = (vLong) => {
@@ -44,142 +83,213 @@ function calcLongTrend(obj, dates) {
         return sigmoid((ratio - 1) * 6) // K=6，可调节
     }
 
-    obj.V05力度 = volumeStrength(obj.v05)
-    obj.V10力度 = volumeStrength(obj.v10)
-    obj.V21力度 = volumeStrength(obj.v21)
-    obj.V30力度 = volumeStrength(obj.v30)
-    obj.V60力度 = volumeStrength(obj.v60)
+    obj.v05力度 = volumeStrength(obj.v05)
+    obj.v10力度 = volumeStrength(obj.v10)
+    obj.v21力度 = volumeStrength(obj.v21)
+    obj.v30力度 = volumeStrength(obj.v30)
+    obj.v60力度 = volumeStrength(obj.v60)
 
-    // ===== 均线力度 =====
-    const m21 = obj.M21力度 ?? 0
-    const m30 = obj.M30力度 ?? 0
-    const m60 = obj.M60力度 ?? 0
-    // ===== 1. 趋势_M分（结构是否成立,中期 + 长期）=====
-    const trendM = 0.40 * m60 + 0.35 * m30 + 0.25 * m21
-    obj['趋势_M分'] = trendM
-    // ===== 2. 趋势_V分（是否有真实参与,只用中长期量）=====
-    const v21 = obj.V21力度 ?? 0
-    const v30 = obj.V30力度 ?? 0
-    const v60 = obj.V60力度 ?? 0
-    const trendV = 0.60 * ((v21 + v30) / 2) + 0.40 * v60
-    obj['趋势_V分'] = trendV
+    // -------- 加权量能趋势分 --------
+    obj['趋势_V分'] =
+        (obj.v05力度 * Vw.v05 +
+            obj.v10力度 * Vw.v10 +
+            obj.v21力度 * Vw.v21 +
+            obj.v30力度 * Vw.v30 +
+            obj.v60力度 * Vw.v60) /
+        (Vw.v05 + Vw.v10 + Vw.v21 + Vw.v30 + Vw.v60)
 
-    // -------- 计算突破潜力分--------
-    const calcBreakoutPotential = (price, low60, high60) => {
-        if (high60 <= low60) return 0.5
-        const pos = (price - low60) / (high60 - low60)
-        return Math.max(0, Math.min(1, pos))// 安全裁剪
+    // -------- 计算突破潜力分 --------
+    const 收盘价 = obj[pd1]?.收盘价 || obj.M01;   //收盘价取收盘价，没有则取M1
+    const 区间最高价 = obj['60日区间最高价'] || 0;
+    const 区间最低价 = obj['60日区间最低价'] || 0;
+
+    if (收盘价 > 0 && 区间最高价 > 区间最低价 && 区间最低价 > 0) {
+        // 计算价格相对于60日区间的位置
+        const 相对位置 = (收盘价 - 区间最低价) / (区间最高价 - 区间最低价);
+
+        // 计算突破潜力：接近区间高点且有上涨趋势的股票得分更高
+        let 突破潜力分 = 0;
+
+        // 价格位置因子（接近高点得高分）
+        if (相对位置 > 0.9) 突破潜力分 += 0.4;
+        else if (相对位置 > 0.8) 突破潜力分 += 0.3;
+        else if (相对位置 > 0.7) 突破潜力分 += 0.2;
+        else if (相对位置 > 0.6) 突破潜力分 += 0.1;
+
+        // 趋势因子（60日均线上行得高分）
+        if (obj.M60力度 > 0.7) 突破潜力分 += 0.3;
+        else if (obj.M60力度 > 0.6) 突破潜力分 += 0.2;
+        else if (obj.M60力度 > 0.5) 突破潜力分 += 0.1;
+
+        // 量能因子（量能放大得高分）
+        if (obj.v60力度 > 0.7) 突破潜力分 += 0.3;
+        else if (obj.v60力度 > 0.6) 突破潜力分 += 0.2;
+        else if (obj.v60力度 > 0.5) 突破潜力分 += 0.1;
+
+        // 限制在0-1范围内
+        obj['突破潜力分'] = Math.max(0, Math.min(1, 突破潜力分));
+    } else {
+        obj['突破潜力分'] = 0;
     }
-    // debugger
-    obj['突破潜力分'] = calcBreakoutPotential(obj[pd1].收盘价, obj['60日区间最低价'], obj['60日区间最高价'])
 
-    // ===== 3. 突破潜力分（只用于位置标签）=====
-    const breakout = obj['突破潜力分'] ?? 0
-    obj['突破潜力分'] = breakout
-
-    // ===== 4. 趋势是否成立（硬门槛）=====
-    obj._trendQualified = trendM >= 0.50 && trendV >= 0.45
-    if (obj['突破潜力分'] >= 0.95) obj._trendQualified = false
-    if (!obj.M60 || !obj.v60) obj._trendQualified = false // 防止数据缺失误判
-
-    // ===== 5. 趋势位置标签 =====
-    obj._trendPosition =
-        breakout >= 0.85 ? 'crowded' :
-            breakout <= 0.40 ? 'early' :
-                'neutral'
-
-    // ===== 6. Block 主线核心趋势强度（用于排序）=====
-    obj._trendCore = 0.4 * m60 + 0.35 * m30 + 0.25 * m21
-    obj._trendCore = Number(obj._trendCore.toFixed(4))
+    // -------- 最终趋势总分（0–1），融合突破潜力分 --------
+    const Bfactor = 0.2; // 突破潜力分的权重
+    const totalWeight = Mfactor + Vfactor + Bfactor;
+    const adjustedM = Mfactor / totalWeight;
+    const adjustedV = Vfactor / totalWeight;
+    const adjustedB = Bfactor / totalWeight;
+    obj['趋势总分'] = obj['趋势_M分'] * adjustedM + obj['趋势_V分'] * adjustedV + obj['突破潜力分'] * adjustedB;
 
     return obj
 }
 // 是否值得优先关注？（calcYesterdayMomentum）决定排序，不决定生死
 function calcYesterdayMomentum(obj, ele, type, dates) {
+    const num = (e) => (e ? Number(Number(e).toFixed(3)) : 0)
     const { pd1 } = dates
 
-    // ===== 1. 昨日涨幅（归一化到 0~1）=====
-    const pct = obj[pd1]['涨跌幅'] ?? 0
-    const priceScore = Math.max(-5, Math.min(5, pct)) / 5   // -1 ~ 1
+    /* ======================
+     *  一、读取昨日基础数据
+     * ====================== */
+    let 涨幅 = 0
+    let 大单 = 0
+    let 资金 = 0
+    let 排名 = 100
+    let 涨停数 = 0
+    let 热度排名 = 9999
 
-    // ===== 2. 情绪行为（涨停 - 跌停）=====
-    const up = obj['昨日涨停数'] ?? 0
-    const down = obj['昨日跌停数'] ?? 0
-    const emotionScore = Math.max(-3, Math.min(3, up - down)) / 3
+    if (type === 'block') {
+        涨幅 = obj[pd1].涨跌幅
+        大单 = obj[pd1].大单净额
+        资金 = obj[pd1].资金流向
+        排名 = obj['昨日涨跌幅排名']
+        涨停数 = obj['昨日涨停数']
+    } else {
+        涨幅 = obj[pd1]?.涨跌幅
+        大单 = obj[pd1]?.大单净额
+        资金 = obj[pd1]?.资金流向
+        热度排名 = ele['昨热度排名'] || obj['昨热度排名']
+        涨停数 = 涨幅 >= 9.8 ? 1 : 0
+    }
 
-    // ===== 3. 资金确认（归一化）=====
-    const fund = obj[pd1].大单净额 ?? 0
-    const cap = obj[pd1].流通市值 ?? 1
-    const fundScore = Math.max(-0.03, Math.min(0.03, fund / cap)) / 0.03
 
-    // ===== 4. 昨日动能分（只用于确认）=====
-    let momentum = 0.50 * priceScore + 0.30 * emotionScore + 0.20 * fundScore
-    momentum = Number(momentum.toFixed(4))
+    let momentumScore = 0
+    // 涨幅（0~4）
+    if (涨幅 >= 4) momentumScore += 0.4
+    else if (涨幅 >= 2) momentumScore += 0.3
+    else if (涨幅 >= 1) momentumScore += 0.2
+    else if (涨幅 >= 0.5) momentumScore += 0.1
 
-    obj['_yesterdayActiveCore'] = momentum
+    // 强度（0~3）
+    if (type === 'block') {
+        if (涨停数 >= 1) momentumScore += 0.3
 
-    // ===== 5. 是否仍被市场参与 =====
-    obj._yesterdayActive = momentum >= 0
-    if (!(obj[pd1]['涨跌幅'] > 1 && obj[pd1].大单净额 > 0)) obj._yesterdayActive = false //加强判断：必须涨跌幅和大单净额都为正，才算被市场参与
+    } else {
+        if (涨停数 >= 1) momentumScore += 3
+        else if (热度排名 <= 20) momentumScore += 0.2
+        else if (热度排名 <= 40) momentumScore += 0.1
+    }
+
+
+
+    // 资金（-1~3）
+    if (大单 > 0 && 资金 > 0) momentumScore += 0.3
+    else if (大单 > 0 && 资金 < 0) momentumScore += 0.2
+    else if (大单 < 0 && 资金 < 0) momentumScore -= 0.1
+
+
+    // Keep both root field and score field for compatibility
+    obj['昨日动能分'] = momentumScore
 
     return obj
 }
 // 今天是否被否定？（calcTodayAlignment）否定 → 暂停 / 降级
 async function calcTodayAlignment(obj, ele, type, dates, blockItem = null) {
-    const { pd1 } = dates
-    const t = obj['09:35'] || {}
-    // ===== Block 否决条件（非常严格）=====
-    obj._todayVeto = false
-    if (t['涨跌幅'] < 1 && t['大单净额'] < 0 && t['资金流向'] < 0) obj._todayVeto = true //加强判断：必须涨跌幅和大单净额和资金流向都为负，才算被今日否决
-    if (obj['09:35']['大单净额下趋势'] && obj['09:35']['资金流向下趋势']) obj._todayVeto = true
-    if (t['涨跌幅'] < 0.5 || obj['09:33']['涨跌幅'] < 0) obj._todayVeto = true
+    const 涨跌35 = obj['09:35']?.涨跌幅 || 0
+    const 大单35 = obj['09:35']?.大单净额 || 0
 
-    const priceToday = t['涨跌幅'] ?? 0;
-    const priceYesterday = obj[pd1]['涨跌幅'] ?? 0;
-    const fundToday = t['资金流向'] ?? 0;
-    const bigToday = t['大单净额'] ?? 0;
-    const cap = obj[pd1].流通市值 ?? 1;
+    let score = 0
 
-    // 1. 涨跌幅维度（80%权重）
-    const priceScore = Math.max(-1, Math.min(1, priceToday / 3));
-    
-    // 2. 机构信号维度（15%权重）
-    const institutionalStrength = Math.sign(bigToday) * Math.min(1, Math.abs(bigToday) / cap * 10000);
-    const divergenceBonus = (Math.sign(bigToday) !== Math.sign(fundToday)) ? Math.sign(bigToday) * Math.min(0.3, Math.abs(bigToday) / (Math.abs(fundToday) + 1) * 0.5) : 0;
-    const institutionalScore = institutionalStrength + divergenceBonus;
-    
-    // 3. 资金流向维度（5%权重）
-    const fundScore = Math.max(-1, Math.min(1, fundToday / cap * 10000)) * 0.5; // 进一步衰减
+    /* 顺长期 */
+    const 趋势阈值高 = 0.70;  // 从0.65提高到0.70，因为趋势总分包含额外因子
+    const 趋势阈值低 = 0.45;  // 从0.50降低到0.45，提供更宽的中间区域
 
-    // 最终得分
-    obj._todayVetoCore = Math.max(-1, Math.min(1, 0.8 * priceScore + 0.15 * institutionalScore + 0.05 * fundScore));
-    obj._todayVetoCore = Number(obj._todayVetoCore.toFixed(4))
+    if (obj['趋势总分'] >= 趋势阈值高) score += 0.4
+    if (obj['趋势总分'] <= 趋势阈值低) score -= 0.4
+
+    /* 延续昨日 */
+    const 突破增强因子 = obj['突破潜力分'] > 0.7 ? 1.2 : 1.0;  // 高突破潜力时增强评分
+
+    if (obj['昨日动能分'] >= 0.6 && 涨跌35 > 0) score += 0.4 * 突破增强因子
+    if (obj['昨日动能分'] >= 0.6 && 涨跌35 < 0) score -= 0.4 * 突破增强因子
+
+    /* 资金确认 */
+    if (大单35 > 0) score += 0.2
+    if (大单35 < 0) score -= 0.2
+
+    /* 4. 趋势动量评分（新增，作为配合分的内在增强） */
+    let trendScore = 0
+    // 1. 09:35综合趋势方向（权重最高：±0.15）
+    if (obj['09:35']['趋势上']) {
+        trendScore += 0.15  // 三者同时向上，强势信号
+    } else if (obj['09:35']['趋势下']) {
+        trendScore -= 0.15  // 三者同时向下，弱势信号
+    }
+
+    // 2. 关键指标趋势（大单净额趋势：±0.10）
+    if (obj['09:35']['大单净额上趋势']) {
+        trendScore += 0.10  // 大单净额改善，积极信号
+    } else if (obj['09:35']['大单净额下趋势']) {
+        trendScore -= 0.10  // 大单净额恶化，消极信号
+    }
+    // 3. 涨跌幅趋势验证（±0.05）
+    if (obj['09:35']['涨跌幅上趋势']) {
+        trendScore += 0.05  // 价格短期向上
+    } else if (obj['09:35']['涨跌幅下趋势']) {
+        trendScore -= 0.05  // 价格短期向下
+    }
+    // 4. 趋势一致性奖励（09:33→09:35延续：±0.05）
+    if (obj['09:33']['趋势上'] && obj['09:35']['趋势上']) {
+        trendScore += 0.05  // 持续上升，动量强劲
+    } else if (obj['09:33']['趋势下'] && obj['09:35']['趋势下']) {
+        trendScore -= 0.05  // 持续下降，弱势延续
+    }
+    // 限制分数范围在-0.35到+0.35之间（避免过度影响）
+    trendScore = Math.max(-0.35, Math.min(0.35, trendScore))
+
+    score += trendScore
+
+    // 根据类型处理特定逻辑
+    if (type === 'block') {
+        // 板块类型暂无特殊处理
+    } else {
+        // stock类型，增加板块约束
+        if (blockItem) {
+            if (blockItem['09:35']?.涨跌幅 < 0 && 涨跌35 < 0) {
+                score -= 0.3
+            }
+        }
+    }
+
+    obj['今日配合分'] = score
+
+
+    const trend = Number(obj['趋势总分'] || 0)
+    const momentum = Number(obj['昨日动能分'] || 0)
+    const alignment = Number(obj['今日配合分'] || 0)
+    let Weight1, Weight2, Weight3;
+    if (type === 'block') {
+        // 板块权重：趋势50%（+5%）, 动能30%（-5%）, 配合20%
+        Weight1 = 0.50, Weight2 = 0.30, Weight3 = 0.20
+        obj['总分'] = Number((trend * Weight1 + momentum * Weight2 + alignment * Weight3).toFixed(3))
+    } else {
+        // 股票权重：趋势30%（+5%）, 动能50%（-5%）, 配合20%
+        Weight1 = 0.30, Weight2 = 0.50, Weight3 = 0.20
+        obj['总分'] = Number((trend * Weight1 + momentum * Weight2 + alignment * Weight3).toFixed(3))
+    }
+
+
     return obj
 }
-function selectStrongBlocks(blocks, maxCount = 8) {
-    // debugger
-    return blocks
-        // 1️⃣ 趋势不过，直接扔
-        .filter(b => b._trendQualified)
-        // 2️⃣ 昨日已被市场抛弃，扔
-        .filter(b => b._yesterdayActive)
-        // 3️⃣ 今日明确否决，扔（强趋势容错你可自己加）
-        .filter(b => !b._todayVeto)
-        // 4️⃣ 计算 Block 主线强度
-        .map(b => {
-            const participation = 0.05 * b['趋势_V分'] + 0.95 * Math.max(0, b._todayVetoCore ?? 0)
-            let strength = 0.3 * b._trendCore + 0.7 * participation
-            // 突破潜力惩罚（只在极端位置）
-            if (b['突破潜力分'] >= 0.90) strength *= 0.8
-            b._blockStrength = Number(strength.toFixed(3))
-            return b
-        })
-        // 5️⃣ 强排序
-        .sort((a, b) => b._blockStrength - a._blockStrength)
-        // 6️⃣ 只保留 Top-N
-        .slice(0, maxCount)
-}
-
 
 function handleRate(obj, ele, type, datas) {
     const num = (e) => (e ? Number(Number(e).toFixed(3)) : 0)
@@ -217,11 +327,11 @@ function handleRate(obj, ele, type, datas) {
     // 计算并赋值：前5交易日、前10交易日区间涨跌幅（不复权）
     // debugger
     const idx = Dates.historicalDate.indexOf(pd1)
-    // const start5 = Dates.historicalDate[idx - 4]
-    // const start10 = Dates.historicalDate[idx - 9]
+    const start5 = Dates.historicalDate[idx - 4]
+    const start10 = Dates.historicalDate[idx - 9]
     const start60 = Dates.historicalDate[Math.max(0, idx - 59)]
-    // obj['5日区间涨跌幅'] = num(ele[`${t}区间涨跌幅:不复权[${start5}-${pd1}]`])
-    // obj['10日区间涨跌幅'] = num(ele[`${t}区间涨跌幅:不复权[${start10}-${pd1}]`])
+    obj['5日区间涨跌幅'] = num(ele[`${t}区间涨跌幅:不复权[${start5}-${pd1}]`])
+    obj['10日区间涨跌幅'] = num(ele[`${t}区间涨跌幅:不复权[${start10}-${pd1}]`])
     obj['60日区间最高价'] = num(ele[`${t}区间最高价:不复权[${start60}-${pd1}]`])
     obj['60日区间最低价'] = num(ele[`${t}区间最低价:不复权[${start60}-${pd1}]`])
 
@@ -258,30 +368,11 @@ function handleRate(obj, ele, type, datas) {
     obj['code'] = ele['code']
     obj['昨日涨跌幅排名'] = ele['昨日涨跌幅排名']
     obj['今日涨跌幅排名'] = ele['今日涨跌幅排名']
-    // -------- 读取价格均线 --------
-    obj.M01 = num(ele[`1日${t}均线[${pd1}]`])
-    obj.M05 = num(ele[`5日${t}均线[${pd1}]`])
-    obj.M10 = num(ele[`10日${t}均线[${pd1}]`])
-    obj.M21 = num(ele[`21日${t}均线[${pd1}]`])
-    obj.M30 = num(ele[`30日${t}均线[${pd1}]`])
-    obj.M60 = num(ele[`60日${t}均线[${pd1}]`])
-
-    // -------- 读取量能均线 --------
-    obj.v01 = num(ele[`1日${t}vol[${pd1}]`])
-    obj.v05 = num(ele[`5日${t}vol[${pd1}]`])
-    obj.v10 = num(ele[`10日${t}vol[${pd1}]`])
-    obj.v21 = num(ele[`21日${t}vol[${pd1}]`])
-    obj.v30 = num(ele[`30日${t}vol[${pd1}]`])
-    obj.v60 = num(ele[`60日${t}vol[${pd1}]`])
 
     if (type === 'block') {
         obj['指数简称'] = ele['指数简称']
         obj['板块类别'] = ele['指数@所属同花顺行业级别'] ? '二级行业' : '概念'
         obj['昨日涨停数'] = ele[`指数@涨停家数[${pd1}]`] || 0
-        obj['昨日跌停数'] = ele[`指数@跌停家数[${pd1}]`] || 0
-        obj[pd1].收盘价 = obj.M01
-        obj[pd1].流通市值 = ele[`指数@流通市值[${pd1}]`]
-
     } else {
         obj['股票简称'] = ele['股票简称']
         obj['行业'] = ele['所属同花顺行业'] || ele['所属同花顺二级行业']
@@ -292,16 +383,22 @@ function handleRate(obj, ele, type, datas) {
         obj['股价'] = Number(ele[`收盘价:不复权[${td}]`] || ele[`最新价`])
     }
 }
-
+/* //处理查询问题相关
+    type: block|| stock
+    dates
+    from: '行业'||'概念' //type=stock存在该参数
+    fromName: '行业名称||概念名称' //type=stock存在该参数
+*/
 function getQuestions(type, datas, from, fromName) {
     // debugger
     const { td, tdcn, pd2, pd3, isToday } = datas
     const text1 = '前1交易日(vol1和vol5和vol10和vol21和vol30和vol60)'
     const text2 = '前1交易日(1日均线和M5和M10和M21和M30和M60)'        //备注：M20 ，THS平台不支持，所以统一改 21
+    const text3 = '前5交易日区间涨幅和前10交易日区间涨幅'
     let res = []
     if (type == 'block') {
         const textA = `当日涨跌幅资金流向大单净额收盘价;09:30涨跌幅;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅降序资金流向大单净额;前60交易日区间最高价;前60交易日区间最低价;`
-        const textB = `前1交易日涨跌幅降序;前1交易日资金流向大单净额;${text1};${text2};前1交易日涨停家数跌停家数;前1交易日流通市值`
+        const textB = `前1交易日涨跌幅降序;前1交易日资金流向大单净额;${text1};${text2};${text3};前1交易日涨停家数;`
         res = [`${textA}二级行业`, `${textB}二级行业`, `${textA}概念`, `${textB}概念`]
         if (!isToday) {
             res = res.map((el) => {
