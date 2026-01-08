@@ -2,26 +2,29 @@
 function calcYesterdayMomentum(obj, type, dates) {
     const { pd1 } = dates
     let result = false, resultScore = 0;
-
-    if (obj.昨日涨跌幅排名 <= 10 || obj[pd1].涨跌幅 >= 2) {
-        if (obj[pd1].大单净额 >= 0 && obj['昨日涨停数'] > 0) {
-            result = true
-            resultScore = 1
+    if (type === 'block') {
+        if (obj.昨日涨跌幅排名 <= 10 || obj[pd1].涨跌幅 >= 2) {
+            if (obj[pd1].大单净额 >= 0 && obj[pd1].大单净额 + obj[pd1].资金流向 > 0 && obj['昨日涨停数'] > 0) {
+                result = true
+                resultScore = 1
+            }
         }
+    } else {
 
     }
+
+
     obj._yesterdayActive = result
     obj._yesterdayActiveCore = Number(resultScore.toFixed(2))
     return obj
 }
 //趋势形态怎么样？
 function calcLongTrend(obj, type, dates) {
-    const { pd1 } = dates
     let result = false, resultScore = 0;
     let M1 = obj.M01, M5 = obj.M05, M10 = obj.M10, M21 = obj.M21, M30 = obj.M30, M60 = obj.M60;
     let V1 = obj.v01, V5 = obj.v05, V10 = obj.v10, V21 = obj.v21, V30 = obj.v30, V60 = obj.v60;
-    if (M1 >= M5 && M1 >= M10 && M1 >= M21 && M1 >= M30 && M1 >= M60) {
-        if (V1 >= V5 && V1 >= V10 && V1 >= V21 && V1 >= V30 && V1 >= V60) {
+    if (M1 >= M5 && M1 >= M10 && M1 >= M21 && (M30 ? M1 >= M30 : true) && (M60 ? M1 >= M60 : true)) {
+        if (V1 >= V5 && V1 >= V10 && V1 >= V21 && (V30 ? V1 >= V30 : true) && (V60 ? V1 >= V60 : true)) {
             result = true
             resultScore = 1
         }
@@ -33,7 +36,7 @@ function calcLongTrend(obj, type, dates) {
 //今天早上表现怎么样？
 async function calcTodayAlignment(obj, type, dates, blockItem = null) {
     // if (type == 'block') {
-    //     if (obj['指数简称'] == '旅游及酒店') {
+    //     if (obj['指数简称'] == '华为海思概念股') {
     //         debugger
     //     }
     // }
@@ -44,13 +47,19 @@ async function calcTodayAlignment(obj, type, dates, blockItem = null) {
         if (obj['09:35'].大单净额 >= 0 || obj['09:35'].资金流向 >= 0) {
             result = true
             resultScore = 1
-            resultScore += 0.1*(t.涨跌幅-1)
+            resultScore += 0.1 * (t.涨跌幅 - 1)
+            let bonus1 = Math.max(Math.min((obj['09:35'].大单净额 / obj[pd1].流通市值) * 10000, 1), -1) * 0.1
+            let bonus2 = Math.max(Math.min((obj['09:35'].资金流向 / obj[pd1].流通市值) * 10000, 0.8), -0.8) * 0.1
+            console.log(obj['指数简称'], bonus1, bonus2)
+            resultScore += bonus1
+            resultScore += bonus2
 
 
 
 
-            
- 
+
+
+
 
             if (obj['09:35']['涨跌幅下趋势']) resultScore += -0.1
             if (obj['09:35']['大单净额下趋势']) resultScore += -0.1
@@ -62,20 +71,19 @@ async function calcTodayAlignment(obj, type, dates, blockItem = null) {
     obj._todayVetoCore = Number(resultScore.toFixed(2))
     return obj
 }
-function selectStrongBlocks(blocks, maxCount = 8) {
-    // debugger
-    return blocks
+function selectStrong(Item, maxCount = 8) {
+    return Item
         .filter(b => b._yesterdayActive)
         .filter(b => b._trendQualified)
         .filter(b => b._todayVeto)
 
         .map(b => {
             let strength = b._trendCore + b._yesterdayActiveCore + b._todayVetoCore
-            b._blockStrength = Number(strength.toFixed(2))
+            b._Strength = Number(strength.toFixed(2))
             return b
         })
 
-        .sort((a, b) => b._blockStrength - a._blockStrength)
+        .sort((a, b) => b._Strength - a._Strength)
         .slice(0, maxCount)
 }
 
@@ -218,7 +226,6 @@ function getQuestions(type, datas, from, fromName) {
             `当日涨跌幅资金流向大单净额收盘价;09:25涨跌幅;前1交易日热度排名升序当日热度排名流通市值;前1交易日涨跌幅资金流向大单净额rsi12;前2交易日涨跌幅大单净额macd;前5交易日区间最高价;行业概念`,
             `前1交易日热度排名升序前40交易日区间最高价不复权;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅资金流向大单净额股价;前3交易日涨跌幅macd;前1交易日涨停价;行业概念`,
             `前1交易日热度排名升序;${text1};${text2};前1交易日区间最高价后2交易日涨跌幅;前1交易日收盘价macd;行业概念`,
-            `前1交易日热度排名升序;前5交易日的涨停次数;前15交易日的涨停次数;行业概念`, //原因1：2025-07-22 股票代码 002654 股票名称 华宏科技  前面连扳，小长期涨幅太高，接盘亏钱，所以不买入15天有超过3个涨停的股票！//原因2：2025-06-12 股票代码 003040 股票名称 楚 天 龙  前面连扳，近短期涨幅太高，接盘亏钱，所以也不买入5天有超过2个涨停的股票！
         ]
         if (!isToday) {
             res = res.map((el) => {

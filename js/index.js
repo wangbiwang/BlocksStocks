@@ -337,7 +337,7 @@ async function handleBlocksData(res) {
                 calcTodayAlignment(obj, 'block', Dates.shareDate)
                 return obj
             })
-        return selectStrongBlocks(arr, maxCount = 20)
+        return selectStrong(arr, maxCount = 20)
     }
     Blocks.Data[0].filters = process(res[0], res[1])
     Blocks.Data[1].filters = process(res[2], res[3])
