@@ -277,7 +277,8 @@
                                     <div class="metrics metrics-score">
                                         <div class="metric">
                                             <span class="metric-label">3</span>
-                                            <span class="metric-value" :class=" row['_trendQualified'] ?'green':'red' ">
+                                            <span class="metric-value" 
+                                            :class=" row['_trendQualified'] ?'green':'red' ">
                                                 {{ row['_trendCore'] }}
                                             </span>
                                         </div>
@@ -290,7 +291,8 @@
                                         </div>
                                         <div class="metric">
                                             <span class="metric-label">1</span>
-                                            <span class="metric-value" :class=" !row['_todayVeto'] ?'green':'red' ">
+                                            <span class="metric-value" 
+                                            :class=" !row['_todayVeto'] ?'green':'red' ">
                                                 {{ row['_todayVetoCore'] }}
                                             </span>
                                         </div>

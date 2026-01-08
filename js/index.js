@@ -33,11 +33,8 @@ const Dates = reactive({
                     // Market open status compensation
                     const mt = shData.qt?.market?.[0]?.split('|') || []
                     if (mt[2]?.includes('open')) fetchedArr.push(dayjs().format('YYYYMMDD'))
-
                     // Merge, deduplicate, sort
-                    FD.historicalDate = [...new Set([...(FD.historicalDate || []), ...fetchedArr])].sort(
-                        (a, b) => a - b
-                    )
+                    FD.historicalDate = [...new Set([...(FD.historicalDate || []), ...fetchedArr])].sort((a, b) => a - b)
                     await catcheSetFunction('Dates', FD)
                 }
             }
@@ -83,63 +80,6 @@ const Dates = reactive({
         }
     },
 })
-
-const BlockKeyArr = []
-const StockKeyArr = []
-function Edited_B(ele, key) {
-    BlockKeyArr.push(key)
-    return ele[key]
-}
-function Edited_S(ele, key) {
-    StockKeyArr.push(key)
-    return ele[key]
-}
-function validateDataArray(data, keyArr) {
-    if (!Array.isArray(data) || data.length === 0) return false
-    const keys = Array.from(new Set((keyArr || []).filter(Boolean)))
-
-    // If no keys to validate, fall back to simple non-empty check
-    if (keys.length === 0) return data.length > 0
-
-    // For each row, count how many keys are present and collect diagnostics
-    const requiredPerRow = Math.max(1, Math.min(3, Math.floor(keys.length * 0.25)))
-    let validRows = 0
-    const diagnostics = []
-    const presentCounts = Object.fromEntries(keys.map((k) => [k, 0]))
-
-    data.forEach((row, idx) => {
-        let cnt = 0
-        const missing = []
-        for (const k of keys) {
-            const ok = Object.prototype.hasOwnProperty.call(row, k) && row[k] !== undefined && row[k] !== null
-            if (ok) {
-                cnt++
-                presentCounts[k] = (presentCounts[k] || 0) + 1
-            } else {
-                missing.push(k)
-            }
-        }
-        if (cnt >= requiredPerRow) validRows++
-        else diagnostics.push({ index: idx, present: cnt, missing })
-    })
-
-    // Require at least 50% of rows (or 10 rows) to be valid
-    const threshold = Math.max(Math.floor(data.length * 0.5), Math.min(10, data.length))
-    const ok = validRows >= threshold
-
-    if (!ok) {
-        console.warn('validateDataArray: validation failed', { totalRows: data.length, validRows, threshold, requiredPerRow })
-        // show top 20 problematic rows
-        diagnostics.slice(0, 20).forEach((d) =>
-            console.warn(`Row ${d.index} - present:${d.present} missing:${d.missing.length}`, d.missing)
-        )
-        // show key presence summary
-        const keySummary = keys.map((k) => ({ key: k, present: presentCounts[k] || 0, pct: ((presentCounts[k] || 0) / data.length).toFixed(2) }))
-        console.warn('Key presence summary (key, presentCount, pct):', keySummary.filter(k => k.present < Math.max(1, Math.floor(data.length * 0.2))))
-    }
-
-    return ok
-}
 
 /** @description Block Module - Built-in retry logic */
 const Blocks = reactive({
@@ -217,8 +157,9 @@ const Blocks = reactive({
                     console.log('Block Data Fetched:', data)
 
                     if (Array.isArray(data) && (data.length >= expected || validateDataArray(data, BlockKeyArr))) {
-                        results[i] = data.map((el) => {
-                            el.row_count = count
+                        results[i] = data.map((el, idx) => {
+                            el.count = count
+                            el.rank = idx + 1
                             return el
                         }) // 设置总数并返回对象
                         Blocks.requestStatus[i].status = 'success'
@@ -251,12 +192,8 @@ const Blocks = reactive({
         }
 
         if (results.filter(Boolean).length === questions.length) {
-            results[2] = results[2].map(ele => ({ ...ele, 今日涨跌幅排名: ele['今日涨跌幅排名'] }))
-            results[3] = results[3].map(ele => ({ ...ele, 昨日涨跌幅排名: ele['昨日涨跌幅排名'] }))
-
             cache[tdcn] = results
             if (!isToday) await catcheSetFunction('Blocks', cache)
-
             handleBlocksData(results)
         }
         Blocks.loading = false
@@ -310,13 +247,8 @@ const Stocks = reactive({
     requestStatus: [],
 
     init: async (catcheGetFunction, catcheSetFunction, dates, blockItem, blockType, blockName) => {
-        const { td, tdcn, isToday } = dates
-        const idx = Dates.historicalDate.indexOf(td)
-        // Get previous dates
-        const p2 = Dates.historicalDate[idx - 2] || null
-        const p3 = Dates.historicalDate[idx - 3] || null
-
-        const questions = getQuestions('stock', date, p2, p3, blockType, blockName)
+        const { tdcn, isToday } = dates
+        const questions = getQuestions('block', dates)
         const cacheKey = `${tdcn}-${blockType}-${blockName}`
         const cache = (await catcheGetFunction('Stocks')) || {}
 
@@ -388,7 +320,7 @@ const Stocks = reactive({
 async function handleBlocksData(res) {
     const process = (arr1, arr2) => {
         // Use Map for O(1) lookups, avoiding nested loops that cause O(n^2)
-        const map2 = new Map(arr2.map((i) => [i.code, i]))
+        const map2 = new Map(arr2.map(el => { el.qRank = el.rank; delete el.rank; return el }).map((i) => [i.code, i]))
         let arr = arr1
             .filter((i) => map2.has(i.code))
             .map((ele) => {
@@ -400,9 +332,9 @@ async function handleBlocksData(res) {
 
                 // Strategy calculation consolidation
                 handleRate(obj, merged, 'block', Dates.shareDate)
-                calcLongTrend(obj, Dates.shareDate)
-                calcYesterdayMomentum(obj, merged, 'block', Dates.shareDate)
-                calcTodayAlignment(obj, merged, 'block', Dates.shareDate)
+                calcYesterdayMomentum(obj, 'block', Dates.shareDate)
+                calcLongTrend(obj, 'block', Dates.shareDate)
+                calcTodayAlignment(obj, 'block', Dates.shareDate)
                 return obj
             })
         return selectStrongBlocks(arr, maxCount = 20)
@@ -421,8 +353,8 @@ async function handleStocksData(res, blockItem) {
         const merged = maps.reduce((acc, m) => ({ ...acc, ...(m.get(ele.code) || {}) }), { ...ele })
         const obj = {}
         handleRate(obj, merged, 'stock', Dates.shareDate)
-        calcLongTrend(obj, Dates.shareDate)
-        calcYesterdayMomentum(obj, merged, 'stock', Dates.shareDate)
+        calcYesterdayMomentum(obj, 'stock', Dates.shareDate, blockItem)
+        calcLongTrend(obj, 'stock', Dates.shareDate, blockItem)
         calcTodayAlignment(obj, merged, 'stock', Dates.shareDate, blockItem)
         return obj
     })
