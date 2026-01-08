@@ -47,7 +47,9 @@
                             <el-table-column type="index" width="10" align="center"></el-table-column>
                             <el-table-column :label="(item.name === 'Blocks-HY' ? 'HY' : 'GN' )+'Name'" min-width="60">
                                 <template #default="{ row }">
-                                    <span class="cell-name">{{ row['指数简称'] || '-' }}</span>
+                                    <span class="cell-name"
+                                        @click="CheckedBlock(item.name === 'Blocks-HY' ? '行业' : '概念', row['指数简称'], row)">{{
+                                        row['指数简称'] || '-' }}</span>
                                 </template>
                             </el-table-column>
 
@@ -277,8 +279,7 @@
                                     <div class="metrics metrics-score">
                                         <div class="metric">
                                             <span class="metric-label">3</span>
-                                            <span class="metric-value" 
-                                            :class=" row['_trendQualified'] ?'green':'red' ">
+                                            <span class="metric-value" :class=" row['_trendQualified'] ?'green':'red' ">
                                                 {{ row['_trendCore'] }}
                                             </span>
                                         </div>
@@ -291,8 +292,7 @@
                                         </div>
                                         <div class="metric">
                                             <span class="metric-label">1</span>
-                                            <span class="metric-value" 
-                                            :class=" !row['_todayVeto'] ?'green':'red' ">
+                                            <span class="metric-value" :class=" !row['_todayVeto'] ?'green':'red' ">
                                                 {{ row['_todayVetoCore'] }}
                                             </span>
                                         </div>
@@ -310,6 +310,288 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 实现Stock 部分 -->
+            <!-- Stock加载状态展示 -->
+            <div class="loading-status-container">
+                <div class="loading-status-line" :class="Stocks.getDataStatus().statusClass">
+                    <span class="loading-progress">Progress：{{ Stocks.getDataStatus().progressText }}</span>
+                    <span class="loading-detail" v-if="Stocks.getDataStatus().currentReq">
+                        {{ Stocks.getDataStatus().currentReq.name }} - {{ Stocks.getDataStatus().currentReq.message }}
+                    </span>
+                </div>
+            </div>
+            <!-- Stock展示区域 -->
+            <div class="stocks-section">
+                <div class="stocks-card">
+                    <div class="stocks-table-wrap">
+                        <el-table :data="Stocks.Data[0].filters" size="small" stripe border :height="300">
+                            <!-- 序号 -->
+                            <el-table-column type="index" width="10" align="center"></el-table-column>
+                            <el-table-column label="股票简称" min-width="60">
+                                <template #default="{ row }">
+                                    <span class="cell-name">{{ row['股票简称'] }}</span>
+                                </template>
+                            </el-table-column>
+
+                            <el-table-column label="Td" width="42" align="left">
+                                <template #default="{ row }">
+                                    <div class="metrics">
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        (Dates.shareDate.td && row[Dates.shareDate.td]?.涨跌幅 > 0)
+                                                            ? 'red'
+                                                            : (Dates.shareDate.td && row[Dates.shareDate.td]?.涨跌幅 < 0)
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ Dates.shareDate.td && row[Dates.shareDate.td] &&
+                                                row[Dates.shareDate.td].涨跌幅 !== undefined ?
+                                                precentformater(row[Dates.shareDate.td].涨跌幅) : '-' }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        (Dates.shareDate.td && row[Dates.shareDate.td]?.资金流向 > 0)
+                                                            ? 'red'
+                                                            : (Dates.shareDate.td && row[Dates.shareDate.td]?.资金流向 < 0)
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ Dates.shareDate.td && row[Dates.shareDate.td] &&
+                                                row[Dates.shareDate.td].资金流向 !== undefined ?
+                                                formatNumber(row[Dates.shareDate.td].资金流向) : '-' }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        (Dates.shareDate.td && row[Dates.shareDate.td]?.大单净额 > 0)
+                                                            ? 'red'
+                                                            : (Dates.shareDate.td && row[Dates.shareDate.td]?.大单净额 < 0)
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ Dates.shareDate.td && row[Dates.shareDate.td] &&
+                                                row[Dates.shareDate.td].大单净额 !== undefined ?
+                                                formatNumber(row[Dates.shareDate.td].大单净额) : '-' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </el-table-column>
+
+                            <el-table-column label="09:35" width="42" align="left">
+                                <template #default="{ row }">
+                                    <div class="metrics">
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        row['09:35']?.涨跌幅 > 0
+                                                            ? 'red'
+                                                            : row['09:35']?.涨跌幅 < 0
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ row['09:35'] && row['09:35'].涨跌幅 !== undefined ?
+                                                precentformater(row['09:35'].涨跌幅) : '-' }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        row['09:35']?.资金流向 > 0
+                                                            ? 'red'
+                                                            : row['09:35']?.资金流向 < 0
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ row['09:35'] && row['09:35'].资金流向 !== undefined ?
+                                                formatNumber(row['09:35'].资金流向) : '-' }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        row['09:35']?.大单净额 > 0
+                                                            ? 'red'
+                                                            : row['09:35']?.大单净额 < 0
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ row['09:35'] && row['09:35'].大单净额 !== undefined ?
+                                                formatNumber(row['09:35'].大单净额) : '-' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </el-table-column>
+
+                            <el-table-column label="09:33" width="42" align="left">
+                                <template #default="{ row }">
+                                    <div class="metrics">
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        row['09:33']?.涨跌幅 > 0
+                                                            ? 'red'
+                                                            : row['09:33']?.涨跌幅 < 0
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ row['09:33'] && row['09:33'].涨跌幅 !== undefined ?
+                                                precentformater(row['09:33'].涨跌幅) : '-' }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        row['09:33']?.资金流向 > 0
+                                                            ? 'red'
+                                                            : row['09:33']?.资金流向 < 0
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ row['09:33'] && row['09:33'].资金流向 !== undefined ?
+                                                formatNumber(row['09:33'].资金流向) : '-' }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        row['09:33']?.大单净额 > 0
+                                                            ? 'red'
+                                                            : row['09:33']?.大单净额 < 0
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ row['09:33'] && row['09:33'].大单净额 !== undefined ?
+                                                formatNumber(row['09:33'].大单净额) : '-' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </el-table-column>
+
+                            <el-table-column label="09:31" width="42" align="left">
+                                <template #default="{ row }">
+                                    <div class="metrics">
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        row['09:31']?.涨跌幅 > 0
+                                                            ? 'red'
+                                                            : row['09:31']?.涨跌幅 < 0
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ row['09:31'] && row['09:31'].涨跌幅 !== undefined ?
+                                                precentformater(row['09:31'].涨跌幅) : '-' }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        row['09:31']?.资金流向 > 0
+                                                            ? 'red'
+                                                            : row['09:31']?.资金流向 < 0
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ row['09:31'] && row['09:31'].资金流向 !== undefined ?
+                                                formatNumber(row['09:31'].资金流向) : '-' }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        row['09:31']?.大单净额 > 0
+                                                            ? 'red'
+                                                            : row['09:31']?.大单净额 < 0
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ row['09:31'] && row['09:31'].大单净额 !== undefined ?
+                                                formatNumber(row['09:31'].大单净额) : '-' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </el-table-column>
+
+                            <el-table-column label="Pd1" width="42" align="left">
+                                <template #default="{ row }">
+                                    <div class="metrics">
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        (Dates.shareDate.pd1 && row[Dates.shareDate.pd1]?.涨跌幅 > 0)
+                                                            ? 'red'
+                                                            : (Dates.shareDate.pd1 && row[Dates.shareDate.pd1]?.涨跌幅 < 0)
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ Dates.shareDate.pd1 && row[Dates.shareDate.pd1] &&
+                                                row[Dates.shareDate.pd1].涨跌幅 !== undefined ?
+                                                precentformater(row[Dates.shareDate.pd1].涨跌幅) : '-' }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        (Dates.shareDate.pd1 && row[Dates.shareDate.pd1]?.资金流向 > 0)
+                                                            ? 'red'
+                                                            : (Dates.shareDate.pd1 && row[Dates.shareDate.pd1]?.资金流向 < 0)
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ Dates.shareDate.pd1 && row[Dates.shareDate.pd1] &&
+                                                row[Dates.shareDate.pd1].资金流向 !== undefined ?
+                                                formatNumber(row[Dates.shareDate.pd1].资金流向) : '-' }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-value" :class="
+                                                        (Dates.shareDate.pd1 && row[Dates.shareDate.pd1]?.大单净额 > 0)
+                                                            ? 'red'
+                                                            : (Dates.shareDate.pd1 && row[Dates.shareDate.pd1]?.大单净额 < 0)
+                                                              ? 'green'
+                                                              : 'flat'
+                                                    ">
+                                                {{ Dates.shareDate.pd1 && row[Dates.shareDate.pd1] &&
+                                                row[Dates.shareDate.pd1].大单净额 !== undefined ?
+                                                formatNumber(row[Dates.shareDate.pd1].大单净额) : '-' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </el-table-column>
+
+                            <el-table-column label="Score" min-width="100" align="left">
+                                <template #default="{ row }">
+                                    <div class="metrics metrics-score">
+                                        <div class="metric">
+                                            <span class="metric-label">3</span>
+                                            <span class="metric-value" :class=" row['_trendQualified'] ?'green':'red' ">
+                                                {{ row['_trendCore'] }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-label">2</span>
+                                            <span class="metric-value"
+                                                :class=" row['_yesterdayActive'] ?'green':'red' ">
+                                                {{ row['_yesterdayActiveCore'] }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-label">1</span>
+                                            <span class="metric-value" :class=" row['_todayVeto'] ?'green':'red' ">
+                                                {{ row['_todayVetoCore'] }}
+                                            </span>
+                                        </div>
+                                        <div class="metric">
+                                            <span class="metric-label">4</span>
+                                            <span class="metric-value"
+                                                @click="()=>{console.log('Total score clicked:', row);}">
+                                                {{ row['_Strength']}}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </div>
+                </div>
+            </div>
+
         </div>
         <!-- PC 端适配功能暂时不做 -->
         <div class="PC" v-else></div>

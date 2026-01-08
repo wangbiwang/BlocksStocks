@@ -79,6 +79,8 @@ const Dates = reactive({
             TimeTilArr: [td, '09:35', '09:33', '09:31', '09:30', getSafe(-1)].filter(Boolean),
         }
     },
+
+
 })
 
 /** @description Block Module - Built-in retry logic */
@@ -89,6 +91,7 @@ const Blocks = reactive({
         { name: 'Blocks-HY', filters: [] },
         { name: 'Blocks-GN', filters: [] },
     ],
+    checked: null,
     requestStatus: [],
 
     init: async (catcheGetFunction, catcheSetFunction, dates) => {
@@ -198,6 +201,8 @@ const Blocks = reactive({
         }
         Blocks.loading = false
     },
+
+
 })
 
 // Single entry for block request progress UI display
@@ -248,7 +253,7 @@ const Stocks = reactive({
 
     init: async (catcheGetFunction, catcheSetFunction, dates, blockItem, blockType, blockName) => {
         const { tdcn, isToday } = dates
-        const questions = getQuestions('block', dates)
+        const questions = getQuestions('stock', dates, blockType, blockName)
         const cacheKey = `${tdcn}-${blockType}-${blockName}`
         const cache = (await catcheGetFunction('Stocks')) || {}
 
@@ -260,40 +265,42 @@ const Stocks = reactive({
             }))
             handleStocksData(cache[cacheKey], blockItem)
         } else {
-            await Stocks.getData(
-                questions,
-                catcheSetFunction,
-                cache,
-                cacheKey,
-                blockItem,
-                blockType,
-                blockName,
-                isToday
-            )
+            await Stocks.getData(questions, catcheSetFunction, cache, cacheKey, blockItem, blockType, blockName, isToday)
         }
     },
 
     getData: async (questions, catcheSetFunction, cache, cacheKey, blockItem, blockType, blockName, isToday) => {
         Stocks.loading = true
+        Stocks.Data[0].filters = []
         // 初始化每个请求的状态
         Stocks.requestStatus = questions.map((_, i) => ({
             name: `Request ${i + 1}`,
-            status: 'pending',
-            message: 'Loading...',
+            status: 'wait',
+            message: 'Not started',
         }))
 
         // 逐个处理请求而不是并行处理
         const results = []
         for (let i = 0; i < questions.length; i++) {
+            // 更新状态为 process
+            Stocks.requestStatus[i].status = 'process'
+            Stocks.requestStatus[i].message = 'Loading...'
+
             try {
-                const req = axios(hexin_vJsRequests('stock', questions[i], blockType, blockName))
-                const response = await req
-                const result = response.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas
-                results[i] = result
+                const res = await axios(hexin_vJsRequests('stock', questions[i]))
+                const data = res.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas
+                const count = res?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.meta.extra.row_count
+                results[i] = data.map((el, idx) => {
+                    el.count = count
+                    el.rank = idx + 1
+                    return el
+                }) // 设置总数并返回对象
                 Stocks.requestStatus[i].status = 'success'
                 Stocks.requestStatus[i].message = 'Request successful'
             } catch (err) {
                 ElNotification.error({ title: 'Load Failed', message: `Request ${i + 1} failed` })
+                Stocks.requestStatus[i].status = 'error'
+                Stocks.requestStatus[i].message = 'Failed to fetch'
             }
         }
 
@@ -302,7 +309,7 @@ const Stocks = reactive({
             if (!isToday) await catcheSetFunction('Stocks', cache)
             handleStocksData(results, blockItem)
         } else {
-            // 如果有请求失败，更新对应状态
+            // 如果有请求失败，更新对应状态（catch 中已更新，这里可省略）
             for (let i = 0; i < results.length; i++) {
                 if (!Array.isArray(results[i])) {
                     Stocks.requestStatus[i].status = 'error'
@@ -313,7 +320,49 @@ const Stocks = reactive({
 
         Stocks.loading = false
     },
+
+
 })
+
+// Single entry for stock request progress UI display
+Stocks.getDataStatus = () => {
+    const list = Array.isArray(Stocks.requestStatus) ? Stocks.requestStatus : []
+    const total = list.length
+
+    if (!total) {
+        return {
+            total: 0,
+            currentIndex: -1,
+            currentReq: null,
+            progressText: '-/-',
+            statusClass: '',
+        }
+    }
+
+    const idxProcess = list.findIndex((r) => r?.status === 'process')
+
+    let currentIndex = idxProcess
+    if (currentIndex < 0) {
+        // No "process" means requests are either finished (success/error) or not started (wait)
+        let lastActiveIndex = -1
+        for (let k = list.length - 1; k >= 0; k--) {
+            if (list[k]?.status && list[k].status !== 'wait') {
+                lastActiveIndex = k
+                break
+            }
+        }
+        currentIndex = lastActiveIndex >= 0 ? lastActiveIndex : 0
+    }
+
+    const currentReq = list[currentIndex] || null
+
+    const progressText = `${currentIndex + 1}/${total}`
+
+    const status = currentReq?.status === 'error' ? 'error' : currentReq?.status
+    const statusClass = status ? `status-${status}` : ''
+
+    return { total, currentIndex, currentReq, progressText, statusClass }
+}
 
 /** --- Data Processing and Calculation --- **/
 
@@ -337,7 +386,7 @@ async function handleBlocksData(res) {
                 calcTodayAlignment(obj, 'block', Dates.shareDate)
                 return obj
             })
-        return selectStrong(arr, maxCount = 20)
+        return selectStrong(arr, maxCount = 20, 'block')
     }
     Blocks.Data[0].filters = process(res[0], res[1])
     Blocks.Data[1].filters = process(res[2], res[3])
@@ -347,8 +396,7 @@ async function handleStocksData(res, blockItem) {
     if (!res[0]) return
     // Convert remaining tables to Maps
     const maps = res.slice(1).map((arr) => new Map(arr?.map((i) => [i.code, i]) || []))
-
-    Stocks.Data[0].base = res[0].map((ele) => {
+    let arr = res[0].map((ele) => {
         // Use reduce to merge data from multiple tables into ele
         const merged = maps.reduce((acc, m) => ({ ...acc, ...(m.get(ele.code) || {}) }), { ...ele })
         const obj = {}
@@ -358,6 +406,17 @@ async function handleStocksData(res, blockItem) {
         calcTodayAlignment(obj, merged, 'stock', Dates.shareDate, blockItem)
         return obj
     })
+    Stocks.Data[0].base = selectStrong(arr, maxCount = 100, 'stock')
+    // filters初始与base相同
+    Stocks.Data[0].filters = [...Stocks.Data[0].base]
+}
+
+async function CheckedBlock(type, name, item = null) {
+    if (Stocks.loading) return
+    // 更新Blocks.checked状态
+    Blocks.checked = { type, name, item }
+    // 调用Stocks.init
+    await Stocks.init(getLocalforage, setLocalforage, Dates.shareDate, item, type, name)
 }
 
 /** --- App Setup --- **/
@@ -370,6 +429,8 @@ const App = {
         })
 
         const Submit = () => {
+            Blocks.Data[0].filters = Blocks.Data[1].filters = []
+            Stocks.Data[0].filters = Stocks.requestStatus = []
             Dates.setRequestDate(Dates.requestDate)
             Dates.setShareDate()
             Blocks.init(getLocalforage, setLocalforage, Dates.shareDate)
@@ -396,8 +457,11 @@ const App = {
             precentformater,
             formatNumber,
             isMobile,
+            CheckedBlock
         }
     },
+
+
 }
 
 const app = Vue.createApp(App)
