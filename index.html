@@ -44,12 +44,16 @@
                         <!-- Fixed 5-row viewport + inner scroll -->
                         <el-table :data="item.filters" size="small" stripe border :height="170">
                             <!-- 序号 -->
-                            <el-table-column type="index" width="10" align="center"></el-table-column>
+                            <el-table-column width="10" align="center">
+                                <template #default="{ row }">
+                                    {{ row['今日涨跌幅排名'] }}
+                                </template>
+                            </el-table-column>
                             <el-table-column :label="(item.name === 'Blocks-HY' ? 'HY' : 'GN' )+'Name'" min-width="60">
                                 <template #default="{ row }">
                                     <span class="cell-name"
                                         @click="CheckedBlock(item.name === 'Blocks-HY' ? '行业' : '概念', row['指数简称'], row)">{{
-                                        row['指数简称'] || '-' }}</span>
+                                        row['指数简称'] }}</span>
                                 </template>
                             </el-table-column>
 
@@ -292,7 +296,7 @@
                                         </div>
                                         <div class="metric">
                                             <span class="metric-label">1</span>
-                                            <span class="metric-value" :class=" !row['_todayVeto'] ?'green':'red' ">
+                                            <span class="metric-value" :class=" row['_todayVeto'] ?'green':'red' ">
                                                 {{ row['_todayVetoCore'] }}
                                             </span>
                                         </div>
@@ -300,7 +304,7 @@
                                             <span class="metric-label">4</span>
                                             <span class="metric-value"
                                                 @click="()=>{console.log('Total score clicked:', row);}">
-                                                {{ row['_blockStrength']}}
+                                                {{ row['_Strength']}}
                                             </span>
                                         </div>
                                     </div>
@@ -551,6 +555,25 @@
                                                 formatNumber(row[Dates.shareDate.pd1].大单净额) : '-' }}
                                             </span>
                                         </div>
+                                    </div>
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="Nd" width="42" align="left">
+                                <template #default="{ row }">
+                                    <div class="metrics">
+                                        <div class="metric">
+                                            <span class="metric-value" :class="row['nd1涨跌幅'] > 0 ? 'red': 'green'">
+                                                {{ row['nd1涨跌幅'] }}
+                                            </span>
+                                        </div>
+
+                                        <div class="metric">
+                                            <span class="metric-value" :class="row['nd2涨跌幅'] > 0 ? 'red': 'green'">
+                                                {{ row['nd2涨跌幅'] }}
+                                            </span>
+                                        </div>
+
+
                                     </div>
                                 </template>
                             </el-table-column>

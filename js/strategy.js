@@ -2,6 +2,8 @@
 function calcYesterdayMomentum(obj, type, dates) {
     const { pd1 } = dates
     let result = false, resultScore = 0;
+    // if (type == 'block'&&obj['指数简称'] == '房地产') debugger
+    // if (type == 'block'&&obj['指数简称'] == '房地产') debugger
     if (type === 'block') {
         if (obj.昨日涨跌幅排名 <= 10 || obj[pd1].涨跌幅 >= 2) {
             if (obj[pd1].大单净额 >= 0 && obj[pd1].大单净额 + obj[pd1].资金流向 > 0 && obj['昨日涨停数'] > 0) {
@@ -10,10 +12,12 @@ function calcYesterdayMomentum(obj, type, dates) {
             }
         }
     } else {
-        if (obj[pd1].大单净额 >= 0 && obj[pd1].大单净额 + obj[pd1].资金流向 > 0) {
+        // if(obj['股票简称']=='光线传媒')debugger
+        let zt = obj[pd1].收盘价 == obj[pd1].涨停价
+        if (obj[pd1].大单净额 >= 0 && (obj[pd1].大单净额 + obj[pd1].资金流向 > 0 || zt)) {
             result = true
             resultScore = 1
-            if (obj[pd1].收盘价 == obj[pd1].涨停价) resultScore += 0.5
+            if (zt) resultScore += 0.5
         }
 
     }
@@ -41,12 +45,13 @@ function calcLongTrend(obj, type, dates) {
 //今天早上表现怎么样？
 async function calcTodayAlignment(obj, type, dates, blockItem = null) {
     // if (type == 'block'&&obj['指数简称'] == '华为海思概念股') debugger
+    // if (type == 'block'&&obj['指数简称'] == '房地产') debugger
 
     const { pd1 } = dates
     const t = obj['09:35']
     let result = false, resultScore = 0;
     if (type === 'block') {
-        if ((obj.今日涨跌幅排名 <= 20 || t.涨跌幅 >= 0.7) && t.涨跌幅 > 0.5 && !obj['09:35'][下趋势]) {
+        if (t.涨跌幅 > 0.7 && !obj['09:35']['趋势下']) {
             if (obj['09:35'].大单净额 >= 0 || obj['09:35'].资金流向 >= 0) {
                 result = true
                 resultScore = 1
@@ -106,16 +111,17 @@ function selectStrong(Item, maxCount = 8, type) {
         .map(b => {
             let strength = b._trendCore + b._yesterdayActiveCore + b._todayVetoCore
             b._Strength = Number(strength.toFixed(2))
+            // if (type == 'block'&&b['指数简称'] == '房地产') debugger
             return b
         })
 
-        .sort((a, b) => a._Strength - b._Strength)
+        .sort((a, b) => b._Strength - a._Strength)
         .slice(0, maxCount)
 }
 
 function handleRate(obj, ele, type, datas) {
     const num = (e) => (e ? Number(Number(e).toFixed(3)) : 0)
-    const { td, pd1 } = datas
+    const { td, pd1, nd1, nd2 } = datas
     let t = type === 'block' ? '指数@' : ''
     obj[`${td}`] = {
         涨跌幅: num(ele[`${t}涨跌幅:前复权[${td}]`]),
@@ -146,6 +152,7 @@ function handleRate(obj, ele, type, datas) {
         大单净额: num(ele[`${t}dde大单净额[${pd1}]`] || ele[`${t}分时dde大单净额[${pd1} 15:00]`]),
 
     }
+
     // 计算并赋值：前5交易日、前10交易日区间涨跌幅（不复权）
     // debugger
     const idx = Dates.historicalDate.indexOf(pd1)
@@ -225,22 +232,28 @@ function handleRate(obj, ele, type, datas) {
         obj['流通市值'] = ele[`a股市值(不含限售股)[${pd1}]`]
         obj['股价'] = Number(ele[`收盘价:不复权[${td}]`] || ele[`最新价`])
         obj[pd1].收盘价 = num(ele[`收盘价:不复权[${pd1}]`])
+        obj[pd1].涨停价 = num(ele[`涨停价[${pd1}]`])  //
         obj['09:35'].收盘价 = num(ele[`分时收盘价:不复权[${td} 09:35]`])
-
         // debugger
+        let n1 = ele[`${t}涨跌幅:前复权[${nd1}]`] 
+        let n2 = ele[`${t}涨跌幅:前复权[${nd2}]`] 
+        obj['nd1涨跌幅'] = n1 ? Number(Number(n1).toFixed(2)) : '-'
+        obj['nd2涨跌幅'] = n2 ? Number(Number(n2).toFixed(2)) : '-'
     }
 }
 
 function getQuestions(type, datas, from, fromName) {
     // debugger
-    const { td, tdcn, pd2, pd3, isToday } = datas
+    const { td, tdcn, pd2, pd3, isToday, nd1, nd2 } = datas
     const text1 = '前1交易日(vol1和vol5和vol10和vol21和vol30和vol60)'
     const text2 = '前1交易日(1日均线和M5和M10和M21和M30和M60)'        //备注：M20 ，THS平台不支持，所以统一改 21
     let res = []
     if (type == 'block') {
         const textA = `当日涨跌幅资金流向大单净额;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅降序资金流向大单净额;`
         const textB = `前1交易日涨跌幅降序;前1交易日资金流向大单净额;${text1};${text2};前1交易日涨停家数跌停家数;前1交易日流通市值;`
+        const other = '前1交易日热度排名升序;前1交易日涨跌幅资金流向大单净额;行业概念'
         res = [`${textA}二级行业`, `${textB}二级行业`, `${textA}概念`, `${textB}概念`]
+        // res.push(other)
         if (!isToday) {
             res = res.map((el) => {
                 return el
@@ -255,8 +268,8 @@ function getQuestions(type, datas, from, fromName) {
         }
     } else if (type == 'stock') {
         res = [
-            `当日涨跌幅资金流向大单净额;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅资金流向大单净额股价;前1交易日热度排名升序;前1交易日涨停价;前1交易日收盘价;行业概念`,
-            `前1交易日热度排名升序;前1交易日涨跌幅资金流向大单净额;${text1};${text2};前40交易日区间最高价不复权;行业概念`,
+            `当日涨跌幅资金流向大单净额;09:31涨跌幅资金流向大单净额;09:33涨跌幅资金流向大单净额;09:35涨跌幅资金流向大单净额股价;前1交易日热度排名升序;前1交易日涨停价;后2.2交易日涨跌幅;后2.1交易日涨跌幅;行业概念`,
+            `前1交易日热度排名升序;前1交易日涨跌幅资金流向大单净额收盘价;${text1};${text2};前40交易日区间最高价不复权;行业概念`,
         ]
         if (!isToday) {
             res = res.map((el) => {
@@ -270,7 +283,8 @@ function getQuestions(type, datas, from, fromName) {
                     .replaceAll('前40交易日', tdcn + '前40交易日')
                     .replaceAll('前60交易日', tdcn + '前60交易日')
                     .replaceAll('流通市值', tdcn + '流通市值')
-                // .replaceAll('后2交易日涨跌幅', `${nd1}涨跌幅${nd2}涨跌幅`)
+                    .replaceAll('后2.1交易日涨跌幅', `${nd1}涨跌幅`)
+                    .replaceAll('后2.2交易日涨跌幅', `${nd2}涨跌幅`)
                 if (from == '行业') {
                     el = el.replace('行业概念', `概念;所属二级行业包含${fromName}`)
                 } else if (from == '概念') {
