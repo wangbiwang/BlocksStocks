@@ -437,41 +437,41 @@ const App = {
             Stocks.Data[0].filters = Stocks.requestStatus = []
             Dates.setRequestDate(Dates.requestDate)
             Dates.setShareDate()
-            // Blocks.init(getLocalforage, setLocalforage, Dates.shareDate)
+            Blocks.init(getLocalforage, setLocalforage, Dates.shareDate)
 
-            //----
-            const { td, tdcn, nd1, nd2, nd3, nd4, nd5 } = Dates.shareDate
-            const other = `${tdcn}(M5和M10和M20和M60)均小于${tdcn}收盘价;${tdcn}大单净量创${tdcn}前30交易日区间新高;${td}涨跌幅${nd1}涨跌幅资金流向大单净额${nd2}涨跌幅${nd3}涨跌幅${nd4}涨跌幅;${nd1}日09:35分涨跌幅
-             ${td}热度排名${nd1}热度排名;`
-            const res = await axios(hexin_vJsRequests('stock', other))
-            let data = res.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas
-            let newData = data.map(ele => {
-                let obj = []
-                obj['0'] = ele['股票简称']
-                obj['nd0'] = Number(ele[`涨跌幅:前复权[${td}]`]).toFixed(1)
-                obj['nd1'] = Number(ele[`涨跌幅:前复权[${nd1}]`]).toFixed(1)
-                obj['nd2'] = Number(ele[`涨跌幅:前复权[${nd2}]`]).toFixed(1)
-                obj['nd3'] = Number(ele[`涨跌幅:前复权[${nd3}]`]).toFixed(1)
-                obj['nd4'] = Number(ele[`涨跌幅:前复权[${nd4}]`]).toFixed(1)
-                // obj['nd5'] = Number(ele[`涨跌幅:前复权[${nd5}]`]).toFixed(1)
+            // //----
+            // const { td, tdcn, nd1, nd2, nd3, nd4, nd5 } = Dates.shareDate
+            // const other = `${tdcn}(M5和M10和M30和M60)均小于${tdcn}收盘价;${tdcn}大单净量创${tdcn}前30交易日区间新高;${td}涨跌幅${nd1}涨跌幅资金流向大单净额${nd2}涨跌幅${nd3}涨跌幅${nd4}涨跌幅;${nd1}日09:35分涨跌幅
+            //  ${td}热度排名${nd1}热度排名;`
+            // const res = await axios(hexin_vJsRequests('stock', other))
+            // let data = res.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas
+            // let newData = data.map(ele => {
+            //     let obj = []
+            //     obj['0'] = ele['股票简称']
+            //     obj['nd0'] = Number(ele[`涨跌幅:前复权[${td}]`]).toFixed(1)
+            //     obj['nd1'] = Number(ele[`涨跌幅:前复权[${nd1}]`]).toFixed(1)
+            //     obj['nd2'] = Number(ele[`涨跌幅:前复权[${nd2}]`]).toFixed(1)
+            //     obj['nd3'] = Number(ele[`涨跌幅:前复权[${nd3}]`]).toFixed(1)
+            //     obj['nd4'] = Number(ele[`涨跌幅:前复权[${nd4}]`]).toFixed(1)
+            //     // obj['nd5'] = Number(ele[`涨跌幅:前复权[${nd5}]`]).toFixed(1)
 
-                obj['_nd0排名'] = ele[`个股热度排名[${td}]`] || 9999
-                obj['_nd1排名'] = ele[`个股热度排名[${nd1}]`] || 9999
-                obj[`09:35`] = {
-                    涨跌幅:   precentformater(ele[`分时涨跌幅:前复权[${nd1} 09:35]`]),
-                    资金流向: formatNumber(ele[`分时资金流向[${nd1} 09:35]`]),
-                    大单净额: formatNumber(ele[`分时dde大单净额[${nd1} 09:35]`]),
-                }
-                // obj['_nd2排名'] = ele[`个股热度排名[${nd2}]`] || 9999
-                // obj['_nd3排名'] = ele[`个股热度排名[${nd3}]`] || 9999
-                // obj['_nd4排名'] = ele[`个股热度排名[${nd4}]`] || 9999
-                // obj['nd5排名'] = ele[`个股热度排名[${nd5}]`] || 9999
+            //     obj['_nd0排名'] = ele[`个股热度排名[${td}]`] || 9999
+            //     obj['_nd1排名'] = ele[`个股热度排名[${nd1}]`] || 9999
+            //     obj[`09:35`] = {
+            //         涨跌幅:   precentformater(ele[`分时涨跌幅:前复权[${nd1} 09:35]`]),
+            //         资金流向: formatNumber(ele[`分时资金流向[${nd1} 09:35]`]),
+            //         大单净额: formatNumber(ele[`分时dde大单净额[${nd1} 09:35]`]),
+            //     }
+            //     // obj['_nd2排名'] = ele[`个股热度排名[${nd2}]`] || 9999
+            //     // obj['_nd3排名'] = ele[`个股热度排名[${nd3}]`] || 9999
+            //     // obj['_nd4排名'] = ele[`个股热度排名[${nd4}]`] || 9999
+            //     // obj['nd5排名'] = ele[`个股热度排名[${nd5}]`] || 9999
 
 
-                return obj
-            }).filter(e => e['nd0'] > 0 && e['09:35'] > 0 )
-            const count = res?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.meta.extra.row_count
-            console.log(newData, data, count, other.length)
+            //     return obj
+            // }).filter(e => e['nd0'] > 0 && e['09:35'] > 0 )
+            // const count = res?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.meta.extra.row_count
+            // console.log(newData, data, count, other.length)
         }
         onMounted(async () => {
             Intervals.timer = setInterval(Intervals.updateTime, 1000)
