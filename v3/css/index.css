@@ -1,0 +1,398 @@
+@charset "UTF-8";
+
+/* 基础重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 主题变量 */
+:root {
+    /* 深色主题变量（默认） */
+    --bg-primary: #1f2937;
+    --bg-secondary: #374151;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --border-color: #4b5563;
+    --control-bar-bg: #1f2937;
+    --page-bg: #f0f2f5;
+}
+
+body.light-theme {
+    /* 浅色主题变量 */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f9fafb;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --control-bar-bg: #ffffff;
+    --page-bg: #f8f9fa;
+}
+
+html,
+body,
+#app {
+    width: 100%;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    overflow: hidden;
+    background: var(--page-bg);
+}
+
+/* 主容器 */
+.v3-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 12px;
+    gap: 12px;
+    background: var(--page-bg);
+}
+
+/* 控制栏 */
+.global-control-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 24px;
+    background: var(--control-bar-bg);
+    color: var(--text-primary);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+    min-height: 52px;
+    max-height: 52px;
+    box-sizing: border-box;
+}
+
+.global-control-bar .time-display {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 15px;
+    min-width: 150px;
+    height: 32px;
+    line-height: 32px;
+    flex-shrink: 0;
+}
+
+.global-control-bar .nav-button {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.global-control-bar .nav-button:hover:not(.is-disabled) {
+    background: var(--bg-primary);
+    border-color: #3b82f6;
+}
+
+.global-control-bar .nav-button.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 主题切换按钮 */
+.global-control-bar .theme-toggle {
+    margin-left: auto;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.global-control-bar .date-picker {
+    height: 32px;
+    line-height: 32px;
+    flex-shrink: 0;
+}
+
+.global-control-bar .date-picker .el-input__wrapper {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: none;
+    transition: none;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 8px;
+    flex-shrink: 0;
+}
+
+.global-control-bar .date-picker .el-input__wrapper:hover,
+.global-control-bar .date-picker .el-input__wrapper.is-focus,
+.global-control-bar .date-picker .el-input__wrapper:focus {
+    border-color: #3b82f6;
+    box-shadow: none;
+    transition: none;
+}
+
+.global-control-bar .date-picker .el-input__inner {
+    transition: none;
+}
+
+.global-control-bar .el-button {
+    border-radius: 6px;
+    padding: 0 12px;
+    font-weight: 500;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    flex-shrink: 0;
+    transform: translateZ(0);
+}
+
+/* 图标样式 */
+.global-control-bar .el-button i {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.global-control-bar .nav-button i {
+    font-size: 16px;
+}
+
+.global-control-bar .theme-toggle i {
+    font-size: 16px;
+}
+
+.global-control-bar .status-indicator {
+    width: 50px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    height: 32px;
+    flex-shrink: 0;
+    transform: translateZ(0);
+}
+
+/* 上部分：左右分栏 */
+.top-section {
+    display: flex;
+    flex: 1;
+    gap: 12px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* 面板样式 - 统一白色卡片 */
+.stock-panel,
+.block-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    min-width: 0;
+}
+
+/* 面板头部 - 深色简洁风格 */
+.panel-header {
+    padding: 6px 18px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.panel-header .badge {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.panel-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    padding: 0;
+}
+
+/* 表格样式优化 */
+.el-table {
+    font-size: 13px;
+    border: none;
+    width: 100%;
+}
+
+.el-table::before {
+    display: none;
+}
+
+.el-table__header-wrapper {
+    overflow: hidden;
+}
+
+.el-table__header {
+    width: 100%;
+}
+
+.el-table__body {
+    width: 100%;
+}
+
+.el-table th.el-table__cell {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+    padding: 6px 4px;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: pre-wrap; /* 允许换行 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 表头带子标题的样式 */
+.column-header-with-subtitle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.2;
+}
+
+.column-subtitle {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 400;
+    margin-top: 2px;
+}
+
+.el-table td.el-table__cell {
+    padding: 4px 4px;
+    border-bottom: 1px solid #f3f4f6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+    background: #fafafa;
+}
+
+.el-table .cell {
+    padding: 0 4px;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 颜色类 - 更柔和的色调 */
+.red {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.green {
+    color: #16a34a;
+    font-weight: 600;
+}
+
+/* 状态点样式 */
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-dot.wait {
+    background-color: #9ca3af;
+}
+
+.status-dot.process {
+    background-color: #3b82f6;
+    animation: pulse 1.5s infinite;
+}
+
+.status-dot.success {
+    background-color: #22c55e;
+}
+
+.status-dot.error {
+    background-color: #ef4444;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* 加载状态 */
+.el-loading-mask {
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* 面板标题包装器 */
+.panel-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* 筛选按钮组 */
+.filter-button-group {
+    margin-left: 8px;
+}
+
+.filter-button-group .el-button {
+    padding: 4px 12px;
+    font-size: 12px;
+    min-width: auto;
+}
+
+/* 匹配表格高亮行 */
+.el-table .highlight-row {
+    background-color: #e6f7ff;
+}
+
+.el-table .highlight-row:hover {
+    background-color: #bae7ff;
+}
+
+.el-table .selected-row {
+    background-color: #fff7e6;
+}
+
+.el-table .selected-row:hover {
+    background-color: #ffe7ba;
+}

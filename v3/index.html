@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>BlocksStocks v3 - 策略分析</title>
+        <!-- 引入样式文件 -->
+        <link rel="stylesheet" href="./lib/elementplus.css" />
+        <link rel="stylesheet" type="text/css" href="./css/index.css" />
+    </head>
+    <body>
+        <div id="app">
+            <div class="v3-container">
+                <!-- 全局控制栏 -->
+                <div class="global-control-bar">
+                    <span class="time-display">{{ Intervals.time }}</span>
+                    <el-button
+                        class="nav-button"
+                        :disabled="GlobalState.isRequesting"
+                        @click="changeDate(-1)"
+                        size="small"
+                        circle
+                    >
+                        <i class="el-icon-arrow-left"></i>
+                    </el-button>
+                    <el-date-picker
+                        class="date-picker"
+                        v-model="Dates.requestDate"
+                        type="date"
+                        format="YYYY/MM/DD"
+                        placeholder="选择日期"
+                        :disabled-date="Dates.disabledDate"
+                        :disabled="GlobalState.isRequesting"
+                        @change="Submit"
+                    >
+                    </el-date-picker>
+                    <el-button
+                        class="nav-button"
+                        :disabled="GlobalState.isRequesting"
+                        @click="changeDate(1)"
+                        size="small"
+                        circle
+                    >
+                        <i class="el-icon-arrow-right"></i>
+                    </el-button>
+                    <el-button
+                        type="primary"
+                        size="small"
+                        @click="Submit"
+                        :disabled="GlobalState.isRequesting"
+                        :loading="GlobalState.isRequesting"
+                    >
+                        查询
+                    </el-button>
+                    <el-button class="theme-toggle" @click="GlobalState.toggleTheme" size="small" circle>
+                        <i class="el-icon-sunny" v-if="GlobalState.isDarkTheme"></i>
+                        <i class="el-icon-moon" v-else></i>
+                    </el-button>
+
+                    <!-- 请求状态 -->
+                    <div class="status-indicator">
+                        <span
+                            v-if="Stocks.requestStatus.length > 0"
+                            v-for="(status, index) in Stocks.requestStatus"
+                            :key="'s-'+index"
+                            :class="['status-dot', status.status]"
+                            :title="'Stock '+status.message"
+                        ></span>
+                        <span
+                            v-if="Blocks.requestStatus.length > 0"
+                            v-for="(status, index) in Blocks.requestStatus"
+                            :key="'b-'+index"
+                            :class="['status-dot', status.status]"
+                            :title="'Block '+status.message"
+                        ></span>
+                    </div>
+                </div>
+
+                <!-- 上部分：左右分栏 -->
+                <div class="top-section">
+                    <div class="block-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-wrapper">
+                                <span>Block策略（{{Dates.shareDate.pd1cn}}涨跌幅降序）</span>
+                                <el-button-group size="small" class="filter-button-group">
+                                    <el-button
+                                        :type="MatchChart.blockFilterMode === 'all' ? 'primary' : ''"
+                                        @click="toggleBlockFilterMode('all')"
+                                        >全部</el-button
+                                    >
+                                    <el-button
+                                        :type="MatchChart.blockFilterMode === 'matched' ? 'primary' : ''"
+                                        @click="toggleBlockFilterMode('matched')"
+                                        >有匹配</el-button
+                                    >
+                                </el-button-group>
+                            </div>
+                            <span class="badge">{{ displayBlocks.length }} 个</span>
+                        </div>
+                        <div class="panel-content">
+                            <!-- Block表格 -->
+                            <el-table
+                                :data="displayBlocks"
+                                height="100%"
+                                stripe
+                                border
+                                v-loading="Blocks.loading"
+                                element-loading-text="加载中..."
+                                size="small"
+                                style="width: 100%"
+                                @row-click="handleBlockRowClick"
+                                :row-class-name="getBlockRowClassName"
+                            >
+                                <el-table-column
+                                    prop="指数简称"
+                                    label="指数简称"
+                                    width="100"
+                                    show-overflow-tooltip
+                                ></el-table-column>
+                                <el-table-column width="70" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.td]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="70" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.pd1]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="75" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>大单净量</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span :class="row[Dates.shareDate.pd1]?.大单净量 > 0 ? 'red' : 'green'">
+                                            {{ row[Dates.shareDate.pd1]?.大单净量?.toFixed(2) || '-' }}
+                                        </span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column
+                                    prop="matchCount"
+                                    label="匹配数"
+                                    width="70"
+                                    align="center"
+                                ></el-table-column>
+                            </el-table>
+                        </div>
+                    </div>
+
+                    <div class="stock-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-wrapper">
+                                <span>Stock策略（{{Dates.shareDate.pd1cn}}热度排名升序）</span>
+                                <el-button-group size="small" class="filter-button-group">
+                                    <el-button
+                                        :type="MatchChart.stockFilterMode === 'all' ? 'primary' : ''"
+                                        @click="toggleStockFilterMode('all')"
+                                        >全部</el-button
+                                    >
+                                    <el-button
+                                        :type="MatchChart.stockFilterMode === 'matched' ? 'primary' : ''"
+                                        @click="toggleStockFilterMode('matched')"
+                                        >有匹配</el-button
+                                    >
+                                </el-button-group>
+                            </div>
+                            <span class="badge">{{ displayStocks.length }} 只</span>
+                        </div>
+                        <div class="panel-content">
+                            <!-- Stock表格 -->
+                            <el-table
+                                :data="displayStocks"
+                                height="100%"
+                                stripe
+                                border
+                                v-loading="Stocks.loading"
+                                element-loading-text="加载中..."
+                                size="small"
+                                style="width: 100%"
+                                @row-click="handleStockRowClick"
+                                :row-class-name="getStockRowClassName"
+                            >
+                                <el-table-column
+                                    prop="股票简称"
+                                    label="股票简称"
+                                    width="100"
+                                    show-overflow-tooltip
+                                ></el-table-column>
+                                <el-table-column width="70" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.td]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="70" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.pd1]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="75" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>大单净量</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span :class="row[Dates.shareDate.pd1]?.大单净量 > 0 ? 'red' : 'green'">
+                                            {{ row[Dates.shareDate.pd1]?.大单净量?.toFixed(2) || '-' }}
+                                        </span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="75" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>热度排名</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span class="red f600">{{ row[Dates.shareDate.pd1]?.热度排名 || '-' }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column
+                                    prop="matchCount"
+                                    label="匹配数"
+                                    width="70"
+                                    align="center"
+                                ></el-table-column>
+                            </el-table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 引入 Vue -->
+        <script src="./lib/vue@3.4.14.js"></script>
+        <!-- 引入 Element Plus -->
+        <script src="./lib/elementplus@v2.7.7.js"></script>
+        <script src="./lib/elementplus@v2.7.7-zhCn.js"></script>
+        <!-- 引入 ECharts -->
+        <script src="./lib/echarts@5.5.0.js"></script>
+        <!-- 引入 axios -->
+        <script src="./lib/axios@1.6.7.js"></script>
+        <!-- 引入 localForage -->
+        <script src="./lib/localForage.js"></script>
+        <!-- 引入 day.js -->
+        <script src="./lib/day.js"></script>
+        <!-- 引入 hexin-v -->
+        <script src="./lib/hexin-v.js"></script>
+        <!-- 引入自定义工具函数 -->
+        <script src="./js/utils.js"></script>
+        <!-- 引入策略函数 -->
+        <script src="./js/strategy.js"></script>
+        <!-- 引入主应用 -->
+        <script src="./js/index.js"></script>
+    </body>
+</html>
