@@ -158,7 +158,6 @@ const Blocks = reactive({
                                 message: 'Skipped',
                             }
                         }
-                        Blocks.loading = false
                         return
                     }
                 }
@@ -170,8 +169,6 @@ const Blocks = reactive({
             if (!isToday) await catcheSetFunction('Blocks', cache)
             handleBlocksData(results)
         }
-
-        Blocks.loading = false
     },
 })
 
@@ -275,52 +272,76 @@ const Stocks = reactive({
             if (!isToday) await catcheSetFunction('Stocks', cache)
             handleStocksData(results)
         }
-
-        Stocks.loading = false
     },
 })
 
 /** @description Data Processing Functions */
 async function handleBlocksData(res) {
-    const arr = res[0].map((ele) => {
+    // 合并两个数组，按 code 去重，res[0] 的数据优先
+    const map0 = new Map(res[0]?.map((item) => [item['code'], item]) || [])
+    const map1 = new Map(res[1]?.map((item) => [item['code'], item]) || [])
+    const mergedMap = new Map()
+
+    // 先添加 res[0] 的所有数据，标记 source = '1'
+    map0.forEach((value, key) => {
+        mergedMap.set(key, { ...value, source: '1' })
+    })
+
+    // 遍历 res[1]，如果 code 已存在则更新 source 为 '1,2'，否则添加并标记 '2'
+    map1.forEach((value, key) => {
+        if (mergedMap.has(key)) {
+            mergedMap.set(key, { ...mergedMap.get(key), source: '1,2' })
+        } else {
+            mergedMap.set(key, { ...value, source: '2' })
+        }
+    })
+
+    // 转换为数组并处理
+    const arr = Array.from(mergedMap.values()).map((ele) => {
         const obj = {}
         handleRate(obj, ele, 'block', Dates.shareDate)
+        // 保留 source 字段
+        obj['source'] = ele.source
         return obj
     })
-    // 按指数简称去重
-    const uniqueArr = Array.from(new Map(arr.map((item) => [item['指数简称'], item])).values())
-    Blocks.Data[0].filters = uniqueArr
 
-    // 更新连线图
-    ConnectionChart.updateData(Stocks.Data[0].filters, Blocks.Data[0].filters)
+    Blocks.Data[0].filters = arr
 
-    // 渲染集合图
-    setTimeout(() => {
-        renderCollectionChart(Stocks.Data[0].filters, Blocks.Data[0].filters, Dates.shareDate)
-    }, 100)
+    // 注意：连线图统一在 Submit 中更新，避免并行执行时的竞争条件
 }
 
 async function handleStocksData(res) {
-    const map1 = new Map(res[1]?.map((item) => [item['股票简称'], item]) || [])
+    // 合并两个数组，按 code 去重，res[0] 的数据优先
+    const map0 = new Map(res[0]?.map((item) => [item['code'], item]) || [])
+    const map1 = new Map(res[1]?.map((item) => [item['code'], item]) || [])
+    const mergedMap = new Map()
 
-    const arr = res[0].map((ele) => {
-        const match1 = map1.get(ele['股票简称']) || {}
-        const merged = { ...ele, ...match1 }
+    // 先添加 res[0] 的所有数据，标记 source = '1'
+    map0.forEach((value, key) => {
+        mergedMap.set(key, { ...value, source: '1' })
+    })
+
+    // 遍历 res[1]，如果 code 已存在则更新 source 为 '1,2'，否则添加并标记 '2'
+    map1.forEach((value, key) => {
+        if (mergedMap.has(key)) {
+            mergedMap.set(key, { ...mergedMap.get(key), source: '1,2' })
+        } else {
+            mergedMap.set(key, { ...value, source: '2' })
+        }
+    })
+
+    // 转换为数组并处理
+    const arr = Array.from(mergedMap.values()).map((ele) => {
         const obj = {}
-        handleRate(obj, merged, 'stock', Dates.shareDate)
+        handleRate(obj, ele, 'stock', Dates.shareDate)
+        // 保留 source 字段
+        obj['source'] = ele.source
         return obj
     })
-    // 按股票简称去重
-    const uniqueArr = Array.from(new Map(arr.map((item) => [item['股票简称'], item])).values())
-    Stocks.Data[0].filters = uniqueArr
 
-    // 更新连线图
-    ConnectionChart.updateData(Stocks.Data[0].filters, Blocks.Data[0].filters)
+    Stocks.Data[0].filters = arr
 
-    // 渲染集合图
-    setTimeout(() => {
-        renderCollectionChart(Stocks.Data[0].filters, Blocks.Data[0].filters, Dates.shareDate)
-    }, 100)
+    // 注意：连线图统一在 Submit 中更新，避免并行执行时的竞争条件
 }
 
 /** @description App Setup */
@@ -335,7 +356,7 @@ const App = {
         const GlobalState = reactive({
             isRequesting: false,
             isDarkTheme: true,
-            
+
             toggleTheme: () => {
                 GlobalState.isDarkTheme = !GlobalState.isDarkTheme
                 const body = document.body
@@ -346,7 +367,7 @@ const App = {
                     body.classList.add('light-theme')
                     body.classList.remove('dark-theme')
                 }
-            }
+            },
         })
 
         // 初始化主题
@@ -361,7 +382,9 @@ const App = {
         const Submit = async () => {
             // 设置请求状态
             GlobalState.isRequesting = true
-            
+            Blocks.loading = true
+            Stocks.loading = true
+
             // 清空数据
             Stocks.Data[0].filters = []
             Blocks.Data[0].filters = []
@@ -383,9 +406,13 @@ const App = {
                     Blocks.init(getLocalforage, setLocalforage, Dates.shareDate),
                     Stocks.init(getLocalforage, setLocalforage, Dates.shareDate),
                 ])
+                // 数据都加载完成后，统一更新连线图（避免并行执行时的竞争条件）
+                ConnectionChart.updateData(Stocks.Data[0].filters, Blocks.Data[0].filters)
             } finally {
                 // 无论成功失败都恢复按钮状态
                 GlobalState.isRequesting = false
+                Blocks.loading = false
+                Stocks.loading = false
             }
         }
 
@@ -405,56 +432,252 @@ const App = {
 
         // 计算属性：显示的Block列表（根据筛选模式）
         const displayBlocks = computed(() => {
+            // 添加依赖：当 selectedBlock 或 selectedStock 变化时重新计算
+            const _selectedBlock = MatchChart.selectedBlock
+            const _selectedStock = MatchChart.selectedStock
+
             if (!ConnectionChart.data || ConnectionChart.data.length === 0) {
                 Blocks.Data[0].filters.forEach((block) => {
                     block.matchCount = 0
                 })
-                return Blocks.Data[0].filters
+                // 没有连接数据时：matched模式返回空数组，strong模式返回强势数据
+                if (MatchChart.blockFilterMode === 'matched') {
+                    return []
+                }
+                let result = Blocks.Data[0].filters
+
+                // 强势筛选
+                if (MatchChart.blockFilterMode === 'strong') {
+                    result = result.filter((block) => {
+                        const data0935 = block[`${Dates.shareDate.td} 09:35`]
+                        if (!data0935) return false
+                        const _35涨跌幅 = data0935.涨跌幅 || 0
+                        const _35资金流向 = data0935.资金流向 || 0
+                        const _35大单净额 = data0935.大单净额 || 0
+                        const _33资金流向 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
+                        const _33大单净额 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
+
+                        return (
+                            _35涨跌幅 > 0 &&
+                            (_35资金流向 > 0 ||
+                                _35大单净额 > 0 ||
+                                (_35资金流向 > _33资金流向 && _35大单净额 > _33大单净额)) &&
+                            !(_35资金流向 < _33资金流向 && _35大单净额 < _33大单净额)
+                        )
+                    })
+                }
+
+                // 按09:35涨跌幅降序排序（涨幅大的在前）
+                result.sort((a, b) => {
+                    const aChange = a[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                    const bChange = b[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                    return bChange - aChange
+                })
+
+                // 返回新对象引用以强制刷新
+                return result.map((b) => ({ ...b }))
             }
 
-            const blockSet = new Set(ConnectionChart.data.map((c) => c.blockName))
+            // 根据筛选模式返回数据（返回新对象引用以强制刷新）
+            // 三级递进：all -> strong -> matched
+            let result = Blocks.Data[0].filters
 
-            // 为所有Block计算匹配数量
-            Blocks.Data[0].filters.forEach((block) => {
-                const matchCount = blockSet.has(block['指数简称'])
-                    ? ConnectionChart.data.filter((c) => c.blockName === block['指数简称']).length
+            // 强势筛选
+            if (MatchChart.blockFilterMode === 'strong' || MatchChart.blockFilterMode === 'matched') {
+                result = result.filter((block) => {
+                    const data0935 = block[`${Dates.shareDate.td} 09:35`]
+                    if (!data0935) return false
+                    const _35涨跌幅 = data0935.涨跌幅 || 0
+                    const _35资金流向 = data0935.资金流向 || 0
+                    const _35大单净额 = data0935.大单净额 || 0
+                    const _33资金流向 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
+                    const _33大单净额 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
+
+                    return (
+                        _35涨跌幅 > 0 &&
+                        (_35资金流向 > 0 || _35大单净额 > 0 || (_35资金流向 > _33资金流向 && _35大单净额 > _33大单净额)) &&
+                        !(_35资金流向 < _33资金流向 && _35大单净额 < _33大单净额)
+                    )
+                })
+            }
+
+            // 在强势数据基础上重新计算匹配数量
+            // 使用与 displayStocks 相同的筛选逻辑
+            const strongBlockData = result
+
+            // 计算所有可能的连接（用于匹配计算）
+            const allConnections = findConnections(Stocks.Data[0].filters, strongBlockData)
+
+            // 为每个Stock找到匹配的强势Block的最高涨幅
+            const stockToMaxBlockChange = new Map()
+            allConnections.forEach((conn) => {
+                const block = strongBlockData.find((b) => b['指数简称'] === conn.blockName)
+                if (block) {
+                    const blockChange = block[`${Dates.shareDate.td} 09:35`]?.涨跌幅 || 0
+                    const stockName = conn.stockName
+                    const currentMax = stockToMaxBlockChange.get(stockName) || -Infinity
+                    if (blockChange > currentMax) {
+                        stockToMaxBlockChange.set(stockName, blockChange)
+                    }
+                }
+            })
+
+            // 筛选出符合 displayStocks 强势条件的 Stock
+            const strongStockData = Stocks.Data[0].filters.filter((stock) => {
+                const data0935 = stock[`${Dates.shareDate.td} 09:35`]
+                if (!data0935) return false
+                const 涨跌幅 = data0935.涨跌幅 || 0
+                const maxBlockChange = stockToMaxBlockChange.get(stock['股票简称'])
+                // 如果没有匹配的强势Block，则不满足条件
+                if (maxBlockChange === undefined) return false
+                return 涨跌幅 > 0 && 涨跌幅 > maxBlockChange
+            })
+
+            // 基于筛选后的 Stock 重新计算连接关系
+            const dynamicConnections = findConnections(strongStockData, strongBlockData)
+            const dynamicBlockSet = new Set(dynamicConnections.map((c) => c.blockName))
+
+            result.forEach((block) => {
+                const matchCount = dynamicBlockSet.has(block['指数简称'])
+                    ? dynamicConnections.filter((c) => c.blockName === block['指数简称']).length
                     : 0
                 block.matchCount = matchCount
             })
 
-            // 根据筛选模式返回数据
+            // 有匹配筛选（在强势基础上）
             if (MatchChart.blockFilterMode === 'matched') {
-                return Blocks.Data[0].filters.filter((block) => block.matchCount > 0)
-            } else {
-                return Blocks.Data[0].filters
+                result = result.filter((block) => block.matchCount > 0)
             }
+
+            // 按09:35涨跌幅降序排序（涨幅大的在前）
+            result.sort((a, b) => {
+                const aChange = a[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                const bChange = b[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                return bChange - aChange
+            })
+
+            return result.map((b) => ({ ...b }))
         })
 
         // 计算属性：显示的Stock列表（根据筛选模式）
         const displayStocks = computed(() => {
+            // 添加依赖：当 selectedBlock 或 selectedStock 变化时重新计算
+            const _selectedBlock = MatchChart.selectedBlock
+            const _selectedStock = MatchChart.selectedStock
+
             if (!ConnectionChart.data || ConnectionChart.data.length === 0) {
                 Stocks.Data[0].filters.forEach((stock) => {
                     stock.matchCount = 0
                 })
-                return Stocks.Data[0].filters
+                // 没有连接数据时：matched模式返回空数组，strong模式返回强势数据
+                if (MatchChart.stockFilterMode === 'matched') {
+                    return []
+                }
+                let result = Stocks.Data[0].filters
+
+                // 强势筛选
+                if (MatchChart.stockFilterMode === 'strong') {
+                    result = result.filter((stock) => {
+                        const data0935 = stock[`${Dates.shareDate.td} 09:35`]
+                        if (!data0935) return false
+                        const 涨跌幅 = data0935.涨跌幅 || 0
+                        return 涨跌幅 > 0
+                    })
+                }
+
+                // 按热度排名升序排序（排名越小越热门）
+                result.sort((a, b) => {
+                    const aHeat = a[Dates.shareDate.pd1]?.热度排名 ?? Infinity
+                    const bHeat = b[Dates.shareDate.pd1]?.热度排名 ?? Infinity
+                    return aHeat - bHeat
+                })
+
+                // 返回新对象引用以强制刷新
+                return result.map((s) => ({ ...s }))
             }
 
-            const stockSet = new Set(ConnectionChart.data.map((c) => c.stockName))
+            // 根据筛选模式返回数据（返回新对象引用以强制刷新）
+            // 三级递进：all -> strong -> matched
+            let result = Stocks.Data[0].filters
 
-            // 为所有Stock计算匹配数量
-            Stocks.Data[0].filters.forEach((stock) => {
-                const matchCount = stockSet.has(stock['股票简称'])
-                    ? ConnectionChart.data.filter((c) => c.stockName === stock['股票简称']).length
+            // 声明变量用于强势筛选和匹配计算
+            let strongBlockData = []
+            let dynamicConnections = []
+            let stockToMaxBlockChange = new Map()
+
+            // 强势筛选
+            if (MatchChart.stockFilterMode === 'strong' || MatchChart.stockFilterMode === 'matched') {
+                // 先计算强势Block数据
+                strongBlockData = Blocks.Data[0].filters.filter((block) => {
+                    const data0935 = block[`${Dates.shareDate.td} 09:35`]
+                    if (!data0935) return false
+                    const _35涨跌幅 = data0935.涨跌幅 || 0
+                    const _35资金流向 = data0935.资金流向 || 0
+                    const _35大单净额 = data0935.大单净额 || 0
+                    const _33资金流向 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
+                    const _33大单净额 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
+
+                    return (
+                        _35涨跌幅 > 0 &&
+                        (_35资金流向 > 0 || _35大单净额 > 0 || (_35资金流向 > _33资金流向 && _35大单净额 > _33大单净额)) &&
+                        !(_35资金流向 < _33资金流向 && _35大单净额 < _33大单净额)
+                    )
+                })
+
+                // 计算动态连接关系
+                const strongStockDataForMatch = result
+                dynamicConnections = findConnections(strongStockDataForMatch, strongBlockData)
+
+                // 为每个Stock找到匹配的强势Block的最高涨幅
+                stockToMaxBlockChange = new Map()
+                dynamicConnections.forEach((conn) => {
+                    const block = strongBlockData.find((b) => b['指数简称'] === conn.blockName)
+                    if (block) {
+                        const blockChange = block[`${Dates.shareDate.td} 09:35`]?.涨跌幅 || 0
+                        const stockName = conn.stockName
+                        const currentMax = stockToMaxBlockChange.get(stockName) || -Infinity
+                        if (blockChange > currentMax) {
+                            stockToMaxBlockChange.set(stockName, blockChange)
+                        }
+                    }
+                })
+
+                // 强势筛选（Stock的09:35涨跌幅 > 0 且 > 匹配Block的最高涨幅）
+                result = result.filter((stock) => {
+                    const data0935 = stock[`${Dates.shareDate.td} 09:35`]
+                    if (!data0935) return false
+                    const 涨跌幅 = data0935.涨跌幅 || 0
+                    const maxBlockChange = stockToMaxBlockChange.get(stock['股票简称'])
+                    // 如果没有匹配的强势Block，则不满足条件
+                    if (maxBlockChange === undefined) return false
+                    return 涨跌幅 > 0 && 涨跌幅 > maxBlockChange
+                })
+            }
+
+            // 在强势数据基础上重新计算匹配数量
+            // 使用之前计算的 strongBlockData 和 dynamicConnections
+            const dynamicStockSet = new Set(dynamicConnections.map((c) => c.stockName))
+
+            result.forEach((stock) => {
+                const matchCount = dynamicStockSet.has(stock['股票简称'])
+                    ? dynamicConnections.filter((c) => c.stockName === stock['股票简称']).length
                     : 0
                 stock.matchCount = matchCount
             })
 
-            // 根据筛选模式返回数据
+            // 有匹配筛选（在强势基础上）
             if (MatchChart.stockFilterMode === 'matched') {
-                return Stocks.Data[0].filters.filter((stock) => stock.matchCount > 0)
-            } else {
-                return Stocks.Data[0].filters
+                result = result.filter((stock) => stock.matchCount > 0)
             }
+
+            // 按热度排名升序排序（排名越小越热门）
+            result.sort((a, b) => {
+                const aHeat = a[Dates.shareDate.pd1]?.热度排名 ?? Infinity
+                const bHeat = b[Dates.shareDate.pd1]?.热度排名 ?? Infinity
+                return aHeat - bHeat
+            })
+
+            return result.map((s) => ({ ...s }))
         })
 
         // 切换Block筛选模式

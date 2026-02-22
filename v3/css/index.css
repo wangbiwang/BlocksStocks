@@ -380,19 +380,19 @@ body,
     min-width: auto;
 }
 
-/* 匹配表格高亮行 */
-.el-table .highlight-row {
-    background-color: #e6f7ff;
+/* 匹配表格高亮行 - 使用更高优先级选择器 */
+.el-table .el-table__body .el-table__row.highlight-row td {
+    background-color: #e6f7ff !important;
 }
 
-.el-table .highlight-row:hover {
-    background-color: #bae7ff;
+.el-table .el-table__body .el-table__row.highlight-row:hover td {
+    background-color: #bae7ff !important;
 }
 
-.el-table .selected-row {
-    background-color: #fff7e6;
+.el-table .el-table__body .el-table__row.selected-row td {
+    background-color: #fff7e6 !important;
 }
 
-.el-table .selected-row:hover {
-    background-color: #ffe7ba;
+.el-table .el-table__body .el-table__row.selected-row:hover td {
+    background-color: #ffe7ba !important;
 }

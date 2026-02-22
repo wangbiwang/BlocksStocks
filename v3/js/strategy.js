@@ -5,7 +5,7 @@
  */
 function handleRate(obj, ele, type, dates) {
     const num = (e) => (e ? Number(Number(e).toFixed(3)) : 0)
-    const { td, pd1 } = dates
+    const { nd1, td, pd1 } = dates
     let t = type === 'block' ? '指数@' : ''
 
     // 基础数据
@@ -17,14 +17,14 @@ function handleRate(obj, ele, type, dates) {
     }
 
     // 09:35 数据
-    obj[`09:35`] = {
+    obj[`${td} 09:35`] = {
         涨跌幅: num(ele[`${t}分时涨跌幅:前复权[${td} 09:35]`]),
         资金流向: num(ele[`${t}分时资金流向[${td} 09:35]`]),
         大单净额: num(ele[`${t}分时dde大单净额[${td} 09:35]`]),
     }
 
     // 09:33 数据
-    obj[`09:33`] = {
+    obj[`${td} 09:33`] = {
         涨跌幅: num(ele[`${t}分时涨跌幅:前复权[${td} 09:33]`]),
         资金流向: num(ele[`${t}分时资金流向[${td} 09:33]`]),
         大单净额: num(ele[`${t}分时dde大单净额[${td} 09:33]`]),
@@ -49,6 +49,10 @@ function handleRate(obj, ele, type, dates) {
         大单净量: num(ele[`${t}dde大单净量[${pd1}]`] || ele[`${t}分时dde大单净量[${pd1} 15:00]`]),
     }
 
+    obj[nd1] = {
+        涨跌幅: num(ele[`${t}涨跌幅:前复权[${nd1}]`] || ele[`${t}分时涨跌幅:前复权[${nd1} 15:00]`]),
+    }
+
     // 类型特定数据
     if (type === 'block') {
         obj['指数简称'] = ele['指数简称'] || ''
@@ -58,7 +62,7 @@ function handleRate(obj, ele, type, dates) {
         obj['行业'] = ele['所属同花顺行业']?.split('-')[1] || ''
         obj['概念'] = ele['所属概念']?.split(';') || []
 
-        obj[pd1]['热度排名'] = ele[`个股热度排名[${pd1}]`]
+        obj[pd1]['热度排名'] = ele[`个股热度排名[${pd1}]`]||ele[`个股热度排名[${td}]`]
     }
 
     obj['code'] = ele['code']
@@ -299,16 +303,32 @@ function renderCollectionChart(stocks, blocks, dates) {
  * 生成查询问题
  */
 function getQuestions(type, datas) {
-    const { td, pd1 } = datas
+    const { nd1, td, pd1, isToday } = datas
+    let questions = []
     if (type === 'stock') {
-        return [
-            `${td}涨跌幅;${pd1}大单净量>0.4；${pd1}涨跌幅>4；${pd1}成交量是5日均量2倍以上；${pd1}大单净额创${pd1}前30交易日新高 ；${pd1}收盘价大于30日均线；${pd1}热度排名升序；主板创业非ST；行业或者概念 `,
-        ]
+        questions[0] = `${td}涨跌幅; ${td} 09:35涨跌幅资金流向大单净额;${pd1}大单净量>0.4；${pd1}涨跌幅>4；${pd1}成交量是5日均量2倍以上；${pd1}大单净额创${pd1}前30交易日新高 ；${pd1}收盘价大于30日均线；${pd1}热度排名升序；主板创业非ST；行业或者概念 `
+        questions[1] = `${td}涨跌幅; ${td} 09:35涨跌幅资金流向大单净额;${pd1}大单净量>0.4；${pd1}涨跌幅>4；${pd1}收盘价大于60日均线；${pd1}热度排名前250；主板创业非ST；行业或者概念 `
+
+        if (isToday && isToday != td) {
+            questions[0] = `大单净量>0.4；涨跌幅>4；成交量是5日均量2倍以上；大单净额创前30交易日新高 ；收盘价大于30日均线；主板创业非ST；行业或者概念 ；热度排名升序`
+            questions[1] = `大单净量>0.4；涨跌幅>4；收盘价大于60日均线；热度排名前250；主板创业非ST；行业或者概念 ；热度排名升序`
+        }
+        if (nd1) {
+            questions[0] = `${nd1}涨跌幅;` + questions[0]
+            questions[1] = `${nd1}涨跌幅;` + questions[1]
+        }
     } else if (type === 'block') {
-        return [
-            `${td}涨跌幅;${pd1}涨跌幅>1.5；${pd1}大单净量>0.2；${pd1}上涨家数占比>60；${pd1}上涨家数占比增长值>0；${pd1}涨停家数>0；${pd1}收盘价大于30日均线；${td}前3交易日资金流向正；$${td}前10交易日涨幅 < 25；${pd1}涨跌幅降序；二级行业或者概念`,
-        ]
+        questions[0] = `${td}涨跌幅;${td} 09:35涨跌幅资金流向大单净额;${td} 09:33资金流向大单净额;${pd1}涨跌幅>1.5；${pd1}大单净量>0.2；${pd1}上涨家数占比>60；${pd1}涨停家数>0；${pd1}收盘价大于30日均线；${td}前3交易日资金流向正；${td}前10交易日涨幅 < 25`
+        questions[1] = `${td}涨跌幅;${td} 09:35涨跌幅资金流向大单净额;${td} 09:33资金流向大单净额;${pd1}涨跌幅>1.5；${pd1}大单净量；${pd1}上涨家数占比>60；${pd1}涨停家数>0；${pd1}收盘价大于60日均线；${pd1}资金流向大单净额正`
+        if (isToday && isToday != td) {
+            questions[0] = `涨跌幅>1.5；大单净量>0.2；上涨家数占比>60；涨停家数>0；收盘价大于30日均线；前3交易日资金流向正；前10交易日涨幅 < 25；涨跌幅降序；二级行业或者概念`
+            questions[1] = `涨跌幅>1.5；大单净量；上涨家数占比>60；涨停家数>0；收盘价大于60日均线；资金流向大单净额正；二级行业或者概念`
+        }
+        if (nd1) {
+            questions[0] = `${nd1}涨跌幅;` + questions[0]
+            questions[1] = `${nd1}涨跌幅;` + questions[1]
+        }
     }
 
-    return []
+    return questions
 }
