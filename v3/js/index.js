@@ -970,4 +970,15 @@ const App = {
 
 const app = Vue.createApp(App)
 app.use(ElementPlus, { locale: ElementPlusLocaleZhCn })
+
+// 注册 Element Plus 图标组件（同时注册 PascalCase 和 kebab-case 格式）
+const icons = ['ArrowLeft', 'ArrowRight', 'Moon', 'Opportunity']
+icons.forEach((name) => {
+    const component = ElementPlusIconsVue[name]
+    app.component(name, component)
+    // 同时注册 kebab-case 格式
+    const kebabName = name.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '')
+    app.component(kebabName, component)
+})
+
 app.mount('#app')
