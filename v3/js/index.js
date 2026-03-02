@@ -81,6 +81,7 @@ const Dates = reactive({
 /** @description Blocks Module */
 const Blocks = reactive({
     loading: false,
+    isFromCache: false,
     Data: [{ name: 'Block策略', filters: [] }],
     requestStatus: [],
 
@@ -93,6 +94,7 @@ const Blocks = reactive({
         const isValid = target?.length === questions.length && target.every((d) => Array.isArray(d))
 
         if (isValid) {
+            Blocks.isFromCache = true
             Blocks.requestStatus = questions.map((_, i) => ({
                 name: `Request ${i + 1}`,
                 status: 'success',
@@ -100,6 +102,7 @@ const Blocks = reactive({
             }))
             handleBlocksData(target)
         } else {
+            Blocks.isFromCache = false
             await Blocks.getData(questions, catcheSetFunction, cache, dates)
         }
     },
@@ -107,6 +110,7 @@ const Blocks = reactive({
     getData: async (questions, catcheSetFunction, cache, dates) => {
         const { tdcn, isToday } = dates
         Blocks.loading = true
+        Blocks.isFromCache = false
         Blocks.Data[0].filters = []
 
         Blocks.requestStatus = questions.map((_, i) => ({
@@ -195,6 +199,7 @@ const MatchChart = reactive({
 /** @description Stocks Module */
 const Stocks = reactive({
     loading: false,
+    isFromCache: false,
     Data: [{ name: 'Stock策略', filters: [] }],
     requestStatus: [],
 
@@ -207,6 +212,7 @@ const Stocks = reactive({
         const isValid = target?.length === questions.length && target.every((d) => Array.isArray(d))
 
         if (isValid) {
+            Stocks.isFromCache = true
             Stocks.requestStatus = questions.map((_, i) => ({
                 name: `Request ${i + 1}`,
                 status: 'success',
@@ -214,6 +220,7 @@ const Stocks = reactive({
             }))
             handleStocksData(target)
         } else {
+            Stocks.isFromCache = false
             await Stocks.getData(questions, catcheSetFunction, cache, dates)
         }
     },
@@ -221,6 +228,7 @@ const Stocks = reactive({
     getData: async (questions, catcheSetFunction, cache, dates) => {
         const { tdcn, isToday } = dates
         Stocks.loading = true
+        Stocks.isFromCache = false
         Stocks.Data[0].filters = []
 
         Stocks.requestStatus = questions.map((_, i) => ({
@@ -370,6 +378,18 @@ const App = {
             },
         })
 
+        // 回测状态
+        const Backtest = reactive({
+            isRunning: false,
+            shouldStop: false,
+            result: {
+                totalDays: 0,
+                buyableDays: 0,
+                winDays: 0,
+                winRate: '0%',
+            },
+        })
+
         // 初始化主题
         onMounted(() => {
             if (GlobalState.isDarkTheme) {
@@ -458,7 +478,7 @@ const App = {
                         const _33大单净额 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
 
                         return (
-                            _35涨跌幅 > 0 &&
+                            _35涨跌幅 > 0.5 &&
                             (_35资金流向 > 0 ||
                                 _35大单净额 > 0 ||
                                 (_35资金流向 > _33资金流向 && _35大单净额 > _33大单净额)) &&
@@ -494,7 +514,7 @@ const App = {
                     const _33大单净额 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
 
                     return (
-                        _35涨跌幅 > 0 &&
+                        _35涨跌幅 > 0.5 &&
                         (_35资金流向 > 0 || _35大单净额 > 0 || (_35资金流向 > _33资金流向 && _35大单净额 > _33大单净额)) &&
                         !(_35资金流向 < _33资金流向 && _35大单净额 < _33大单净额)
                     )
@@ -618,7 +638,7 @@ const App = {
                     const _33大单净额 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
 
                     return (
-                        _35涨跌幅 > 0 &&
+                        _35涨跌幅 > 0.5 &&
                         (_35资金流向 > 0 || _35大单净额 > 0 || (_35资金流向 > _33资金流向 && _35大单净额 > _33大单净额)) &&
                         !(_35资金流向 < _33资金流向 && _35大单净额 < _33大单净额)
                     )
@@ -746,6 +766,166 @@ const App = {
             return ''
         }
 
+        // 删除当前日期的缓存数据
+        const clearCache = async () => {
+            const { tdcn } = Dates.shareDate
+            const blocksCache = (await getLocalforage('Blocks')) || {}
+            const stocksCache = (await getLocalforage('Stocks')) || {}
+
+            delete blocksCache[tdcn]
+            delete stocksCache[tdcn]
+
+            await setLocalforage('Blocks', blocksCache)
+            await setLocalforage('Stocks', stocksCache)
+
+            // 清空当前数据
+            Blocks.Data[0].filters = []
+            Stocks.Data[0].filters = []
+            Blocks.isFromCache = false
+            Stocks.isFromCache = false
+
+            // 重新请求数据
+            await Submit()
+        }
+
+        // 回测函数
+        const startBacktest = async () => {
+            Backtest.isRunning = true
+            Backtest.shouldStop = false
+            Backtest.result = { totalDays: 0, buyableDays: 0, winDays: 0, winRate: '0%' }
+
+            // 获取2024年及以后的交易日
+            const startDate = '20240101'
+            const allDates = Dates.historicalDate || []
+            const testDates = allDates.filter((d) => d >= startDate && d < Dates.Today)
+
+            let totalDays = 0
+            let buyableDays = 0
+            let winDays = 0
+
+            // 遍历每个交易日
+            for (const date of testDates) {
+                // 检查是否需要停止
+                if (Backtest.shouldStop) break
+
+                totalDays++
+                Dates.requestDate = date
+                Dates.setShareDate()
+
+                try {
+                    // 获取数据
+                    await Promise.all([
+                        Blocks.init(getLocalforage, setLocalforage, Dates.shareDate),
+                        Stocks.init(getLocalforage, setLocalforage, Dates.shareDate),
+                    ])
+
+                    // 检查是否需要停止（在获取数据后再次检查）
+                    if (Backtest.shouldStop) break
+
+                    // 等待直到loading结束（确保数据完全加载）
+                    while (Blocks.loading || Stocks.loading) {
+                        if (Backtest.shouldStop) break;
+                        await new Promise(resolve => setTimeout(resolve, 100)); // 每100ms检查一次
+                    }
+                    
+                    if (Backtest.shouldStop) break;
+
+                    // 计算强势Block数据
+                    const strongBlockData = Blocks.Data[0].filters.filter((block) => {
+                        const data0935 = block[`${Dates.shareDate.td} 09:35`]
+                        if (!data0935) return false
+                        const _35涨跌幅 = data0935.涨跌幅 || 0
+                        const _35资金流向 = data0935.资金流向 || 0
+                        const _35大单净额 = data0935.大单净额 || 0
+                        const _33资金流向 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
+                        const _33大单净额 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
+
+                        return (
+                            _35涨跌幅 > 0.5 &&
+                            (_35资金流向 > 0 || _35大单净额 > 0 || (_35资金流向 > _33资金流向 && _35大单净额 > _33大单净额)) &&
+                            !(_35资金流向 < _33资金流向 && _35大单净额 < _33大单净额)
+                        )
+                    })
+
+                    // 计算强势Stock数据
+                    const strongStockData = Stocks.Data[0].filters.filter((stock) => {
+                        const data0935 = stock[`${Dates.shareDate.td} 09:35`]
+                        if (!data0935) return false
+                        return data0935.涨跌幅 > 0
+                    })
+
+                    // 计算连接关系
+                    const connections = findConnections(strongStockData, strongBlockData)
+
+                    // 找到有匹配的Block
+                    const blockMatchCounts = {}
+                    connections.forEach((conn) => {
+                        blockMatchCounts[conn.blockName] = (blockMatchCounts[conn.blockName] || 0) + 1
+                    })
+
+                    const matchedBlocks = strongBlockData.filter((b) => blockMatchCounts[b['指数简称']] > 0)
+                        .sort((a, b) => {
+                            const aChange = a[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                            const bChange = b[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                            return bChange - aChange
+                        })
+
+                    if (matchedBlocks.length === 0) continue
+
+                    // 获取第一个Block的第一个匹配Stock
+                    const firstBlock = matchedBlocks[0]
+                    const matchedStocks = connections
+                        .filter((c) => c.blockName === firstBlock['指数简称'])
+                        .map((c) => strongStockData.find((s) => s['股票简称'] === c.stockName))
+                        .filter(Boolean)
+                        .sort((a, b) => (a[Dates.shareDate.pd1]?.热度排名 ?? Infinity) - (b[Dates.shareDate.pd1]?.热度排名 ?? Infinity))
+
+                    if (matchedStocks.length === 0) continue
+
+                    buyableDays++
+                    const firstStock = matchedStocks[0]
+                    const nextDayChange = firstStock[Dates.shareDate.nd1]?.涨跌幅 || 0
+
+                    if (nextDayChange > 0) {
+                        winDays++
+                    }
+                } catch (e) {
+                    console.error(`Backtest error for ${date}:`, e)
+                }
+
+                // 更新显示
+                Backtest.result.totalDays = totalDays
+                Backtest.result.buyableDays = buyableDays
+                Backtest.result.winDays = winDays
+                Backtest.result.winRate = buyableDays > 0 ? ((winDays / buyableDays) * 100).toFixed(1) + '%' : '0%'
+
+                // 检查是否需要停止（在更新显示后再次检查）
+                if (Backtest.shouldStop) break
+                
+                // 只有不是从缓存加载数据时才等待，如果是缓存数据则跳过等待
+                if (!(Blocks.isFromCache && Stocks.isFromCache)) {
+                    const waitTime = (Math.floor(Math.random() * 11) + 10) * 1000 // 随机等待10-20秒
+                    // 等待期间定期检查是否需要停止
+                    const checkInterval = 100; // 每100ms检查一次
+                    let waited = 0;
+                    while (waited < waitTime && !Backtest.shouldStop) {
+                        await new Promise(resolve => setTimeout(resolve, checkInterval));
+                        waited += checkInterval;
+                    }
+                    
+                    // 如果是因为停止信号而跳出等待，则退出循环
+                    if (Backtest.shouldStop) break;
+                }
+            }
+
+            Backtest.isRunning = false
+        }
+
+        // 停止回测
+        const stopBacktest = () => {
+            Backtest.shouldStop = true
+        }
+
         onMounted(async () => {
             Intervals.timer = setInterval(Intervals.updateTime, 1000)
 
@@ -780,6 +960,10 @@ const App = {
             handleStockRowClick,
             getBlockRowClassName,
             getStockRowClassName,
+            clearCache,
+            Backtest,
+            startBacktest,
+            stopBacktest,
         }
     },
 }

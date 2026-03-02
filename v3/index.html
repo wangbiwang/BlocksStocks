@@ -52,6 +52,38 @@
                     >
                         查询
                     </el-button>
+                    <el-tag
+                        v-if="Blocks.isFromCache || Stocks.isFromCache"
+                        type="warning"
+                        size="small"
+                        class="cache-tag"
+                        @click="clearCache"
+                        style="cursor: pointer; margin-left: 8px;"
+                    >
+                        缓存
+                    </el-tag>
+                    <el-button
+                        type="success"
+                        size="small"
+                        @click="startBacktest"
+                        :disabled="Backtest.isRunning"
+                        :loading="Backtest.isRunning"
+                        style="margin-left: 8px;"
+                    >
+                        回测
+                    </el-button>
+                    <el-button
+                        type="danger"
+                        size="small"
+                        @click="stopBacktest"
+                        v-if="Backtest.isRunning"
+                        style="margin-left: 4px;"
+                    >
+                        停止
+                    </el-button>
+                    <span v-if="Backtest.result.totalDays > 0" style="margin-left: 12px; font-size: 13px;">
+                        总:{{ Backtest.result.totalDays }} | 可购:{{ Backtest.result.buyableDays }} | 胜率:{{ Backtest.result.winRate }}
+                    </span>
                     <el-button class="theme-toggle" @click="GlobalState.toggleTheme" size="small" circle>
                         <i class="el-icon-sunny" v-if="GlobalState.isDarkTheme"></i>
                         <i class="el-icon-moon" v-else></i>
@@ -224,6 +256,12 @@
                                     </template>
                                 </el-table-column>
                                 <el-table-column
+                                    prop="source"
+                                    label="来源"
+                                    width="60"
+                                    align="center"
+                                ></el-table-column>
+                                <el-table-column
                                     prop="matchCount"
                                     label="匹配数"
                                     width="70"
@@ -361,6 +399,12 @@
                                         <span class="red f600">{{ row[Dates.shareDate.pd1]?.热度排名 || '-' }}</span>
                                     </template>
                                 </el-table-column>
+                                <el-table-column
+                                    prop="source"
+                                    label="来源"
+                                    width="60"
+                                    align="center"
+                                ></el-table-column>
                                 <el-table-column
                                     prop="matchCount"
                                     label="匹配数"

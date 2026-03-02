@@ -6,7 +6,7 @@ const myIndexedDB = localforage.createInstance({
 })
 async function setLocalforage(key, value) {
     try {
-        // await myIndexedDB.setItem(key, value)  //暂时关闭
+        await myIndexedDB.setItem(key, value)  //暂时关闭
 
     } catch (err) {
         console.error(`Error setting ${key} to IndexedDB:`, err)
