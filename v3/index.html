@@ -72,6 +72,17 @@
                     >
                         回测
                     </el-button>
+                    <el-input-number
+                        v-model="Backtest.intervalSeconds"
+                        :min="1"
+                        :max="300"
+                        :step="1"
+                        size="small"
+                        controls-position="right"
+                        style="width: 80px; margin-left: 4px;"
+                        :disabled="Backtest.isRunning"
+                    ></el-input-number>
+                    <span style="margin-left: 2px; font-size: 12px; color: #666;">秒</span>
                     <el-button
                         type="danger"
                         size="small"

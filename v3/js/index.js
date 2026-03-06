@@ -378,10 +378,13 @@ const App = {
             },
         })
 
-        // 回测状态
+        // 自动切换状态
         const Backtest = reactive({
             isRunning: false,
             shouldStop: false,
+            timeoutId: null, // 存储定时器引用
+            intervalSeconds: 30, // 切换间隔时间（秒），可配置
+            consecutiveErrors: 0, // 连续错误计数器
             result: {
                 totalDays: 0,
                 buyableDays: 0,
@@ -788,142 +791,103 @@ const App = {
             await Submit()
         }
 
-        // 回测函数
+        // 自动切换到下一个交易日函数（原回测按钮功能）
         const startBacktest = async () => {
             Backtest.isRunning = true
             Backtest.shouldStop = false
             Backtest.result = { totalDays: 0, buyableDays: 0, winDays: 0, winRate: '0%' }
+            Backtest.consecutiveErrors = 0 // 重置连续错误计数器
 
-            // 获取2024年及以后的交易日
-            const startDate = '20240101'
-            const allDates = Dates.historicalDate || []
-            const testDates = allDates.filter((d) => d >= startDate && d < Dates.Today)
+            // 清空之前的定时器
+            if (Backtest.timeoutId) {
+                clearTimeout(Backtest.timeoutId)
+                Backtest.timeoutId = null
+            }
 
-            let totalDays = 0
-            let buyableDays = 0
-            let winDays = 0
+            // 开始自动切换循环
+            const autoSwitch = async () => {
+                // 检查停止信号
+                if (Backtest.shouldStop) {
+                    Backtest.isRunning = false
+                    return
+                }
 
-            // 遍历每个交易日
-            for (const date of testDates) {
-                // 检查是否需要停止
-                if (Backtest.shouldStop) break
+                // 检查是否已是最后一个交易日
+                const list = Dates.historicalDate || []
+                const current = Dates.requestDate
+                const idx = list.indexOf(current)
 
-                totalDays++
-                Dates.requestDate = date
+                if (idx === -1 || idx >= list.length - 1) {
+                    Backtest.isRunning = false
+                    console.log('[自动切换] 已到达最后一个交易日，停止自动切换')
+                    return
+                }
+
+                // 切换到下一个交易日
+                const nextDate = list[idx + 1]
+                console.log(`[自动切换] 切换到下一个交易日: ${nextDate}`)
+                Dates.requestDate = nextDate
                 Dates.setShareDate()
 
                 try {
-                    // 获取数据
-                    await Promise.all([
-                        Blocks.init(getLocalforage, setLocalforage, Dates.shareDate),
-                        Stocks.init(getLocalforage, setLocalforage, Dates.shareDate),
-                    ])
-
-                    // 检查是否需要停止（在获取数据后再次检查）
-                    if (Backtest.shouldStop) break
-
-                    // 等待直到loading结束（确保数据完全加载）
-                    while (Blocks.loading || Stocks.loading) {
-                        if (Backtest.shouldStop) break;
-                        await new Promise(resolve => setTimeout(resolve, 100)); // 每100ms检查一次
+                    // 执行数据加载
+                    await Submit()
+                    
+                    // 数据加载成功，重置连续错误计数器
+                    Backtest.consecutiveErrors = 0
+                    
+                    // 检查数据是否来自缓存
+                    const isFromCache = Blocks.isFromCache && Stocks.isFromCache
+                    
+                    if (isFromCache) {
+                        // 数据来自缓存，无需等待，立即进行下一次切换
+                        console.log('[自动切换] 数据来自缓存，立即切换到下一个交易日')
+                        autoSwitch()
+                    } else {
+                        // 数据加载完成后，等待配置的间隔时间再进行下一次切换
+                        console.log(`[自动切换] 数据加载完成，等待${Backtest.intervalSeconds}秒后进行下一次切换`)
+                        Backtest.timeoutId = setTimeout(autoSwitch, Backtest.intervalSeconds * 1000)
+                    }
+                } catch (error) {
+                    console.error('[自动切换] 数据加载失败:', error)
+                    
+                    // 增加连续错误计数器
+                    Backtest.consecutiveErrors = (Backtest.consecutiveErrors || 0) + 1
+                    console.log(`[自动切换] 连续错误次数: ${Backtest.consecutiveErrors}`)
+                    
+                    // 如果连续错误达到3次，自动停止
+                    if (Backtest.consecutiveErrors >= 3) {
+                        console.log('[自动切换] 连续三次错误，自动停止')
+                        Backtest.shouldStop = true
+                        Backtest.isRunning = false
+                        if (Backtest.timeoutId) {
+                            clearTimeout(Backtest.timeoutId)
+                            Backtest.timeoutId = null
+                        }
+                        return
                     }
                     
-                    if (Backtest.shouldStop) break;
-
-                    // 计算强势Block数据
-                    const strongBlockData = Blocks.Data[0].filters.filter((block) => {
-                        const data0935 = block[`${Dates.shareDate.td} 09:35`]
-                        if (!data0935) return false
-                        const _35涨跌幅 = data0935.涨跌幅 || 0
-                        const _35资金流向 = data0935.资金流向 || 0
-                        const _35大单净额 = data0935.大单净额 || 0
-                        const _33资金流向 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
-                        const _33大单净额 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
-
-                        return (
-                            _35涨跌幅 > 0.5 &&
-                            (_35资金流向 > 0 || _35大单净额 > 0 || (_35资金流向 > _33资金流向 && _35大单净额 > _33大单净额)) &&
-                            !(_35资金流向 < _33资金流向 && _35大单净额 < _33大单净额)
-                        )
-                    })
-
-                    // 计算强势Stock数据
-                    const strongStockData = Stocks.Data[0].filters.filter((stock) => {
-                        const data0935 = stock[`${Dates.shareDate.td} 09:35`]
-                        if (!data0935) return false
-                        return data0935.涨跌幅 > 0
-                    })
-
-                    // 计算连接关系
-                    const connections = findConnections(strongStockData, strongBlockData)
-
-                    // 找到有匹配的Block
-                    const blockMatchCounts = {}
-                    connections.forEach((conn) => {
-                        blockMatchCounts[conn.blockName] = (blockMatchCounts[conn.blockName] || 0) + 1
-                    })
-
-                    const matchedBlocks = strongBlockData.filter((b) => blockMatchCounts[b['指数简称']] > 0)
-                        .sort((a, b) => {
-                            const aChange = a[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
-                            const bChange = b[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
-                            return bChange - aChange
-                        })
-
-                    if (matchedBlocks.length === 0) continue
-
-                    // 获取第一个Block的第一个匹配Stock
-                    const firstBlock = matchedBlocks[0]
-                    const matchedStocks = connections
-                        .filter((c) => c.blockName === firstBlock['指数简称'])
-                        .map((c) => strongStockData.find((s) => s['股票简称'] === c.stockName))
-                        .filter(Boolean)
-                        .sort((a, b) => (a[Dates.shareDate.pd1]?.热度排名 ?? Infinity) - (b[Dates.shareDate.pd1]?.热度排名 ?? Infinity))
-
-                    if (matchedStocks.length === 0) continue
-
-                    buyableDays++
-                    const firstStock = matchedStocks[0]
-                    const nextDayChange = firstStock[Dates.shareDate.nd1]?.涨跌幅 || 0
-
-                    if (nextDayChange > 0) {
-                        winDays++
-                    }
-                } catch (e) {
-                    console.error(`Backtest error for ${date}:`, e)
-                }
-
-                // 更新显示
-                Backtest.result.totalDays = totalDays
-                Backtest.result.buyableDays = buyableDays
-                Backtest.result.winDays = winDays
-                Backtest.result.winRate = buyableDays > 0 ? ((winDays / buyableDays) * 100).toFixed(1) + '%' : '0%'
-
-                // 检查是否需要停止（在更新显示后再次检查）
-                if (Backtest.shouldStop) break
-                
-                // 只有不是从缓存加载数据时才等待，如果是缓存数据则跳过等待
-                if (!(Blocks.isFromCache && Stocks.isFromCache)) {
-                    const waitTime = (Math.floor(Math.random() * 11) + 10) * 1000 // 随机等待10-20秒
-                    // 等待期间定期检查是否需要停止
-                    const checkInterval = 100; // 每100ms检查一次
-                    let waited = 0;
-                    while (waited < waitTime && !Backtest.shouldStop) {
-                        await new Promise(resolve => setTimeout(resolve, checkInterval));
-                        waited += checkInterval;
-                    }
-                    
-                    // 如果是因为停止信号而跳出等待，则退出循环
-                    if (Backtest.shouldStop) break;
+                    // 即使失败，也等待配置的间隔时间后继续尝试下一个日期
+                    console.log(`[自动切换] 等待${Backtest.intervalSeconds}秒后继续尝试`)
+                    Backtest.timeoutId = setTimeout(autoSwitch, Backtest.intervalSeconds * 1000)
                 }
             }
 
-            Backtest.isRunning = false
+            // 立即开始第一次切换
+            console.log('[自动切换] 开始自动切换到下一个交易日')
+            autoSwitch()
         }
 
-        // 停止回测
+        // 停止自动切换
         const stopBacktest = () => {
             Backtest.shouldStop = true
+            if (Backtest.timeoutId) {
+                clearTimeout(Backtest.timeoutId)
+                Backtest.timeoutId = null
+            }
+            Backtest.isRunning = false
+            Backtest.consecutiveErrors = 0 // 重置错误计数器
+            console.log('[自动切换] 已停止')
         }
 
         onMounted(async () => {
