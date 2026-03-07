@@ -85,9 +85,9 @@ const Industries = reactive({
     Data: [{ name: '行业策略', filters: [] }],
     requestStatus: [],
 
-    init: async (catcheGetFunction, catcheSetFunction, dates) => {
+    init: async (catcheGetFunction, catcheSetFunction, dates, blockItem, blockType, blockName) => {
         const { tdcn } = dates
-        const questions = getQuestions('block-行业', dates, null, '行业', null)
+        const questions = getQuestions('block-行业', dates, blockItem, blockType, blockName)
         const cache = (await catcheGetFunction('Industries')) || {}
         const target = cache[tdcn]
 
@@ -183,9 +183,9 @@ const Concepts = reactive({
     Data: [{ name: '概念策略', filters: [] }],
     requestStatus: [],
 
-    init: async (catcheGetFunction, catcheSetFunction, dates) => {
+    init: async (catcheGetFunction, catcheSetFunction, dates, blockItem, blockType, blockName) => {
         const { tdcn } = dates
-        const questions = getQuestions('block-概念', dates)
+        const questions = getQuestions('block-概念', dates,blockItem, blockType, blockName)
         const cache = (await catcheGetFunction('Concepts')) || {}
         const target = cache[tdcn]
 
@@ -290,14 +290,14 @@ const Stocks = reactive({
     selectedBlockName: null, // 当前选中的板块名称
     currentBlockType: null, // 当前板块类型：'行业' 或 '概念'
 
-    init: async (catcheGetFunction, catcheSetFunction, dates, clickBlockName = null, clickBlockType = null) => {
+    init: async (catcheGetFunction, catcheSetFunction, dates, blockItem, blockType, blockName) => {
         const { tdcn } = dates
-        Stocks.selectedBlockName = clickBlockName
-        Stocks.currentBlockType = clickBlockType
-        const questions = getQuestions('stock', dates, clickBlockName)
+        Stocks.selectedBlockName = blockName
+        Stocks.currentBlockType = blockType
+        const questions = getQuestions('stock', dates, blockItem, blockType, blockName)
         const cache = (await catcheGetFunction('Stocks')) || {}
         // 使用复合 key: 日期#板块类型#板块名称
-        const cacheKey = `${tdcn}#${clickBlockType || 'none'}#${clickBlockName || 'none'}`
+        const cacheKey = `${tdcn}#${blockType || 'none'}#${blockName || 'none'}`
         const target = cache[cacheKey]
 
         const isValid = target?.length === questions.length && target.every((d) => Array.isArray(d))
@@ -312,11 +312,11 @@ const Stocks = reactive({
             handleStocksData(target)
         } else {
             Stocks.isFromCache = false
-            await Stocks.getData(questions, catcheSetFunction, cache, dates, clickBlockName, clickBlockType)
+            await Stocks.getData(questions, catcheSetFunction, cache, dates, blockName, blockType)
         }
     },
 
-    getData: async (questions, catcheSetFunction, cache, dates, clickBlockName, clickBlockType) => {
+    getData: async (questions, catcheSetFunction, cache, dates, blockName, blockType) => {
         const { tdcn, isToday } = dates
         Stocks.loading = true
         Stocks.isFromCache = false
@@ -368,7 +368,7 @@ const Stocks = reactive({
 
         if (results.filter(Boolean).length === questions.length) {
             // 使用复合 key 保存缓存
-            const cacheKey = `${tdcn}#${clickBlockType || 'none'}#${clickBlockName || 'none'}`
+            const cacheKey = `${tdcn}#${blockType || 'none'}#${blockName || 'none'}`
             cache[cacheKey] = results
             if (!isToday) await catcheSetFunction('Stocks', cache)
             handleStocksData(results)
@@ -503,8 +503,8 @@ const App = {
             try {
                 // 并行请求行业和概念数据
                 await Promise.all([
-                    Industries.init(getLocalforage, setLocalforage, Dates.shareDate),
-                    Concepts.init(getLocalforage, setLocalforage, Dates.shareDate),
+                    Industries.init(getLocalforage, setLocalforage, Dates.shareDate, null, null, null),
+                    Concepts.init(getLocalforage, setLocalforage, Dates.shareDate, null, null, null),
                 ])
             } finally {
                 // 无论成功失败都恢复按钮状态
@@ -550,8 +550,6 @@ const App = {
                     const M10 = item.M10 ?? 0
                     const M30 = item.M30 ?? 0
                     const M60 = item.M60 ?? 0
-                    const v01 = item.v01 ?? 0
-                    const v05 = item.v05 ?? 0
 
                     const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                     const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
@@ -560,9 +558,8 @@ const App = {
                     const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
                         ? M01 > M05 && M01 > M10 && M01 > M30
                         : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
-                    const volumeAmplify = v01 > 2 * v05
 
-                    return baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && volumeAmplify
+                    return baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish
                 })
             }
 
@@ -598,8 +595,6 @@ const App = {
                     const M10 = item.M10 ?? 0
                     const M30 = item.M30 ?? 0
                     const M60 = item.M60 ?? 0
-                    const v01 = item.v01 ?? 0
-                    const v05 = item.v05 ?? 0
 
                     const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                     const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
@@ -608,9 +603,8 @@ const App = {
                     const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
                         ? M01 > M05 && M01 > M10 && M01 > M30
                         : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
-                    const volumeAmplify = v01 > 2 * v05
 
-                    return baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && volumeAmplify
+                    return baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish
                 })
             }
 
@@ -690,7 +684,6 @@ const App = {
             const maBullish = useSimpleMA
                 ? M01 > M05 && M01 > M10 && M01 > M30
                 : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
-            const volumeAmplify = v01 > 2 * v05
 
             console.log(`=== 强势筛选分析 - ${blockName} ===`, {
                 '基础条件': {
@@ -722,16 +715,11 @@ const App = {
                     '使用简化规则': useSimpleMA,
                     '是否满足': maBullish
                 },
-                '成交量放大': {
-                    'v01': v01,
-                    'v05': v05,
-                    '是否满足': volumeAmplify
-                },
-                '最终结果': baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && volumeAmplify
+                '最终结果': baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish
             })
 
             Stocks.loading = true
-            await Stocks.init(getLocalforage, setLocalforage, Dates.shareDate, blockName, '行业')
+            await Stocks.init(getLocalforage, setLocalforage, Dates.shareDate, row, '行业', blockName)
             Stocks.loading = false
         }
 
@@ -756,8 +744,6 @@ const App = {
             const M10 = row.M10 ?? 0
             const M30 = row.M30 ?? 0
             const M60 = row.M60 ?? 0
-            const v01 = row.v01 ?? 0
-            const v05 = row.v05 ?? 0
 
             const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
             const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
@@ -767,7 +753,6 @@ const App = {
             const maBullish = useSimpleMA
                 ? M01 > M05 && M01 > M10 && M01 > M30
                 : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
-            const volumeAmplify = v01 > 2 * v05
 
             console.log(`=== 强势筛选分析 - ${blockName} ===`, {
                 '基础条件': {
@@ -799,16 +784,11 @@ const App = {
                     '使用简化规则': useSimpleMA,
                     '是否满足': maBullish
                 },
-                '成交量放大': {
-                    'v01': v01,
-                    'v05': v05,
-                    '是否满足': volumeAmplify
-                },
-                '最终结果': baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && volumeAmplify
+                '最终结果': baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish
             })
 
             Stocks.loading = true
-            await Stocks.init(getLocalforage, setLocalforage, Dates.shareDate, blockName, '概念')
+            await Stocks.init(getLocalforage, setLocalforage, Dates.shareDate, row, '概念', blockName)
             Stocks.loading = false
         }
 

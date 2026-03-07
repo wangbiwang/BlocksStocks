@@ -189,6 +189,19 @@
                                 <el-table-column width="80" align="center">
                                     <template #header>
                                         <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span
+                                            v-html="precentformater(row[`${Dates.shareDate.td} 09:33`]?.涨跌幅)"
+                                        ></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
                                             <div>资金流向</div>
                                             <div class="column-subtitle">({{Dates.shareDate.td}} 09:35)</div>
                                         </div>
@@ -358,6 +371,17 @@
                                         <span
                                             v-html="precentformater(row[`${Dates.shareDate.td} 09:35`]?.涨跌幅)"
                                         ></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[`${Dates.shareDate.td} 09:33`]?.涨跌幅)"></span>
                                     </template>
                                 </el-table-column>
                                 <el-table-column width="80" align="center">
@@ -558,6 +582,43 @@
                                     <template #default="{ row }">
                                         <span
                                             v-html="formatNumber(row[`${Dates.shareDate.td} 09:35`]?.大单净额)"
+                                        ></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[`${Dates.shareDate.td} 09:33`]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>资金流向</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span
+                                            v-html="formatNumber(row[`${Dates.shareDate.td} 09:33`]?.资金流向)"
+                                        ></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>大单净额</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span
+                                            v-html="formatNumber(row[`${Dates.shareDate.td} 09:33`]?.大单净额)"
                                         ></span>
                                     </template>
                                 </el-table-column>
