@@ -78,42 +78,42 @@ const Dates = reactive({
     },
 })
 
-/** @description Blocks Module */
-const Blocks = reactive({
+/** @description Industries Module */
+const Industries = reactive({
     loading: false,
     isFromCache: false,
-    Data: [{ name: 'Block策略', filters: [] }],
+    Data: [{ name: '行业策略', filters: [] }],
     requestStatus: [],
 
     init: async (catcheGetFunction, catcheSetFunction, dates) => {
         const { tdcn } = dates
-        const questions = getQuestions('block', dates)
-        const cache = (await catcheGetFunction('Blocks')) || {}
+        const questions = getQuestions('block-行业', dates, null, '行业', null)
+        const cache = (await catcheGetFunction('Industries')) || {}
         const target = cache[tdcn]
 
         const isValid = target?.length === questions.length && target.every((d) => Array.isArray(d))
 
         if (isValid) {
-            Blocks.isFromCache = true
-            Blocks.requestStatus = questions.map((_, i) => ({
+            Industries.isFromCache = true
+            Industries.requestStatus = questions.map((_, i) => ({
                 name: `Request ${i + 1}`,
                 status: 'success',
                 message: 'From cache',
             }))
-            handleBlocksData(target)
+            handleIndustriesData(target)
         } else {
-            Blocks.isFromCache = false
-            await Blocks.getData(questions, catcheSetFunction, cache, dates)
+            Industries.isFromCache = false
+            await Industries.getData(questions, catcheSetFunction, cache, dates)
         }
     },
 
     getData: async (questions, catcheSetFunction, cache, dates) => {
         const { tdcn, isToday } = dates
-        Blocks.loading = true
-        Blocks.isFromCache = false
-        Blocks.Data[0].filters = []
+        Industries.loading = true
+        Industries.isFromCache = false
+        Industries.Data[0].filters = []
 
-        Blocks.requestStatus = questions.map((_, i) => ({
+        Industries.requestStatus = questions.map((_, i) => ({
             name: `Request ${i + 1}`,
             status: 'wait',
             message: 'Not started',
@@ -126,7 +126,7 @@ const Blocks = reactive({
             let success = false
             let attempt = 0
 
-            Blocks.requestStatus[i] = {
+            Industries.requestStatus[i] = {
                 name: `Request ${i + 1}`,
                 status: 'process',
                 message: 'Loading...',
@@ -135,7 +135,7 @@ const Blocks = reactive({
             while (attempt <= MAX_RETRY_ATTEMPTS && !success) {
                 try {
                     if (attempt > 0) {
-                        Blocks.requestStatus[i].message = `Retrying (${attempt}/${MAX_RETRY_ATTEMPTS})...`
+                        Industries.requestStatus[i].message = `Retrying (${attempt}/${MAX_RETRY_ATTEMPTS})...`
                         await new Promise((r) => setTimeout(r, 1000))
                     }
 
@@ -144,8 +144,8 @@ const Blocks = reactive({
 
                     if (Array.isArray(data) && data.length > 0 ? data[0]['code'] : true) {
                         results[i] = data
-                        Blocks.requestStatus[i].status = 'success'
-                        Blocks.requestStatus[i].message = `Success (${data.length})`
+                        Industries.requestStatus[i].status = 'success'
+                        Industries.requestStatus[i].message = `Success (${data.length})`
                         success = true
                     } else {
                         throw new Error('Invalid data')
@@ -153,10 +153,10 @@ const Blocks = reactive({
                 } catch (e) {
                     attempt++
                     if (attempt > MAX_RETRY_ATTEMPTS) {
-                        Blocks.requestStatus[i].status = 'error'
-                        Blocks.requestStatus[i].message = 'Failed to fetch'
+                        Industries.requestStatus[i].status = 'error'
+                        Industries.requestStatus[i].message = 'Failed to fetch'
                         for (let j = i + 1; j < questions.length; j++) {
-                            Blocks.requestStatus[j] = {
+                            Industries.requestStatus[j] = {
                                 name: `Request ${j + 1}`,
                                 status: 'wait',
                                 message: 'Skipped',
@@ -170,44 +170,135 @@ const Blocks = reactive({
 
         if (results.filter(Boolean).length === questions.length) {
             cache[tdcn] = results
-            if (!isToday) await catcheSetFunction('Blocks', cache)
-            handleBlocksData(results)
+            if (!isToday) await catcheSetFunction('Industries', cache)
+            handleIndustriesData(results)
         }
     },
 })
 
-/** @description Connection Chart Module */
-const ConnectionChart = reactive({
-    data: [],
-    totalPairs: 0,
+/** @description Concepts Module */
+const Concepts = reactive({
+    loading: false,
+    isFromCache: false,
+    Data: [{ name: '概念策略', filters: [] }],
+    requestStatus: [],
 
-    updateData: (stocks, blocks) => {
-        const connectionData = findConnections(stocks, blocks)
-        ConnectionChart.data = connectionData
-        ConnectionChart.totalPairs = connectionData.length
+    init: async (catcheGetFunction, catcheSetFunction, dates) => {
+        const { tdcn } = dates
+        const questions = getQuestions('block-概念', dates)
+        const cache = (await catcheGetFunction('Concepts')) || {}
+        const target = cache[tdcn]
+
+        const isValid = target?.length === questions.length && target.every((d) => Array.isArray(d))
+
+        if (isValid) {
+            Concepts.isFromCache = true
+            Concepts.requestStatus = questions.map((_, i) => ({
+                name: `Request ${i + 1}`,
+                status: 'success',
+                message: 'From cache',
+            }))
+            handleConceptsData(target)
+        } else {
+            Concepts.isFromCache = false
+            await Concepts.getData(questions, catcheSetFunction, cache, dates)
+        }
+    },
+
+    getData: async (questions, catcheSetFunction, cache, dates) => {
+        const { tdcn, isToday } = dates
+        Concepts.loading = true
+        Concepts.isFromCache = false
+        Concepts.Data[0].filters = []
+
+        Concepts.requestStatus = questions.map((_, i) => ({
+            name: `Request ${i + 1}`,
+            status: 'wait',
+            message: 'Not started',
+        }))
+
+        const MAX_RETRY_ATTEMPTS = 2
+        const results = []
+
+        for (let i = 0; i < questions.length; i++) {
+            let success = false
+            let attempt = 0
+
+            Concepts.requestStatus[i] = {
+                name: `Request ${i + 1}`,
+                status: 'process',
+                message: 'Loading...',
+            }
+
+            while (attempt <= MAX_RETRY_ATTEMPTS && !success) {
+                try {
+                    if (attempt > 0) {
+                        Concepts.requestStatus[i].message = `Retrying (${attempt}/${MAX_RETRY_ATTEMPTS})...`
+                        await new Promise((r) => setTimeout(r, 1000))
+                    }
+
+                    const res = await axios(hexin_vJsRequests('zhishu', questions[i]))
+                    const data = res?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas
+
+                    if (Array.isArray(data) && data.length > 0 ? data[0]['code'] : true) {
+                        results[i] = data
+                        Concepts.requestStatus[i].status = 'success'
+                        Concepts.requestStatus[i].message = `Success (${data.length})`
+                        success = true
+                    } else {
+                        throw new Error('Invalid data')
+                    }
+                } catch (e) {
+                    attempt++
+                    if (attempt > MAX_RETRY_ATTEMPTS) {
+                        Concepts.requestStatus[i].status = 'error'
+                        Concepts.requestStatus[i].message = 'Failed to fetch'
+                        for (let j = i + 1; j < questions.length; j++) {
+                            Concepts.requestStatus[j] = {
+                                name: `Request ${j + 1}`,
+                                status: 'wait',
+                                message: 'Skipped',
+                            }
+                        }
+                        return
+                    }
+                }
+            }
+        }
+
+        if (results.filter(Boolean).length === questions.length) {
+            cache[tdcn] = results
+            if (!isToday) await catcheSetFunction('Concepts', cache)
+            handleConceptsData(results)
+        }
     },
 })
 
 /** @description Match Chart Module - 用于管理匹配图的选中状态和筛选模式 */
 const MatchChart = reactive({
-    selectedBlock: null, // 当前选中的Block名称
-    selectedStock: null, // 当前选中的Stock名称
-    blockFilterMode: 'matched', // Block筛选模式：'all' | 'matched'
-    stockFilterMode: 'matched', // Stock筛选模式：'all' | 'matched'
+    industryFilterMode: 'all', // 行业筛选模式：'all' | 'strong'
+    conceptFilterMode: 'all', // 概念筛选模式：'all' | 'strong'
+    stockFilterMode: 'all', // Stock 筛选模式：'all' | 'strong'
 })
 
 /** @description Stocks Module */
 const Stocks = reactive({
     loading: false,
     isFromCache: false,
-    Data: [{ name: 'Stock策略', filters: [] }],
+    Data: [{ name: 'Stock 策略', filters: [] }],
     requestStatus: [],
+    selectedBlockName: null, // 当前选中的板块名称
+    currentBlockType: null, // 当前板块类型：'行业' 或 '概念'
 
-    init: async (catcheGetFunction, catcheSetFunction, dates) => {
+    init: async (catcheGetFunction, catcheSetFunction, dates, clickBlockName = null, clickBlockType = null) => {
         const { tdcn } = dates
-        const questions = getQuestions('stock', dates)
+        Stocks.selectedBlockName = clickBlockName
+        Stocks.currentBlockType = clickBlockType
+        const questions = getQuestions('stock', dates, clickBlockName)
         const cache = (await catcheGetFunction('Stocks')) || {}
-        const target = cache[tdcn]
+        // 使用复合 key: 日期#板块类型#板块名称
+        const cacheKey = `${tdcn}#${clickBlockType || 'none'}#${clickBlockName || 'none'}`
+        const target = cache[cacheKey]
 
         const isValid = target?.length === questions.length && target.every((d) => Array.isArray(d))
 
@@ -221,11 +312,11 @@ const Stocks = reactive({
             handleStocksData(target)
         } else {
             Stocks.isFromCache = false
-            await Stocks.getData(questions, catcheSetFunction, cache, dates)
+            await Stocks.getData(questions, catcheSetFunction, cache, dates, clickBlockName, clickBlockType)
         }
     },
 
-    getData: async (questions, catcheSetFunction, cache, dates) => {
+    getData: async (questions, catcheSetFunction, cache, dates, clickBlockName, clickBlockType) => {
         const { tdcn, isToday } = dates
         Stocks.loading = true
         Stocks.isFromCache = false
@@ -276,7 +367,9 @@ const Stocks = reactive({
         }
 
         if (results.filter(Boolean).length === questions.length) {
-            cache[tdcn] = results
+            // 使用复合 key 保存缓存
+            const cacheKey = `${tdcn}#${clickBlockType || 'none'}#${clickBlockName || 'none'}`
+            cache[cacheKey] = results
             if (!isToday) await catcheSetFunction('Stocks', cache)
             handleStocksData(results)
         }
@@ -284,72 +377,58 @@ const Stocks = reactive({
 })
 
 /** @description Data Processing Functions */
-async function handleBlocksData(res) {
-    // 合并两个数组，按 code 去重，res[0] 的数据优先
+async function handleIndustriesData(res) {
+    // 内连接合并：只保留同时在 res[0] 和 res[1] 中存在的 code
     const map0 = new Map(res[0]?.map((item) => [item['code'], item]) || [])
     const map1 = new Map(res[1]?.map((item) => [item['code'], item]) || [])
-    const mergedMap = new Map()
 
-    // 先添加 res[0] 的所有数据，标记 source = '1'
-    map0.forEach((value, key) => {
-        mergedMap.set(key, { ...value, source: '1' })
-    })
-
-    // 遍历 res[1]，如果 code 已存在则更新 source 为 '1,2'，否则添加并标记 '2'
-    map1.forEach((value, key) => {
-        if (mergedMap.has(key)) {
-            mergedMap.set(key, { ...mergedMap.get(key), source: '1,2' })
-        } else {
-            mergedMap.set(key, { ...value, source: '2' })
+    const mergedArr = []
+    map0.forEach((value0, code) => {
+        if (map1.has(code)) {
+            const merged = { ...value0, ...map1.get(code) }
+            const obj = {}
+            handleRate(obj, merged, 'block', Dates.shareDate)
+            mergedArr.push(obj)
         }
     })
 
-    // 转换为数组并处理
-    const arr = Array.from(mergedMap.values()).map((ele) => {
-        const obj = {}
-        handleRate(obj, ele, 'block', Dates.shareDate)
-        // 保留 source 字段
-        obj['source'] = ele.source
-        return obj
+    Industries.Data[0].filters = mergedArr
+}
+
+async function handleConceptsData(res) {
+    // 内连接合并：只保留同时在 res[0] 和 res[1] 中存在的 code
+    const map0 = new Map(res[0]?.map((item) => [item['code'], item]) || [])
+    const map1 = new Map(res[1]?.map((item) => [item['code'], item]) || [])
+
+    const mergedArr = []
+    map0.forEach((value0, code) => {
+        if (map1.has(code)) {
+            const merged = { ...value0, ...map1.get(code) }
+            const obj = {}
+            handleRate(obj, merged, 'block', Dates.shareDate)
+            mergedArr.push(obj)
+        }
     })
 
-    Blocks.Data[0].filters = arr
-
-    // 注意：连线图统一在 Submit 中更新，避免并行执行时的竞争条件
+    Concepts.Data[0].filters = mergedArr
 }
 
 async function handleStocksData(res) {
-    // 合并两个数组，按 code 去重，res[0] 的数据优先
+    // 内连接合并：只保留同时在 res[0] 和 res[1] 中存在的 code
     const map0 = new Map(res[0]?.map((item) => [item['code'], item]) || [])
     const map1 = new Map(res[1]?.map((item) => [item['code'], item]) || [])
-    const mergedMap = new Map()
 
-    // 先添加 res[0] 的所有数据，标记 source = '1'
-    map0.forEach((value, key) => {
-        mergedMap.set(key, { ...value, source: '1' })
-    })
-
-    // 遍历 res[1]，如果 code 已存在则更新 source 为 '1,2'，否则添加并标记 '2'
-    map1.forEach((value, key) => {
-        if (mergedMap.has(key)) {
-            mergedMap.set(key, { ...mergedMap.get(key), source: '1,2' })
-        } else {
-            mergedMap.set(key, { ...value, source: '2' })
+    const mergedArr = []
+    map0.forEach((value0, code) => {
+        if (map1.has(code)) {
+            const merged = { ...value0, ...map1.get(code) }
+            const obj = {}
+            handleRate(obj, merged, 'stock', Dates.shareDate)
+            mergedArr.push(obj)
         }
     })
 
-    // 转换为数组并处理
-    const arr = Array.from(mergedMap.values()).map((ele) => {
-        const obj = {}
-        handleRate(obj, ele, 'stock', Dates.shareDate)
-        // 保留 source 字段
-        obj['source'] = ele.source
-        return obj
-    })
-
-    Stocks.Data[0].filters = arr
-
-    // 注意：连线图统一在 Submit 中更新，避免并行执行时的竞争条件
+    Stocks.Data[0].filters = mergedArr
 }
 
 /** @description App Setup */
@@ -405,37 +484,33 @@ const App = {
         const Submit = async () => {
             // 设置请求状态
             GlobalState.isRequesting = true
-            Blocks.loading = true
-            Stocks.loading = true
+            Industries.loading = true
+            Concepts.loading = true
+            Stocks.loading = false // 初始不加载 Stock 数据
 
             // 清空数据
+            Industries.Data[0].filters = []
+            Concepts.Data[0].filters = []
             Stocks.Data[0].filters = []
-            Blocks.Data[0].filters = []
+            Industries.requestStatus = []
+            Concepts.requestStatus = []
             Stocks.requestStatus = []
-            Blocks.requestStatus = []
-            ConnectionChart.data = []
-            ConnectionChart.totalPairs = 0
-            MatchChart.selectedBlock = null
-            MatchChart.selectedStock = null
-            MatchChart.blockFilterMode = 'matched'
-            MatchChart.stockFilterMode = 'matched'
+            Stocks.selectedBlockName = null
 
             Dates.setRequestDate(Dates.requestDate)
             Dates.setShareDate()
 
             try {
-                // 并行获取Block和Stock数据
+                // 并行请求行业和概念数据
                 await Promise.all([
-                    Blocks.init(getLocalforage, setLocalforage, Dates.shareDate),
-                    Stocks.init(getLocalforage, setLocalforage, Dates.shareDate),
+                    Industries.init(getLocalforage, setLocalforage, Dates.shareDate),
+                    Concepts.init(getLocalforage, setLocalforage, Dates.shareDate),
                 ])
-                // 数据都加载完成后，统一更新连线图（避免并行执行时的竞争条件）
-                ConnectionChart.updateData(Stocks.Data[0].filters, Blocks.Data[0].filters)
             } finally {
                 // 无论成功失败都恢复按钮状态
                 GlobalState.isRequesting = false
-                Blocks.loading = false
-                Stocks.loading = false
+                Industries.loading = false
+                Concepts.loading = false
             }
         }
 
@@ -453,339 +528,127 @@ const App = {
             }
         }
 
-        // 计算属性：显示的Block列表（根据筛选模式）
-        const displayBlocks = computed(() => {
-            // 添加依赖：当 selectedBlock 或 selectedStock 变化时重新计算
-            const _selectedBlock = MatchChart.selectedBlock
-            const _selectedStock = MatchChart.selectedStock
+        // 计算属性：显示的行业列表（根据筛选模式）
+        const displayIndustries = computed(() => {
+            let result = Industries.Data[0].filters
 
-            if (!ConnectionChart.data || ConnectionChart.data.length === 0) {
-                Blocks.Data[0].filters.forEach((block) => {
-                    block.matchCount = 0
-                })
-                // 没有连接数据时：matched模式返回空数组，strong模式返回强势数据
-                if (MatchChart.blockFilterMode === 'matched') {
-                    return []
-                }
-                let result = Blocks.Data[0].filters
-
-                // 强势筛选
-                if (MatchChart.blockFilterMode === 'strong') {
-                    result = result.filter((block) => {
-                        const data0935 = block[`${Dates.shareDate.td} 09:35`]
-                        if (!data0935) return false
-                        const _35涨跌幅 = data0935.涨跌幅 || 0
-                        const _35资金流向 = data0935.资金流向 || 0
-                        const _35大单净额 = data0935.大单净额 || 0
-                        const _33资金流向 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
-                        const _33大单净额 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
-
-                        return (
-                            _35涨跌幅 > 0.5 &&
-                            (_35资金流向 > 0 ||
-                                _35大单净额 > 0 ||
-                                (_35资金流向 > _33资金流向 && _35大单净额 > _33大单净额)) &&
-                            !(_35资金流向 < _33资金流向 && _35大单净额 < _33大单净额)
-                        )
-                    })
-                }
-
-                // 按09:35涨跌幅降序排序（涨幅大的在前）
-                result.sort((a, b) => {
-                    const aChange = a[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
-                    const bChange = b[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
-                    return bChange - aChange
-                })
-
-                // 返回新对象引用以强制刷新
-                return result.map((b) => ({ ...b }))
+            // 强势筛选逻辑（暂时空框架）
+            if (MatchChart.industryFilterMode === 'strong') {
+                // TODO: 强势筛选逻辑待实现
             }
 
-            // 根据筛选模式返回数据（返回新对象引用以强制刷新）
-            // 三级递进：all -> strong -> matched
-            let result = Blocks.Data[0].filters
-
-            // 强势筛选
-            if (MatchChart.blockFilterMode === 'strong' || MatchChart.blockFilterMode === 'matched') {
-                result = result.filter((block) => {
-                    const data0935 = block[`${Dates.shareDate.td} 09:35`]
-                    if (!data0935) return false
-                    const _35涨跌幅 = data0935.涨跌幅 || 0
-                    const _35资金流向 = data0935.资金流向 || 0
-                    const _35大单净额 = data0935.大单净额 || 0
-                    const _33资金流向 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
-                    const _33大单净额 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
-
-                    return (
-                        _35涨跌幅 > 0.5 &&
-                        (_35资金流向 > 0 || _35大单净额 > 0 || (_35资金流向 > _33资金流向 && _35大单净额 > _33大单净额)) &&
-                        !(_35资金流向 < _33资金流向 && _35大单净额 < _33大单净额)
-                    )
-                })
-            }
-
-            // 在强势数据基础上重新计算匹配数量
-            // 使用与 displayStocks 相同的筛选逻辑
-            const strongBlockData = result
-
-            // 计算所有可能的连接（用于匹配计算）
-            const allConnections = findConnections(Stocks.Data[0].filters, strongBlockData)
-
-            // 为每个Stock找到匹配的强势Block的最高涨幅
-            const stockToMaxBlockChange = new Map()
-            allConnections.forEach((conn) => {
-                const block = strongBlockData.find((b) => b['指数简称'] === conn.blockName)
-                if (block) {
-                    const blockChange = block[`${Dates.shareDate.td} 09:35`]?.涨跌幅 || 0
-                    const stockName = conn.stockName
-                    const currentMax = stockToMaxBlockChange.get(stockName) || -Infinity
-                    if (blockChange > currentMax) {
-                        stockToMaxBlockChange.set(stockName, blockChange)
-                    }
-                }
-            })
-
-            // 筛选出符合 displayStocks 强势条件的 Stock
-            const strongStockData = Stocks.Data[0].filters.filter((stock) => {
-                const data0935 = stock[`${Dates.shareDate.td} 09:35`]
-                if (!data0935) return false
-                const 涨跌幅 = data0935.涨跌幅 || 0
-                const maxBlockChange = stockToMaxBlockChange.get(stock['股票简称'])
-                // 如果没有匹配的强势Block，则不满足条件
-                if (maxBlockChange === undefined) return false
-                return 涨跌幅 > 0 && 涨跌幅 > maxBlockChange
-            })
-
-            // 基于筛选后的 Stock 重新计算连接关系
-            const dynamicConnections = findConnections(strongStockData, strongBlockData)
-            const dynamicBlockSet = new Set(dynamicConnections.map((c) => c.blockName))
-
-            result.forEach((block) => {
-                const matchCount = dynamicBlockSet.has(block['指数简称'])
-                    ? dynamicConnections.filter((c) => c.blockName === block['指数简称']).length
-                    : 0
-                block.matchCount = matchCount
-            })
-
-            // 有匹配筛选（在强势基础上）
-            if (MatchChart.blockFilterMode === 'matched') {
-                result = result.filter((block) => block.matchCount > 0)
-            }
-
-            // 按09:35涨跌幅降序排序（涨幅大的在前）
+            // 排序：按 09:35 涨跌幅降序
             result.sort((a, b) => {
                 const aChange = a[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
                 const bChange = b[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
                 return bChange - aChange
             })
 
-            return result.map((b) => ({ ...b }))
+            return result
         })
 
-        // 计算属性：显示的Stock列表（根据筛选模式）
-        const displayStocks = computed(() => {
-            // 添加依赖：当 selectedBlock 或 selectedStock 变化时重新计算
-            const _selectedBlock = MatchChart.selectedBlock
-            const _selectedStock = MatchChart.selectedStock
+        // 计算属性：显示的概念列表（根据筛选模式）
+        const displayConcepts = computed(() => {
+            let result = Concepts.Data[0].filters
 
-            if (!ConnectionChart.data || ConnectionChart.data.length === 0) {
-                Stocks.Data[0].filters.forEach((stock) => {
-                    stock.matchCount = 0
-                })
-                // 没有连接数据时：matched模式返回空数组，strong模式返回强势数据
-                if (MatchChart.stockFilterMode === 'matched') {
-                    return []
-                }
-                let result = Stocks.Data[0].filters
-
-                // 强势筛选
-                if (MatchChart.stockFilterMode === 'strong') {
-                    result = result.filter((stock) => {
-                        const data0935 = stock[`${Dates.shareDate.td} 09:35`]
-                        if (!data0935) return false
-                        const 涨跌幅 = data0935.涨跌幅 || 0
-                        return 涨跌幅 > 0
-                    })
-                }
-
-                // 按热度排名升序排序（排名越小越热门）
-                result.sort((a, b) => {
-                    const aHeat = a[Dates.shareDate.pd1]?.热度排名 ?? Infinity
-                    const bHeat = b[Dates.shareDate.pd1]?.热度排名 ?? Infinity
-                    return aHeat - bHeat
-                })
-
-                // 返回新对象引用以强制刷新
-                return result.map((s) => ({ ...s }))
+            // 强势筛选逻辑（暂时空框架）
+            if (MatchChart.conceptFilterMode === 'strong') {
+                // TODO: 强势筛选逻辑待实现
             }
 
-            // 根据筛选模式返回数据（返回新对象引用以强制刷新）
-            // 三级递进：all -> strong -> matched
-            let result = Stocks.Data[0].filters
-
-            // 声明变量用于强势筛选和匹配计算
-            let strongBlockData = []
-            let dynamicConnections = []
-            let stockToMaxBlockChange = new Map()
-
-            // 强势筛选
-            if (MatchChart.stockFilterMode === 'strong' || MatchChart.stockFilterMode === 'matched') {
-                // 先计算强势Block数据
-                strongBlockData = Blocks.Data[0].filters.filter((block) => {
-                    const data0935 = block[`${Dates.shareDate.td} 09:35`]
-                    if (!data0935) return false
-                    const _35涨跌幅 = data0935.涨跌幅 || 0
-                    const _35资金流向 = data0935.资金流向 || 0
-                    const _35大单净额 = data0935.大单净额 || 0
-                    const _33资金流向 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
-                    const _33大单净额 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
-
-                    return (
-                        _35涨跌幅 > 0.5 &&
-                        (_35资金流向 > 0 || _35大单净额 > 0 || (_35资金流向 > _33资金流向 && _35大单净额 > _33大单净额)) &&
-                        !(_35资金流向 < _33资金流向 && _35大单净额 < _33大单净额)
-                    )
-                })
-
-                // 计算动态连接关系
-                const strongStockDataForMatch = result
-                dynamicConnections = findConnections(strongStockDataForMatch, strongBlockData)
-
-                // 为每个Stock找到匹配的强势Block的最高涨幅
-                stockToMaxBlockChange = new Map()
-                dynamicConnections.forEach((conn) => {
-                    const block = strongBlockData.find((b) => b['指数简称'] === conn.blockName)
-                    if (block) {
-                        const blockChange = block[`${Dates.shareDate.td} 09:35`]?.涨跌幅 || 0
-                        const stockName = conn.stockName
-                        const currentMax = stockToMaxBlockChange.get(stockName) || -Infinity
-                        if (blockChange > currentMax) {
-                            stockToMaxBlockChange.set(stockName, blockChange)
-                        }
-                    }
-                })
-
-                // 强势筛选（Stock的09:35涨跌幅 > 0 且 > 匹配Block的最高涨幅）
-                result = result.filter((stock) => {
-                    const data0935 = stock[`${Dates.shareDate.td} 09:35`]
-                    if (!data0935) return false
-                    const 涨跌幅 = data0935.涨跌幅 || 0
-                    const maxBlockChange = stockToMaxBlockChange.get(stock['股票简称'])
-                    // 如果没有匹配的强势Block，则不满足条件
-                    if (maxBlockChange === undefined) return false
-                    return 涨跌幅 > 0 && 涨跌幅 > maxBlockChange
-                })
-            }
-
-            // 在强势数据基础上重新计算匹配数量
-            // 使用之前计算的 strongBlockData 和 dynamicConnections
-            const dynamicStockSet = new Set(dynamicConnections.map((c) => c.stockName))
-
-            result.forEach((stock) => {
-                const matchCount = dynamicStockSet.has(stock['股票简称'])
-                    ? dynamicConnections.filter((c) => c.stockName === stock['股票简称']).length
-                    : 0
-                stock.matchCount = matchCount
+            // 排序：按 09:35 涨跌幅降序
+            result.sort((a, b) => {
+                const aChange = a[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                const bChange = b[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                return bChange - aChange
             })
 
-            // 有匹配筛选（在强势基础上）
-            if (MatchChart.stockFilterMode === 'matched') {
-                result = result.filter((stock) => stock.matchCount > 0)
+            return result
+        })
+
+        // 计算属性：显示的 Stock 列表（根据筛选模式）
+        const displayStocks = computed(() => {
+            let result = Stocks.Data[0].filters
+
+            // 强势筛选逻辑（暂时空框架）
+            if (MatchChart.stockFilterMode === 'strong') {
+                // TODO: 强势筛选逻辑待实现
             }
 
-            // 按热度排名升序排序（排名越小越热门）
+            // 排序：按热度排名升序
             result.sort((a, b) => {
                 const aHeat = a[Dates.shareDate.pd1]?.热度排名 ?? Infinity
                 const bHeat = b[Dates.shareDate.pd1]?.热度排名 ?? Infinity
                 return aHeat - bHeat
             })
 
-            return result.map((s) => ({ ...s }))
+            return result
         })
 
-        // 切换Block筛选模式
-        const toggleBlockFilterMode = (mode) => {
-            MatchChart.blockFilterMode = mode
-            MatchChart.selectedBlock = null
-            MatchChart.selectedStock = null
+        // 切换行业筛选模式
+        const toggleIndustryFilterMode = (mode) => {
+            MatchChart.industryFilterMode = mode
         }
 
-        // 切换Stock筛选模式
+        // 切换概念筛选模式
+        const toggleConceptFilterMode = (mode) => {
+            MatchChart.conceptFilterMode = mode
+        }
+
+        // 切换 Stock 筛选模式
         const toggleStockFilterMode = (mode) => {
             MatchChart.stockFilterMode = mode
-            MatchChart.selectedBlock = null
-            MatchChart.selectedStock = null
         }
 
-        // 处理Block行点击
-        const handleBlockRowClick = (row) => {
-            MatchChart.selectedBlock = row['指数简称']
-            MatchChart.selectedStock = null
-        }
-
-        // 处理Stock行点击
-        const handleStockRowClick = (row) => {
-            MatchChart.selectedStock = row['股票简称']
-            MatchChart.selectedBlock = null
-        }
-
-        // 获取Block行的class名
-        const getBlockRowClassName = ({ row }) => {
+        // 处理行业行点击 - 触发 Stock 数据请求
+        const handleIndustryRowClick = async (row) => {
             const blockName = row['指数简称']
+            Stocks.selectedBlockName = blockName
 
-            // 如果选中的是Stock，检查当前Block是否与该Stock匹配
-            if (MatchChart.selectedStock) {
-                const isMatch = ConnectionChart.data.some(
-                    (conn) => conn.stockName === MatchChart.selectedStock && conn.blockName === blockName,
-                )
-                if (isMatch) return 'highlight-row'
-            }
-
-            // 如果选中的是Block，检查是否是当前选中的
-            if (MatchChart.selectedBlock === blockName) {
-                return 'selected-row'
-            }
-
-            return ''
+            Stocks.loading = true
+            await Stocks.init(getLocalforage, setLocalforage, Dates.shareDate, blockName, '行业')
+            Stocks.loading = false
         }
 
-        // 获取Stock行的class名
-        const getStockRowClassName = ({ row }) => {
-            const stockName = row['股票简称']
+        // 处理概念行点击 - 触发 Stock 数据请求
+        const handleConceptRowClick = async (row) => {
+            const blockName = row['指数简称']
+            Stocks.selectedBlockName = blockName
 
-            // 如果选中的是Block，检查当前Stock是否与该Block匹配
-            if (MatchChart.selectedBlock) {
-                const isMatch = ConnectionChart.data.some(
-                    (conn) => conn.blockName === MatchChart.selectedBlock && conn.stockName === stockName,
-                )
-                if (isMatch) return 'highlight-row'
-            }
-
-            // 如果选中的是Stock，检查是否是当前选中的
-            if (MatchChart.selectedStock === stockName) {
-                return 'selected-row'
-            }
-
-            return ''
+            Stocks.loading = true
+            await Stocks.init(getLocalforage, setLocalforage, Dates.shareDate, blockName, '概念')
+            Stocks.loading = false
         }
 
         // 删除当前日期的缓存数据
         const clearCache = async () => {
             const { tdcn } = Dates.shareDate
-            const blocksCache = (await getLocalforage('Blocks')) || {}
+            const industriesCache = (await getLocalforage('Industries')) || {}
+            const conceptsCache = (await getLocalforage('Concepts')) || {}
             const stocksCache = (await getLocalforage('Stocks')) || {}
 
-            delete blocksCache[tdcn]
-            delete stocksCache[tdcn]
+            delete industriesCache[tdcn]
+            delete conceptsCache[tdcn]
+            // 删除所有该日期的 Stock 缓存（包括不同板块类型和名称的）
+            Object.keys(stocksCache).forEach((key) => {
+                if (key.startsWith(`${tdcn}#`)) {
+                    delete stocksCache[key]
+                }
+            })
 
-            await setLocalforage('Blocks', blocksCache)
+            await setLocalforage('Industries', industriesCache)
+            await setLocalforage('Concepts', conceptsCache)
             await setLocalforage('Stocks', stocksCache)
 
             // 清空当前数据
-            Blocks.Data[0].filters = []
+            Industries.Data[0].filters = []
+            Concepts.Data[0].filters = []
             Stocks.Data[0].filters = []
-            Blocks.isFromCache = false
+            Industries.isFromCache = false
+            Concepts.isFromCache = false
             Stocks.isFromCache = false
+            Stocks.selectedBlockName = null
+            Stocks.currentBlockType = null
 
             // 重新请求数据
             await Submit()
@@ -825,20 +688,20 @@ const App = {
 
                 // 切换到下一个交易日
                 const nextDate = list[idx + 1]
-                console.log(`[自动切换] 切换到下一个交易日: ${nextDate}`)
+                console.log(`[自动切换] 切换到下一个交易日：${nextDate}`)
                 Dates.requestDate = nextDate
                 Dates.setShareDate()
 
                 try {
                     // 执行数据加载
                     await Submit()
-                    
+
                     // 数据加载成功，重置连续错误计数器
                     Backtest.consecutiveErrors = 0
-                    
+
                     // 检查数据是否来自缓存
-                    const isFromCache = Blocks.isFromCache && Stocks.isFromCache
-                    
+                    const isFromCache = Industries.isFromCache && Concepts.isFromCache
+
                     if (isFromCache) {
                         // 数据来自缓存，无需等待，立即进行下一次切换
                         console.log('[自动切换] 数据来自缓存，立即切换到下一个交易日')
@@ -850,12 +713,12 @@ const App = {
                     }
                 } catch (error) {
                     console.error('[自动切换] 数据加载失败:', error)
-                    
+
                     // 增加连续错误计数器
                     Backtest.consecutiveErrors = (Backtest.consecutiveErrors || 0) + 1
-                    console.log(`[自动切换] 连续错误次数: ${Backtest.consecutiveErrors}`)
-                    
-                    // 如果连续错误达到3次，自动停止
+                    console.log(`[自动切换] 连续错误次数：${Backtest.consecutiveErrors}`)
+
+                    // 如果连续错误达到 3 次，自动停止
                     if (Backtest.consecutiveErrors >= 3) {
                         console.log('[自动切换] 连续三次错误，自动停止')
                         Backtest.shouldStop = true
@@ -866,7 +729,7 @@ const App = {
                         }
                         return
                     }
-                    
+
                     // 即使失败，也等待配置的间隔时间后继续尝试下一个日期
                     console.log(`[自动切换] 等待${Backtest.intervalSeconds}秒后继续尝试`)
                     Backtest.timeoutId = setTimeout(autoSwitch, Backtest.intervalSeconds * 1000)
@@ -906,9 +769,9 @@ const App = {
         return {
             Intervals,
             Dates,
-            Blocks,
+            Industries,
+            Concepts,
             Stocks,
-            ConnectionChart,
             MatchChart,
             GlobalState,
             Submit,
@@ -916,14 +779,14 @@ const App = {
             precentformater,
             formatNumber,
             isMobile,
-            displayBlocks,
+            displayIndustries,
+            displayConcepts,
             displayStocks,
-            toggleBlockFilterMode,
+            toggleIndustryFilterMode,
+            toggleConceptFilterMode,
             toggleStockFilterMode,
-            handleBlockRowClick,
-            handleStockRowClick,
-            getBlockRowClassName,
-            getStockRowClassName,
+            handleIndustryRowClick,
+            handleConceptRowClick,
             clearCache,
             Backtest,
             startBacktest,

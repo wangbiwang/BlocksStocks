@@ -164,7 +164,6 @@ body,
 }
 
 .global-control-bar .status-indicator {
-    width: 50px;
     display: flex;
     gap: 6px;
     align-items: center;
@@ -173,7 +172,22 @@ body,
     transform: translateZ(0);
 }
 
-/* 上部分：左右分栏 */
+/* 面板内的状态指示器 */
+.status-indicator-inline {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-left: 8px;
+}
+
+.status-indicator-inline .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+/* 上部分：行业 table + 概念 table */
 .top-section {
     display: flex;
     flex: 1;
@@ -182,9 +196,19 @@ body,
     overflow: hidden;
 }
 
+/* 下部分：Stock table */
+.bottom-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
 /* 面板样式 - 统一白色卡片 */
 .stock-panel,
-.block-panel {
+.industry-panel,
+.concept-panel {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -378,21 +402,4 @@ body,
     padding: 4px 12px;
     font-size: 12px;
     min-width: auto;
-}
-
-/* 匹配表格高亮行 - 使用更高优先级选择器 */
-.el-table .el-table__body .el-table__row.highlight-row td {
-    background-color: #e6f7ff !important;
-}
-
-.el-table .el-table__body .el-table__row.highlight-row:hover td {
-    background-color: #bae7ff !important;
-}
-
-.el-table .el-table__body .el-table__row.selected-row td {
-    background-color: #fff7e6 !important;
-}
-
-.el-table .el-table__body .el-table__row.selected-row:hover td {
-    background-color: #ffe7ba !important;
 }
