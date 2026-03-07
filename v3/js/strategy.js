@@ -53,7 +53,6 @@ function handleRate(obj, ele, type, dates) {
     obj[nd1] = {
         涨跌幅: num(ele[`${t}涨跌幅:前复权[${nd1}]`] || ele[`${t}分时涨跌幅:前复权[${nd1} 15:00]`]),
     }
-
     // -------- 读取价格均线 --------
     obj.M01 = num(ele[`1日${t}均线[${pd1}]`])
     obj.M05 = num(ele[`5日${t}均线[${pd1}]`])
@@ -106,13 +105,13 @@ function getQuestions(type, datas, blockItem, blockType, blockName) {
     }
     if (type === 'block-行业') {
         questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${td}前10交易日涨幅；二级行业`
-        questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数；${pd1}前1交易日(vol1和vol5和vol10和vol30和vol60)；二级行业`
+        questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)；二级行业`
     } else if (type === 'block-概念') {
         questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${td}前10交易日涨幅；概念`
-        questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数；${pd1}前1交易日(vol1和vol5和vol10和vol30和vol60)；${pd1}前1交易日(1日均线和M5和M10和M30和M60)；概念`
+        questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)；概念`
     } else if (type === 'stock') {
         questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${pd1}热度排名；主板创业非ST；${blockName} `
-        questions[1] = `${pd1}涨跌幅降序资金流向大单净额大单净量成交量；${pd1}前1交易日(vol1和vol5和vol10和vol30和vol60)；${pd1}前1交易日(1日均线和M5和M10和M30和M60)主板创业非ST；${blockName}`
+        questions[1] = `${pd1}涨跌幅降序资金流向大单净额大单净量成交量；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)主板创业非ST；${blockName}`
     }
     if (nd1) {
         questions[0] = `${nd1}涨跌幅;` + questions[0]

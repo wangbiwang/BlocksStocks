@@ -662,7 +662,7 @@ const App = {
         const handleIndustryRowClick = async (row) => {
             const blockName = row['指数简称']
             Stocks.selectedBlockName = blockName
-debugger
+
             // 打印强势筛选各项条件状态（用于分析）
             const pd1Change = row[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
             const pd1NetInflow = row[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
