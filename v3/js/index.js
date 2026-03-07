@@ -278,7 +278,7 @@ const Concepts = reactive({
 const MatchChart = reactive({
     industryFilterMode: 'strong', // 行业筛选模式：'all' | 'strong'
     conceptFilterMode: 'strong', // 概念筛选模式：'all' | 'strong'
-    stockFilterMode: 'all', // Stock 筛选模式：'all' | 'strong'
+    stockFilterMode: 'strong', // Stock 筛选模式：'all' | 'strong'
 })
 
 /** @description Stocks Module */
@@ -558,8 +558,9 @@ const App = {
                     const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
                         ? M01 > M05 && M01 > M10 && M01 > M30
                         : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+                    const maOrFlowCondition = M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
 
-                    return baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish
+                    return baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition
                 })
             }
 
@@ -603,8 +604,9 @@ const App = {
                     const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
                         ? M01 > M05 && M01 > M10 && M01 > M30
                         : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+                    const maOrFlowCondition = M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
 
-                    return baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish
+                    return baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition
                 })
             }
 
@@ -622,9 +624,65 @@ const App = {
         const displayStocks = computed(() => {
             let result = Stocks.Data[0].filters
 
-            // 强势筛选逻辑（暂时空框架）
+            // 强势筛选逻辑
             if (MatchChart.stockFilterMode === 'strong') {
-                // TODO: 强势筛选逻辑待实现
+                // 获取所点击指数的 09:35 涨跌幅
+                const blockName = Stocks.selectedBlockName
+                const blockType = Stocks.currentBlockType
+                let block0935Change = 0
+
+                if (blockName && blockType) {
+                    const blockData = blockType === '行业'
+                        ? Industries.Data[0].filters.find(item => item['指数简称'] === blockName)
+                        : Concepts.Data[0].filters.find(item => item['指数简称'] === blockName)
+                    block0935Change = blockData?.[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? 0
+                }
+
+                result = result.filter(item => {
+                    const pd1Change = item[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
+                    const pd1NetInflowVol = item[Dates.shareDate.pd1]?.大单净量 ?? -Infinity
+                    const pd1CapitalFlow = item[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
+                    const M01 = item.M01 ?? 0
+                    const M05 = item.M05 ?? 0
+                    const M30 = item.M30 ?? 0
+                    const td0935Change = item[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                    const td0935CapitalFlow = item[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
+                    const td0935NetInflow = item[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
+                    const td0933CapitalFlow = item[`${Dates.shareDate.td} 09:33`]?.资金流向 ?? -Infinity
+                    const td0933NetInflow = item[`${Dates.shareDate.td} 09:33`]?.大单净额 ?? -Infinity
+
+                    // 强势筛选条件
+                    const condition1 = pd1Change > 4 // 昨日涨幅大于 4
+                    const condition2Standard = pd1NetInflowVol > 0.4 // 昨日大单净量大于 0.4
+                    // 豁免条件：即使昨日大单净额为负但是昨日资金流向为正&& (09:35 资金流向 > 09:33 资金流向 且 09:35 大单净额 > 09:33 大单净额)
+                    const condition2Exception = pd1CapitalFlow > 0 && (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
+                    const condition2 = condition2Standard || condition2Exception // 满足标准条件或豁免条件即可
+                    const condition3 = M01 > M05 && M01 > M30 // M01 > M05 && M01 > M30
+                    const condition4 = td0935Change > 4 || td0935Change > block0935Change // 今日 09:35 涨跌幅>4 或>所点击指数涨跌幅
+
+                    const isStrong = condition1 && condition2 && condition3 && condition4
+
+                    // 打印强势筛选各项条件状态（用于分析）
+                    console.log(`=== 强势筛选分析 - ${item['股票简称']} ===`, {
+                        '昨日涨幅': pd1Change,
+                        '昨日大单净量': pd1NetInflowVol,
+                        '昨日资金流向': pd1CapitalFlow,
+                        'M01': M01,
+                        'M05': M05,
+                        'M30': M30,
+                        '今日 09:35 涨跌幅': td0935Change,
+                        '所点击指数 09:35 涨跌幅': block0935Change,
+                        '条件 1(昨日涨幅>4)': condition1,
+                        '条件 2(昨日大单净量>0.4 或豁免)': condition2,
+                        '  - 标准条件 (大单净量>0.4)': condition2Standard,
+                        '  - 豁免条件 (资金流向>0 且改善)': condition2Exception,
+                        '条件 3(M01>M05&&M01>M30)': condition3,
+                        '条件 4(09:35 涨跌幅>4 或>指数)': condition4,
+                        '是否满足': isStrong
+                    })
+
+                    return isStrong
+                })
             }
 
             // 排序：按热度排名升序
