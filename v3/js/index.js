@@ -276,8 +276,8 @@ const Concepts = reactive({
 
 /** @description Match Chart Module - 用于管理匹配图的选中状态和筛选模式 */
 const MatchChart = reactive({
-    industryFilterMode: 'all', // 行业筛选模式：'all' | 'strong'
-    conceptFilterMode: 'all', // 概念筛选模式：'all' | 'strong'
+    industryFilterMode: 'strong', // 行业筛选模式：'all' | 'strong'
+    conceptFilterMode: 'strong', // 概念筛选模式：'all' | 'strong'
     stockFilterMode: 'all', // Stock 筛选模式：'all' | 'strong'
 })
 
@@ -532,9 +532,38 @@ const App = {
         const displayIndustries = computed(() => {
             let result = Industries.Data[0].filters
 
-            // 强势筛选逻辑（暂时空框架）
+            // 强势筛选逻辑
             if (MatchChart.industryFilterMode === 'strong') {
-                // TODO: 强势筛选逻辑待实现
+                result = result.filter(item => {
+                    const pd1Change = item[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
+                    const pd1NetInflow = item[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
+                    const pd1CapitalFlow = item[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
+                    const td0935Change = item[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                    const td0935CapitalFlow = item[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
+                    const td0935NetInflow = item[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
+                    const td0933CapitalFlow = item[`${Dates.shareDate.td} 09:33`]?.资金流向 ?? -Infinity
+                    const td0933NetInflow = item[`${Dates.shareDate.td} 09:33`]?.大单净额 ?? -Infinity
+                    const pd1WinRate = item['昨日上涨家数占比'] ?? 0
+                    const pd1LimitUpCount = item['昨日涨停数'] ?? 0
+                    const M01 = item.M01 ?? 0
+                    const M05 = item.M05 ?? 0
+                    const M10 = item.M10 ?? 0
+                    const M30 = item.M30 ?? 0
+                    const M60 = item.M60 ?? 0
+                    const v01 = item.v01 ?? 0
+                    const v05 = item.v05 ?? 0
+
+                    const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
+                    const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
+                    const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
+                    const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
+                    const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
+                        ? M01 > M05 && M01 > M10 && M01 > M30
+                        : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+                    const volumeAmplify = v01 > 2 * v05
+
+                    return baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && volumeAmplify
+                })
             }
 
             // 排序：按 09:35 涨跌幅降序
@@ -551,9 +580,38 @@ const App = {
         const displayConcepts = computed(() => {
             let result = Concepts.Data[0].filters
 
-            // 强势筛选逻辑（暂时空框架）
+            // 强势筛选逻辑
             if (MatchChart.conceptFilterMode === 'strong') {
-                // TODO: 强势筛选逻辑待实现
+                result = result.filter(item => {
+                    const pd1Change = item[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
+                    const pd1NetInflow = item[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
+                    const pd1CapitalFlow = item[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
+                    const td0935Change = item[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                    const td0935CapitalFlow = item[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
+                    const td0935NetInflow = item[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
+                    const td0933CapitalFlow = item[`${Dates.shareDate.td} 09:33`]?.资金流向 ?? -Infinity
+                    const td0933NetInflow = item[`${Dates.shareDate.td} 09:33`]?.大单净额 ?? -Infinity
+                    const pd1WinRate = item['昨日上涨家数占比'] ?? 0
+                    const pd1LimitUpCount = item['昨日涨停数'] ?? 0
+                    const M01 = item.M01 ?? 0
+                    const M05 = item.M05 ?? 0
+                    const M10 = item.M10 ?? 0
+                    const M30 = item.M30 ?? 0
+                    const M60 = item.M60 ?? 0
+                    const v01 = item.v01 ?? 0
+                    const v05 = item.v05 ?? 0
+
+                    const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
+                    const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
+                    const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
+                    const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
+                    const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
+                        ? M01 > M05 && M01 > M10 && M01 > M30
+                        : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+                    const volumeAmplify = v01 > 2 * v05
+
+                    return baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && volumeAmplify
+                })
             }
 
             // 排序：按 09:35 涨跌幅降序
@@ -604,6 +662,73 @@ const App = {
         const handleIndustryRowClick = async (row) => {
             const blockName = row['指数简称']
             Stocks.selectedBlockName = blockName
+debugger
+            // 打印强势筛选各项条件状态（用于分析）
+            const pd1Change = row[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
+            const pd1NetInflow = row[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
+            const pd1CapitalFlow = row[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
+            const td0935Change = row[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+            const td0935CapitalFlow = row[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
+            const td0935NetInflow = row[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
+            const td0933CapitalFlow = row[`${Dates.shareDate.td} 09:33`]?.资金流向 ?? -Infinity
+            const td0933NetInflow = row[`${Dates.shareDate.td} 09:33`]?.大单净额 ?? -Infinity
+            const pd1WinRate = row['昨日上涨家数占比'] ?? 0
+            const pd1LimitUpCount = row['昨日涨停数'] ?? 0
+            const M01 = row.M01 ?? 0
+            const M05 = row.M05 ?? 0
+            const M10 = row.M10 ?? 0
+            const M30 = row.M30 ?? 0
+            const M60 = row.M60 ?? 0
+            const v01 = row.v01 ?? 0
+            const v05 = row.v05 ?? 0
+
+            const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
+            const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
+            const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
+            const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
+            const useSimpleMA = pd1CapitalFlow > 0 && pd1NetInflow > 0
+            const maBullish = useSimpleMA
+                ? M01 > M05 && M01 > M10 && M01 > M30
+                : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+            const volumeAmplify = v01 > 2 * v05
+
+            console.log(`=== 强势筛选分析 - ${blockName} ===`, {
+                '基础条件': {
+                    '昨日涨跌幅': pd1Change,
+                    '昨日大单净额': pd1NetInflow,
+                    '今日 09:35 涨跌幅': td0935Change,
+                    '是否满足': baseCondition
+                },
+                '资金流向条件': {
+                    '09:35 资金流向': td0935CapitalFlow,
+                    '09:35 大单净额': td0935NetInflow,
+                    '09:33 资金流向': td0933CapitalFlow,
+                    '09:33 大单净额': td0933NetInflow,
+                    '为正': flowPositive,
+                    '改善': flowImproving,
+                    '是否满足': flowPositive || flowImproving
+                },
+                '板块热度': {
+                    '昨日上涨家数占比': pd1WinRate,
+                    '昨日涨停数': pd1LimitUpCount,
+                    '是否满足': blockHeat
+                },
+                '均线多头': {
+                    'M01': M01,
+                    'M05': M05,
+                    'M10': M10,
+                    'M30': M30,
+                    'M60': M60,
+                    '使用简化规则': useSimpleMA,
+                    '是否满足': maBullish
+                },
+                '成交量放大': {
+                    'v01': v01,
+                    'v05': v05,
+                    '是否满足': volumeAmplify
+                },
+                '最终结果': baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && volumeAmplify
+            })
 
             Stocks.loading = true
             await Stocks.init(getLocalforage, setLocalforage, Dates.shareDate, blockName, '行业')
@@ -614,6 +739,73 @@ const App = {
         const handleConceptRowClick = async (row) => {
             const blockName = row['指数简称']
             Stocks.selectedBlockName = blockName
+
+            // 打印强势筛选各项条件状态（用于分析）
+            const pd1Change = row[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
+            const pd1NetInflow = row[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
+            const pd1CapitalFlow = row[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
+            const td0935Change = row[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+            const td0935CapitalFlow = row[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
+            const td0935NetInflow = row[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
+            const td0933CapitalFlow = row[`${Dates.shareDate.td} 09:33`]?.资金流向 ?? -Infinity
+            const td0933NetInflow = row[`${Dates.shareDate.td} 09:33`]?.大单净额 ?? -Infinity
+            const pd1WinRate = row['昨日上涨家数占比'] ?? 0
+            const pd1LimitUpCount = row['昨日涨停数'] ?? 0
+            const M01 = row.M01 ?? 0
+            const M05 = row.M05 ?? 0
+            const M10 = row.M10 ?? 0
+            const M30 = row.M30 ?? 0
+            const M60 = row.M60 ?? 0
+            const v01 = row.v01 ?? 0
+            const v05 = row.v05 ?? 0
+
+            const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
+            const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
+            const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
+            const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
+            const useSimpleMA = pd1CapitalFlow > 0 && pd1NetInflow > 0
+            const maBullish = useSimpleMA
+                ? M01 > M05 && M01 > M10 && M01 > M30
+                : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+            const volumeAmplify = v01 > 2 * v05
+
+            console.log(`=== 强势筛选分析 - ${blockName} ===`, {
+                '基础条件': {
+                    '昨日涨跌幅': pd1Change,
+                    '昨日大单净额': pd1NetInflow,
+                    '今日 09:35 涨跌幅': td0935Change,
+                    '是否满足': baseCondition
+                },
+                '资金流向条件': {
+                    '09:35 资金流向': td0935CapitalFlow,
+                    '09:35 大单净额': td0935NetInflow,
+                    '09:33 资金流向': td0933CapitalFlow,
+                    '09:33 大单净额': td0933NetInflow,
+                    '为正': flowPositive,
+                    '改善': flowImproving,
+                    '是否满足': flowPositive || flowImproving
+                },
+                '板块热度': {
+                    '昨日上涨家数占比': pd1WinRate,
+                    '昨日涨停数': pd1LimitUpCount,
+                    '是否满足': blockHeat
+                },
+                '均线多头': {
+                    'M01': M01,
+                    'M05': M05,
+                    'M10': M10,
+                    'M30': M30,
+                    'M60': M60,
+                    '使用简化规则': useSimpleMA,
+                    '是否满足': maBullish
+                },
+                '成交量放大': {
+                    'v01': v01,
+                    'v05': v05,
+                    '是否满足': volumeAmplify
+                },
+                '最终结果': baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && volumeAmplify
+            })
 
             Stocks.loading = true
             await Stocks.init(getLocalforage, setLocalforage, Dates.shareDate, blockName, '概念')
