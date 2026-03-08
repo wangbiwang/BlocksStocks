@@ -834,7 +834,7 @@ const App = {
             if (MatchChart.stockFilterMode === 'strong' || MatchChart.stockFilterMode === 'matched') {
 
                 // 为每个 Stock 找到匹配的强势 Block 的最高涨幅
-                stockToMaxBlockChange = new Map()
+                const stockToMaxBlockChange = new Map()
                 dynamicConnections.forEach((conn) => {
                     const block = strongBlockData.find((b) => b['指数简称'] === conn.blockName)
                     if (block) {
