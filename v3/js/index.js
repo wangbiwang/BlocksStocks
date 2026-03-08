@@ -363,9 +363,8 @@ const Stocks = reactive({
         }
 
         if (results.filter(Boolean).length === questions.length) {
-            // 使用复合 key 保存缓存
-            const cacheKey = `${tdcn}#${blockType || 'none'}#${blockName || 'none'}`
-            cache[cacheKey] = results
+            // 使用日期 key 保存缓存（Stock 独立请求，不依赖 Block）
+            cache[tdcn] = results
             if (!isToday) await catcheSetFunction('Stocks', cache)
             handleStocksData(results)
         }
