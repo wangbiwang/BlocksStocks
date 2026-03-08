@@ -85,9 +85,9 @@ const Industries = reactive({
     Data: [{ name: '行业策略', filters: [] }],
     requestStatus: [],
 
-    init: async (catcheGetFunction, catcheSetFunction, dates, blockItem, blockType, blockName) => {
+    init: async (catcheGetFunction, catcheSetFunction, dates) => {
         const { tdcn } = dates
-        const questions = getQuestions('block-行业', dates, blockItem, blockType, blockName)
+        const questions = getQuestions('block-行业', dates)
         const cache = (await catcheGetFunction('Industries')) || {}
         const target = cache[tdcn]
 
@@ -183,9 +183,9 @@ const Concepts = reactive({
     Data: [{ name: '概念策略', filters: [] }],
     requestStatus: [],
 
-    init: async (catcheGetFunction, catcheSetFunction, dates, blockItem, blockType, blockName) => {
+    init: async (catcheGetFunction, catcheSetFunction, dates) => {
         const { tdcn } = dates
-        const questions = getQuestions('block-概念', dates,blockItem, blockType, blockName)
+        const questions = getQuestions('block-概念', dates)
         const cache = (await catcheGetFunction('Concepts')) || {}
         const target = cache[tdcn]
 
@@ -425,6 +425,66 @@ async function handleStocksData(res) {
     })
 
     Stocks.Data[0].filters = mergedArr
+}
+
+/**
+ * 查找 Block 和 Stock 之间的连接关系
+ */
+function findConnections(stocks, blocks) {
+    const connections = []
+    const blockMatchCounts = {}
+    const stockMatchCounts = {}
+    const seenPairs = new Set()
+
+    blocks.forEach((block) => {
+        const blockName = block['指数简称']
+        if (!blockName) return
+
+        stocks.forEach((stock) => {
+            const stockName = stock['股票简称']
+            const industry = stock['行业'] || ''
+            const concepts = stock['概念'] || []
+
+            let matchType = null
+
+            if (industry === blockName) {
+                matchType = '行业'
+            } else if (Array.isArray(concepts) && concepts.includes(blockName)) {
+                matchType = '概念'
+            }
+
+            if (matchType) {
+                const pairKey = `${blockName}-${stockName}`
+                if (seenPairs.has(pairKey)) return
+                seenPairs.add(pairKey)
+
+                if (!blockMatchCounts[blockName]) {
+                    blockMatchCounts[blockName] = 0
+                }
+                blockMatchCounts[blockName]++
+
+                if (!stockMatchCounts[stockName]) {
+                    stockMatchCounts[stockName] = 0
+                }
+                stockMatchCounts[stockName]++
+
+                connections.push({
+                    blockName: blockName,
+                    stockName: stockName,
+                    matchType: matchType,
+                    blockMatchCount: blockMatchCounts[blockName],
+                    stockMatchCount: stockMatchCounts[stockName],
+                })
+            }
+        })
+    })
+
+    connections.forEach((conn) => {
+        conn.blockMatchCount = blockMatchCounts[conn.blockName]
+        conn.stockMatchCount = stockMatchCounts[conn.stockName]
+    })
+
+    return connections
 }
 
 /** @description App Setup */
