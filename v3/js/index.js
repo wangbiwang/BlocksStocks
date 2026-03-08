@@ -274,20 +274,6 @@ const Concepts = reactive({
     },
 })
 
-/** @description Connection Chart Module */
-const ConnectionChart = reactive({
-    data: [],
-    totalPairs: 0,
-
-    updateData: (stocks, industries, concepts) => {
-        // 合并行业和概念数据
-        const allBlocks = [...(industries || []), ...(concepts || [])]
-        const connectionData = findConnections(stocks, allBlocks)
-        ConnectionChart.data = connectionData
-        ConnectionChart.totalPairs = connectionData.length
-    },
-})
-
 /** @description Match Chart Module - 用于管理匹配图的选中状态和筛选模式 */
 const MatchChart = reactive({
     industryFilterMode: 'strong', // 行业筛选模式：'all' | 'strong'
@@ -517,8 +503,6 @@ const App = {
                     Concepts.init(getLocalforage, setLocalforage, Dates.shareDate),
                     Stocks.init(getLocalforage, setLocalforage, Dates.shareDate),
                 ])
-                // 数据都加载完成后，统一更新连线图
-                ConnectionChart.updateData(Stocks.Data[0].filters, Industries.Data[0].filters, Concepts.Data[0].filters)
             } finally {
                 // 无论成功失败都恢复按钮状态
                 GlobalState.isRequesting = false
@@ -728,7 +712,31 @@ const App = {
             const _selectedBlock = MatchChart.selectedBlock
             const _selectedStock = MatchChart.selectedStock
 
-            if (!ConnectionChart.data || ConnectionChart.data.length === 0) {
+            // 合并行业和概念数据用于匹配计算
+            const allBlocks = [...(Industries.Data[0].filters || []), ...(Concepts.Data[0].filters || [])]
+            
+            // 计算强势Block 数据
+            const strongBlockData = allBlocks.filter((block) => {
+                const data0935 = block[`${Dates.shareDate.td} 09:35`]
+                if (!data0935) return false
+                const change35 = data0935.涨跌幅 || 0
+                const flow35 = data0935.资金流向 || 0
+                const net35 = data0935.大单净额 || 0
+                const flow33 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
+                const net33 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
+
+                return (
+                    change35 > 0.5 &&
+                    (flow35 > 0 || net35 > 0 || (flow35 > flow33 && net35 > net33)) &&
+                    !(flow35 < flow33 && net35 < net33)
+                )
+            })
+
+            // 计算动态连接关系
+            const dynamicConnections = findConnections(Stocks.Data[0].filters, strongBlockData)
+
+            // 没有连接数据时：matched模式返回空数组，strong 模式返回强势数据
+            if (dynamicConnections.length === 0) {
                 Stocks.Data[0].filters.forEach((stock) => {
                     stock.matchCount = 0
                 })
@@ -763,15 +771,8 @@ const App = {
             // 三级递进：all -> strong -> matched
             let result = Stocks.Data[0].filters
 
-            // 声明变量用于强势筛选和匹配计算
-            let strongBlockData = []
-            let dynamicConnections = []
-            let stockToMaxBlockChange = new Map()
-
             // 强势筛选
             if (MatchChart.stockFilterMode === 'strong' || MatchChart.stockFilterMode === 'matched') {
-                // 先计算强势 Block 数据（合并行业和概念）
-                const allBlocks = [...(Industries.Data[0].filters || []), ...(Concepts.Data[0].filters || [])]
                 strongBlockData = allBlocks.filter((block) => {
                     const data0935 = block[`${Dates.shareDate.td} 09:35`]
                     if (!data0935) return false
