@@ -87,7 +87,7 @@ const Industries = reactive({
 
     init: async (catcheGetFunction, catcheSetFunction, dates) => {
         const { tdcn } = dates
-        const questions = getQuestions('block-行业', dates)
+        const questions = getQuestions('block', dates)
         const cache = (await catcheGetFunction('Industries')) || {}
         const target = cache[tdcn]
 
@@ -185,7 +185,7 @@ const Concepts = reactive({
 
     init: async (catcheGetFunction, catcheSetFunction, dates) => {
         const { tdcn } = dates
-        const questions = getQuestions('block-概念', dates)
+        const questions = getQuestions('block', dates)
         const cache = (await catcheGetFunction('Concepts')) || {}
         const target = cache[tdcn]
 
