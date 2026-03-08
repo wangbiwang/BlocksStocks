@@ -75,7 +75,7 @@ function handleRate(obj, ele, type, dates) {
         obj['板块类别'] = ele['指数@所属同花顺行业级别'] ? '二级行业' : '概念'
         obj['昨日涨停数'] = ele[`指数@涨停家数[${pd1}]`] || 0
         obj['昨日上涨家数占比'] = ele[`指数@上涨家数占比[${pd1}]`] || 0
-        obj[pd1]['成交量'] = num(ele[`${t}成交量[${pd2}]`])
+        obj[pd1]['成交量'] = num(ele[`${t}成交量[${pd1}]`])
         obj[pd2] = {
             成交量: num(ele[`${t}成交量[${pd2}]`]),
         }
