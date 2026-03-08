@@ -87,7 +87,7 @@ const Industries = reactive({
 
     init: async (catcheGetFunction, catcheSetFunction, dates) => {
         const { tdcn } = dates
-        const questions = getQuestions('block', dates)
+        const questions = getQuestions('block-行业', dates)
         const cache = (await catcheGetFunction('Industries')) || {}
         const target = cache[tdcn]
 
@@ -185,7 +185,7 @@ const Concepts = reactive({
 
     init: async (catcheGetFunction, catcheSetFunction, dates) => {
         const { tdcn } = dates
-        const questions = getQuestions('block', dates)
+        const questions = getQuestions('block-概念', dates)
         const cache = (await catcheGetFunction('Concepts')) || {}
         const target = cache[tdcn]
 
@@ -279,6 +279,10 @@ const MatchChart = reactive({
     industryFilterMode: 'strong', // 行业筛选模式：'all' | 'strong'
     conceptFilterMode: 'strong', // 概念筛选模式：'all' | 'strong'
     stockFilterMode: 'strong', // Stock 筛选模式：'all' | 'strong' | 'matched'
+    selectedBlock: null, // 当前选中的 Block（行业或概念）
+    selectedStock: null, // 当前选中的 Stock
+    matchedStocks: [], // 与选中 Block 匹配的 Stock 列表
+    matchedBlocks: [], // 与选中 Stock 匹配的 Block 列表
 })
 
 /** @description Stocks Module */
@@ -434,11 +438,12 @@ async function handleStocksData(res) {
             merged = { ...merged, ...map1.get(code) }
         }
 
-        // 添加来源标识
-        merged.source = source
-
         const obj = {}
         handleRate(obj, merged, 'stock', Dates.shareDate)
+        
+        // 在 handleRate 处理后添加来源标识（因为 handleRate 会创建新对象）
+        obj.source = source
+        
         mergedArr.push(obj)
     })
 
@@ -923,6 +928,25 @@ const App = {
         const handleIndustryRowClick = async (row) => {
             const blockName = row['指数简称']
             Stocks.selectedBlockName = blockName
+            Stocks.currentBlockType = '行业'
+            
+            // 设置选中的 Block
+            MatchChart.selectedBlock = { name: blockName, type: '行业' }
+            MatchChart.selectedStock = null // 清除选中的 Stock
+            
+            // 计算匹配的 Stock（行业匹配或概念匹配）
+            const matchedStocks = []
+            Stocks.Data[0].filters.forEach((stock) => {
+                const stockName = stock['股票简称']
+                const industry = stock['行业'] || ''
+                const concepts = stock['概念'] || []
+                
+                if (industry === blockName || (Array.isArray(concepts) && concepts.includes(blockName))) {
+                    matchedStocks.push(stockName)
+                }
+            })
+            MatchChart.matchedStocks = matchedStocks
+            MatchChart.matchedBlocks = [] // 清除匹配的 Block
 
             // 打印强势筛选各项条件状态（用于分析）
             const pd1Change = row[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
@@ -990,6 +1014,24 @@ const App = {
         const handleConceptRowClick = async (row) => {
             const blockName = row['指数简称']
             Stocks.selectedBlockName = blockName
+            Stocks.currentBlockType = '概念'
+            
+            // 设置选中的 Block
+            MatchChart.selectedBlock = { name: blockName, type: '概念' }
+            MatchChart.selectedStock = null // 清除选中的 Stock
+            
+            // 计算匹配的 Stock（概念匹配）
+            const matchedStocks = []
+            Stocks.Data[0].filters.forEach((stock) => {
+                const stockName = stock['股票简称']
+                const concepts = stock['概念'] || []
+                
+                if (Array.isArray(concepts) && concepts.includes(blockName)) {
+                    matchedStocks.push(stockName)
+                }
+            })
+            MatchChart.matchedStocks = matchedStocks
+            MatchChart.matchedBlocks = [] // 清除匹配的 Block
 
             // 打印强势筛选各项条件状态（用于分析）
             const pd1Change = row[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
@@ -1054,6 +1096,36 @@ const App = {
         // 处理 Stock 行点击 - 打印强势筛选分析信息
         const handleStockRowClick = (row) => {
             const stockName = row['股票简称']
+            const industry = row['行业'] || ''
+            const concepts = row['概念'] || []
+
+            // 设置选中的 Stock
+            MatchChart.selectedStock = { name: stockName, industry, concepts }
+            MatchChart.selectedBlock = null // 清除选中的 Block
+            
+            // 计算匹配的 Block（行业或概念）
+            const matchedBlocks = []
+            
+            // 查找匹配的行业 Block
+            if (industry) {
+                const industryBlock = Industries.Data[0].filters.find(item => item['指数简称'] === industry)
+                if (industryBlock) {
+                    matchedBlocks.push({ name: industry, type: '行业' })
+                }
+            }
+            
+            // 查找匹配的概念 Block
+            if (Array.isArray(concepts)) {
+                concepts.forEach((concept) => {
+                    const conceptBlock = Concepts.Data[0].filters.find(item => item['指数简称'] === concept)
+                    if (conceptBlock) {
+                        matchedBlocks.push({ name: concept, type: '概念' })
+                    }
+                })
+            }
+            
+            MatchChart.matchedBlocks = matchedBlocks
+            MatchChart.matchedStocks = [] // 清除匹配的 Stock
 
             // 获取所点击指数的 09:35 涨跌幅
             const blockName = Stocks.selectedBlockName
@@ -1252,6 +1324,48 @@ const App = {
             // await Submit()
         })
 
+        // 行业表格行类名 - 用于高亮匹配的行
+        const industryRowClassName = ({ row }) => {
+            const blockName = row['指数简称']
+            // 当前选中的 Block 高亮
+            if (MatchChart.selectedBlock?.name === blockName) {
+                return 'row-highlight'
+            }
+            // 与选中 Stock 匹配的 Block 高亮
+            if (MatchChart.selectedStock && MatchChart.matchedBlocks.some(b => b.name === blockName)) {
+                return 'row-match'
+            }
+            return ''
+        }
+
+        // 概念表格行类名 - 用于高亮匹配的行
+        const conceptRowClassName = ({ row }) => {
+            const blockName = row['指数简称']
+            // 当前选中的 Block 高亮
+            if (MatchChart.selectedBlock?.name === blockName) {
+                return 'row-highlight'
+            }
+            // 与选中 Stock 匹配的 Block 高亮
+            if (MatchChart.selectedStock && MatchChart.matchedBlocks.some(b => b.name === blockName)) {
+                return 'row-match'
+            }
+            return ''
+        }
+
+        // Stock 表格行类名 - 用于高亮匹配的行
+        const stockRowClassName = ({ row }) => {
+            const stockName = row['股票简称']
+            // 当前选中的 Stock 高亮
+            if (MatchChart.selectedStock?.name === stockName) {
+                return 'row-highlight'
+            }
+            // 与选中 Block 匹配的 Stock 高亮
+            if (MatchChart.selectedBlock && MatchChart.matchedStocks.includes(stockName)) {
+                return 'row-match'
+            }
+            return ''
+        }
+
         onUnmounted(() => {
             clearInterval(Intervals.timer)
         })
@@ -1279,6 +1393,9 @@ const App = {
             handleIndustryRowClick,
             handleConceptRowClick,
             handleStockRowClick,
+            industryRowClassName,
+            conceptRowClassName,
+            stockRowClassName,
             clearCache,
             Backtest,
             startBacktest,

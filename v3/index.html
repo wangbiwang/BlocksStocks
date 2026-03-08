@@ -163,6 +163,7 @@
                                 size="small"
                                 style="width: 100%"
                                 @row-click="handleIndustryRowClick"
+                                :row-class-name="industryRowClassName"
                             >
                                 <el-table-column
                                     prop="指数简称"
@@ -349,6 +350,7 @@
                                 size="small"
                                 style="width: 100%"
                                 @row-click="handleConceptRowClick"
+                                :row-class-name="conceptRowClassName"
                             >
                                 <el-table-column
                                     prop="指数简称"
@@ -541,6 +543,7 @@
                                 size="small"
                                 style="width: 100%"
                                 @row-click="handleStockRowClick"
+                                :row-class-name="stockRowClassName"
                             >
                                 <el-table-column
                                     prop="股票简称"
@@ -548,17 +551,6 @@
                                     width="80"
                                     show-overflow-tooltip
                                 ></el-table-column>
-                                <el-table-column width="60" align="center">
-                                    <template #header>
-                                        <div class="column-header-with-subtitle">
-                                            <div>来源</div>
-                                            <div class="column-subtitle">questions</div>
-                                        </div>
-                                    </template>
-                                    <template #default="{ row }">
-                                        <span class="red f600">{{ row.source ? row.source.join(',') : '-' }}</span>
-                                    </template>
-                                </el-table-column>
                                 <el-table-column width="60" align="center">
                                     <template #header>
                                         <div class="column-header-with-subtitle">
@@ -700,6 +692,17 @@
                                     </template>
                                     <template #default="{ row }">
                                         <span class="red f600">{{ row[Dates.shareDate.pd1]?.热度排名 || '-' }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="60" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>来源</div>
+                                            <div class="column-subtitle">questions</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span class="red f600">{{ row.source ? row.source.join(',') : '-' }}</span>
                                     </template>
                                 </el-table-column>
                             </el-table>

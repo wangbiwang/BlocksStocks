@@ -403,3 +403,37 @@ body,
     font-size: 12px;
     min-width: auto;
 }
+
+/* 表格行高亮样式 */
+.el-table .row-highlight {
+    background-color: #fff7e6 !important;
+}
+
+.el-table .row-highlight td {
+    background-color: #fff7e6 !important;
+}
+
+.el-table .row-match {
+    background-color: #fff0e6 !important;
+}
+
+.el-table .row-match td {
+    background-color: #fff0e6 !important;
+}
+
+/* 深色模式下的匹配高亮 */
+body:not(.light-theme) .el-table .row-highlight {
+    background-color: #fff7e6 !important;
+}
+
+body:not(.light-theme) .el-table .row-highlight td {
+    background-color: #fff7e6 !important;
+}
+
+body:not(.light-theme) .el-table .row-match {
+    background-color: #fff0e6 !important;
+}
+
+body:not(.light-theme) .el-table .row-match td {
+    background-color: #fff0e6 !important;
+}
