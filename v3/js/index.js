@@ -435,7 +435,7 @@ async function handleStocksData(res) {
 
         const obj = {}
         handleRate(obj, merged, 'stock', Dates.shareDate)
-        
+
         mergedArr.push(obj)
     })
 
@@ -559,9 +559,9 @@ const App = {
         const calculateStockMatchCounts = () => {
             // 获取强势 Block 列表（使用与 displayIndustries 和 displayConcepts 相同的筛选逻辑）
             const strongBlocks = []
-            
+
             // 筛选强势行业 Block
-            const strongIndustries = Industries.Data[0].filters.filter(item => {
+            const strongIndustries = Industries.Data[0].filters.filter((item) => {
                 const pd1Change = item[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
                 const pd1NetInflow = item[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
                 const pd1CapitalFlow = item[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
@@ -582,20 +582,25 @@ const App = {
                 // 新增：pd1 成交量与 pd2 对比
                 const pd1Volume = item[Dates.shareDate.pd1]?.成交量 ?? -Infinity
                 const pd2Volume = item[Dates.shareDate.pd2]?.成交量 ?? -Infinity
-                const volumeCondition = pd1Volume > pd2Volume
+                // 新增：pd1 大单净额与 pd2 对比
+                const pd2NetInflow = item[Dates.shareDate.pd2]?.大单净额 ?? -Infinity
+                const volumeCondition = pd1Volume > pd2Volume || pd1NetInflow > pd2NetInflow
 
                 const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                 const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                 const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                 const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
-                const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
-                    ? M01 > M05 && M01 > M10 && M01 > M30
-                    : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
-                const maOrFlowCondition = M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
+                const maBullish =
+                    pd1CapitalFlow > 0 && pd1NetInflow > 0
+                        ? M01 > M05 && M01 > M10 && M01 > M30
+                        : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+                const maOrFlowCondition =
+                    M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
                 const flowNegative = td0935CapitalFlow < 0 && td0935NetInflow < 0
-                const allImproving = td0935Change > td0933Change && 
-                                     td0935CapitalFlow > td0933CapitalFlow && 
-                                     td0935NetInflow > td0933NetInflow
+                const allImproving =
+                    td0935Change > td0933Change &&
+                    td0935CapitalFlow > td0933CapitalFlow &&
+                    td0935NetInflow > td0933NetInflow
                 const flowCondition = !flowNegative || allImproving
                 const flowWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
                 const lowChange = td0935Change < 1
@@ -603,16 +608,25 @@ const App = {
                 const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                 const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition && volumeCondition
-                
+                const isStrong =
+                    baseCondition &&
+                    (flowPositive || flowImproving) &&
+                    blockHeat &&
+                    maBullish &&
+                    maOrFlowCondition &&
+                    flowCondition &&
+                    !flowWorsening &&
+                    lowChangeCondition &&
+                    volumeCondition
+
                 if (isStrong) {
                     strongBlocks.push(item)
                 }
                 return isStrong
             })
-            
+
             // 筛选强势概念 Block
-            Concepts.Data[0].filters.filter(item => {
+            Concepts.Data[0].filters.filter((item) => {
                 const pd1Change = item[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
                 const pd1NetInflow = item[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
                 const pd1CapitalFlow = item[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
@@ -633,20 +647,25 @@ const App = {
                 // 新增：pd1 成交量与 pd2 对比
                 const pd1Volume = item[Dates.shareDate.pd1]?.成交量 ?? -Infinity
                 const pd2Volume = item[Dates.shareDate.pd2]?.成交量 ?? -Infinity
-                const volumeCondition = pd1Volume > pd2Volume
+                // 新增：pd1 大单净额与 pd2 对比
+                const pd2NetInflow = item[Dates.shareDate.pd2]?.大单净额 ?? -Infinity
+                const volumeCondition = pd1Volume > pd2Volume || pd1NetInflow > pd2NetInflow
 
                 const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                 const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                 const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                 const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
-                const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
-                    ? M01 > M05 && M01 > M10 && M01 > M30
-                    : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
-                const maOrFlowCondition = M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
+                const maBullish =
+                    pd1CapitalFlow > 0 && pd1NetInflow > 0
+                        ? M01 > M05 && M01 > M10 && M01 > M30
+                        : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+                const maOrFlowCondition =
+                    M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
                 const flowNegative = td0935CapitalFlow < 0 && td0935NetInflow < 0
-                const allImproving = td0935Change > td0933Change && 
-                                     td0935CapitalFlow > td0933CapitalFlow && 
-                                     td0935NetInflow > td0933NetInflow
+                const allImproving =
+                    td0935Change > td0933Change &&
+                    td0935CapitalFlow > td0933CapitalFlow &&
+                    td0935NetInflow > td0933NetInflow
                 const flowCondition = !flowNegative || allImproving
                 const flowWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
                 const lowChange = td0935Change < 1
@@ -654,22 +673,31 @@ const App = {
                 const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                 const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition && volumeCondition
-                
+                const isStrong =
+                    baseCondition &&
+                    (flowPositive || flowImproving) &&
+                    blockHeat &&
+                    maBullish &&
+                    maOrFlowCondition &&
+                    flowCondition &&
+                    !flowWorsening &&
+                    lowChangeCondition &&
+                    volumeCondition
+
                 if (isStrong) {
                     strongBlocks.push(item)
                 }
                 return isStrong
             })
-            
+
             // 使用 findConnections 计算 Stock 与强势 Block 的匹配关系
             const connections = findConnections(Stocks.Data[0].filters, strongBlocks)
-            
+
             // 首先重置所有 Stock 的 matchCount 为 0
             Stocks.Data[0].filters.forEach((stock) => {
                 stock.matchCount = 0
             })
-            
+
             // 然后为在 connections 中的 Stock 设置正确的 matchCount
             const stockMatchCounts = {}
             connections.forEach((conn) => {
@@ -678,7 +706,7 @@ const App = {
                 }
                 stockMatchCounts[conn.stockName]++
             })
-            
+
             // 设置 matchCount
             Stocks.Data[0].filters.forEach((stock) => {
                 stock.matchCount = stockMatchCounts[stock['股票简称']] || 0
@@ -711,7 +739,7 @@ const App = {
                     Concepts.init(getLocalforage, setLocalforage, Dates.shareDate),
                     Stocks.init(getLocalforage, setLocalforage, Dates.shareDate),
                 ])
-                
+
                 // 三个表数据都加载完成后，计算 Stock 的匹配数
                 calculateStockMatchCounts()
             } finally {
@@ -753,7 +781,7 @@ const App = {
                 // 从下一个日期开始遍历
                 for (let i = idx + direction; i >= 0 && i < list.length; i += direction) {
                     const targetDate = list[i]
-                    
+
                     // 临时设置日期
                     Dates.requestDate = targetDate
                     Dates.setRequestDate(targetDate)
@@ -793,7 +821,7 @@ const App = {
 
             // 强势筛选逻辑
             if (MatchChart.industryFilterMode === 'strong') {
-                result = result.filter(item => {
+                result = result.filter((item) => {
                     const pd1Change = item[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
                     const pd1NetInflow = item[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
                     const pd1CapitalFlow = item[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
@@ -814,22 +842,27 @@ const App = {
                     // 新增：pd1 成交量与 pd2 对比
                     const pd1Volume = item[Dates.shareDate.pd1]?.成交量 ?? -Infinity
                     const pd2Volume = item[Dates.shareDate.pd2]?.成交量 ?? -Infinity
-                    const volumeCondition = pd1Volume > pd2Volume
+                    // 新增：pd1 大单净额与 pd2 对比
+                    const pd2NetInflow = item[Dates.shareDate.pd2]?.大单净额 ?? -Infinity
+                    const volumeCondition = pd1Volume > pd2Volume || pd1NetInflow > pd2NetInflow
 
                     const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                     const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                     const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                     const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
-                    const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
-                        ? M01 > M05 && M01 > M10 && M01 > M30
-                        : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
-                    const maOrFlowCondition = M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
+                    const maBullish =
+                        pd1CapitalFlow > 0 && pd1NetInflow > 0
+                            ? M01 > M05 && M01 > M10 && M01 > M30
+                            : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+                    const maOrFlowCondition =
+                        M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
 
                     // 新增条件：如果 09:35 资金流向和大单净额都为负，则需要全面改善
                     const flowNegative = td0935CapitalFlow < 0 && td0935NetInflow < 0
-                    const allImproving = td0935Change > td0933Change && 
-                                         td0935CapitalFlow > td0933CapitalFlow && 
-                                         td0935NetInflow > td0933NetInflow
+                    const allImproving =
+                        td0935Change > td0933Change &&
+                        td0935CapitalFlow > td0933CapitalFlow &&
+                        td0935NetInflow > td0933NetInflow
                     const flowCondition = !flowNegative || allImproving
 
                     // 剔除条件：如果 09:35 资金流向和大单净额都小于 09:33，则剔除
@@ -841,8 +874,17 @@ const App = {
                     const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                     const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                    const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition && volumeCondition
-                    
+                    const isStrong =
+                        baseCondition &&
+                        (flowPositive || flowImproving) &&
+                        blockHeat &&
+                        maBullish &&
+                        maOrFlowCondition &&
+                        flowCondition &&
+                        !flowWorsening &&
+                        lowChangeCondition &&
+                        volumeCondition
+
                     return isStrong
                 })
             }
@@ -863,7 +905,7 @@ const App = {
 
             // 强势筛选逻辑
             if (MatchChart.conceptFilterMode === 'strong') {
-                result = result.filter(item => {
+                result = result.filter((item) => {
                     const pd1Change = item[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
                     const pd1NetInflow = item[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
                     const pd1CapitalFlow = item[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
@@ -884,22 +926,27 @@ const App = {
                     // 新增：pd1 成交量与 pd2 对比
                     const pd1Volume = item[Dates.shareDate.pd1]?.成交量 ?? -Infinity
                     const pd2Volume = item[Dates.shareDate.pd2]?.成交量 ?? -Infinity
-                    const volumeCondition = pd1Volume > pd2Volume
+                    // 新增：pd1 大单净额与 pd2 对比
+                    const pd2NetInflow = item[Dates.shareDate.pd2]?.大单净额 ?? -Infinity
+                    const volumeCondition = pd1Volume > pd2Volume || pd1NetInflow > pd2NetInflow
 
                     const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                     const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                     const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                     const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
-                    const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
-                        ? M01 > M05 && M01 > M10 && M01 > M30
-                        : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
-                    const maOrFlowCondition = M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
+                    const maBullish =
+                        pd1CapitalFlow > 0 && pd1NetInflow > 0
+                            ? M01 > M05 && M01 > M10 && M01 > M30
+                            : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+                    const maOrFlowCondition =
+                        M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
 
                     // 新增条件：如果 09:35 资金流向和大单净额都为负，则需要全面改善
                     const flowNegative = td0935CapitalFlow < 0 && td0935NetInflow < 0
-                    const allImproving = td0935Change > td0933Change && 
-                                         td0935CapitalFlow > td0933CapitalFlow && 
-                                         td0935NetInflow > td0933NetInflow
+                    const allImproving =
+                        td0935Change > td0933Change &&
+                        td0935CapitalFlow > td0933CapitalFlow &&
+                        td0935NetInflow > td0933NetInflow
                     const flowCondition = !flowNegative || allImproving
 
                     // 剔除条件：如果 09:35 资金流向和大单净额都小于 09:33，则剔除
@@ -911,8 +958,17 @@ const App = {
                     const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                     const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                    const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition && volumeCondition
-                    
+                    const isStrong =
+                        baseCondition &&
+                        (flowPositive || flowImproving) &&
+                        blockHeat &&
+                        maBullish &&
+                        maOrFlowCondition &&
+                        flowCondition &&
+                        !flowWorsening &&
+                        lowChangeCondition &&
+                        volumeCondition
+
                     return isStrong
                 })
             }
@@ -935,7 +991,7 @@ const App = {
 
             // 合并行业和概念数据用于匹配计算
             const allBlocks = [...(Industries.Data[0].filters || []), ...(Concepts.Data[0].filters || [])]
-            
+
             // 计算强势Block 数据
             const strongBlockData = allBlocks.filter((block) => {
                 const data0935 = block[`${Dates.shareDate.td} 09:35`]
@@ -1003,56 +1059,65 @@ const App = {
                     const data0935 = stock[`${Dates.shareDate.td} 09:35`]
                     const data0933 = stock[`${Dates.shareDate.td} 09:33`]
                     if (!data0935 || !data0933) return false
-                    
+
                     const change0935 = data0935.涨跌幅 || 0
                     const flow0935 = data0935.资金流向 || 0
                     const net0935 = data0935.大单净额 || 0
                     const change0933 = data0933.涨跌幅 || 0
                     const flow0933 = data0933.资金流向 || 0
                     const net0933 = data0933.大单净额 || 0
-                    
+
                     // 基础条件：09:35 涨跌幅 > 0
                     if (change0935 <= 0) return false
-                    
+
                     // 新增条件：如果 09:35 涨跌幅/资金流向/大单净额 全部 < 09:33，则需要检查例外
                     const changeDecline = change0935 < change0933
                     const flowDecline = flow0935 < flow0933
                     const netDecline = net0935 < net0933
-                    
+
                     // 如果三项全部下降，需要检查是否有例外
                     if (changeDecline && flowDecline && netDecline) {
                         // 查找该 Stock 对应的所有 Block（行业和概念）
                         const stockName = stock['股票简称']
                         const industry = stock['行业'] || ''
                         const concepts = stock['概念'] || []
-                        
+
                         // 收集所有匹配的 Block
                         const matchedBlockList = []
                         if (industry) {
-                            const industryBlock = Industries.Data[0].filters.find(item => item['指数简称'] === industry)
+                            const industryBlock = Industries.Data[0].filters.find(
+                                (item) => item['指数简称'] === industry,
+                            )
                             if (industryBlock) matchedBlockList.push(industryBlock)
                         }
                         if (Array.isArray(concepts)) {
                             concepts.forEach((concept) => {
-                                const conceptBlock = Concepts.Data[0].filters.find(item => item['指数简称'] === concept)
+                                const conceptBlock = Concepts.Data[0].filters.find(
+                                    (item) => item['指数简称'] === concept,
+                                )
                                 if (conceptBlock) matchedBlockList.push(conceptBlock)
                             })
                         }
-                        
+
                         // 检查是否有 Block 满足例外条件：09:35 资金流向 > 09:33 且 09:35 大单净额 > 09:33 且 两者都大于 0
                         const hasException = matchedBlockList.some((block) => {
                             const blockFlow0935 = block[`${Dates.shareDate.td} 09:35`]?.资金流向 || 0
                             const blockNet0935 = block[`${Dates.shareDate.td} 09:35`]?.大单净额 || 0
                             const blockFlow0933 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
                             const blockNet0933 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
-                            
-                            return (blockFlow0935 > blockFlow0933) && (blockNet0935 > blockNet0933) && (blockFlow0935 > 0) && (blockNet0935 > 0)
+
+                            return (
+                                blockFlow0935 > blockFlow0933 &&
+                                blockNet0935 > blockNet0933 &&
+                                blockFlow0935 > 0 &&
+                                blockNet0935 > 0
+                            )
                         })
-                        
+
                         // 如果没有例外情况，则筛出
                         if (!hasException) return false
                     }
-                    
+
                     return true
                 })
             }
@@ -1088,21 +1153,21 @@ const App = {
             MatchChart.matchedStocks = []
             MatchChart.matchedBlocks = []
             MatchChart.selectedStock = null
-            
+
             const blockName = row['指数简称']
             Stocks.selectedBlockName = blockName
             Stocks.currentBlockType = '行业'
-            
+
             // 设置选中的 Block
             MatchChart.selectedBlock = { name: blockName, type: '行业' }
-            
+
             // 计算匹配的 Stock（行业匹配或概念匹配）
             const matchedStocks = []
             Stocks.Data[0].filters.forEach((stock) => {
                 const stockName = stock['股票简称']
                 const industry = stock['行业'] || ''
                 const concepts = stock['概念'] || []
-                
+
                 if (industry === blockName || (Array.isArray(concepts) && concepts.includes(blockName))) {
                     matchedStocks.push(stockName)
                 }
@@ -1139,36 +1204,36 @@ const App = {
                 : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
 
             console.log(`=== 强势筛选分析 - ${blockName} ===`, {
-                '基础条件': {
-                    '昨日涨跌幅': pd1Change,
-                    '昨日大单净额': pd1NetInflow,
+                基础条件: {
+                    昨日涨跌幅: pd1Change,
+                    昨日大单净额: pd1NetInflow,
                     '今日 09:35 涨跌幅': td0935Change,
-                    '是否满足': baseCondition
+                    是否满足: baseCondition,
                 },
-                '资金流向条件': {
+                资金流向条件: {
                     '09:35 资金流向': td0935CapitalFlow,
                     '09:35 大单净额': td0935NetInflow,
                     '09:33 资金流向': td0933CapitalFlow,
                     '09:33 大单净额': td0933NetInflow,
-                    '为正': flowPositive,
-                    '改善': flowImproving,
-                    '是否满足': flowPositive || flowImproving
+                    为正: flowPositive,
+                    改善: flowImproving,
+                    是否满足: flowPositive || flowImproving,
                 },
-                '板块热度': {
-                    '昨日上涨家数占比': pd1WinRate,
-                    '昨日涨停数': pd1LimitUpCount,
-                    '是否满足': blockHeat
+                板块热度: {
+                    昨日上涨家数占比: pd1WinRate,
+                    昨日涨停数: pd1LimitUpCount,
+                    是否满足: blockHeat,
                 },
-                '均线多头': {
-                    'M01': M01,
-                    'M05': M05,
-                    'M10': M10,
-                    'M30': M30,
-                    'M60': M60,
-                    '使用简化规则': useSimpleMA,
-                    '是否满足': maBullish
+                均线多头: {
+                    M01: M01,
+                    M05: M05,
+                    M10: M10,
+                    M30: M30,
+                    M60: M60,
+                    使用简化规则: useSimpleMA,
+                    是否满足: maBullish,
                 },
-                '最终结果': baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish
+                最终结果: baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish,
             })
         }
 
@@ -1178,20 +1243,20 @@ const App = {
             MatchChart.matchedStocks = []
             MatchChart.matchedBlocks = []
             MatchChart.selectedStock = null
-            
+
             const blockName = row['指数简称']
             Stocks.selectedBlockName = blockName
             Stocks.currentBlockType = '概念'
-            
+
             // 设置选中的 Block
             MatchChart.selectedBlock = { name: blockName, type: '概念' }
-            
+
             // 计算匹配的 Stock（概念匹配）
             const matchedStocks = []
             Stocks.Data[0].filters.forEach((stock) => {
                 const stockName = stock['股票简称']
                 const concepts = stock['概念'] || []
-                
+
                 if (Array.isArray(concepts) && concepts.includes(blockName)) {
                     matchedStocks.push(stockName)
                 }
@@ -1226,36 +1291,36 @@ const App = {
                 : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
 
             console.log(`=== 强势筛选分析 - ${blockName} ===`, {
-                '基础条件': {
-                    '昨日涨跌幅': pd1Change,
-                    '昨日大单净额': pd1NetInflow,
+                基础条件: {
+                    昨日涨跌幅: pd1Change,
+                    昨日大单净额: pd1NetInflow,
                     '今日 09:35 涨跌幅': td0935Change,
-                    '是否满足': baseCondition
+                    是否满足: baseCondition,
                 },
-                '资金流向条件': {
+                资金流向条件: {
                     '09:35 资金流向': td0935CapitalFlow,
                     '09:35 大单净额': td0935NetInflow,
                     '09:33 资金流向': td0933CapitalFlow,
                     '09:33 大单净额': td0933NetInflow,
-                    '为正': flowPositive,
-                    '改善': flowImproving,
-                    '是否满足': flowPositive || flowImproving
+                    为正: flowPositive,
+                    改善: flowImproving,
+                    是否满足: flowPositive || flowImproving,
                 },
-                '板块热度': {
-                    '昨日上涨家数占比': pd1WinRate,
-                    '昨日涨停数': pd1LimitUpCount,
-                    '是否满足': blockHeat
+                板块热度: {
+                    昨日上涨家数占比: pd1WinRate,
+                    昨日涨停数: pd1LimitUpCount,
+                    是否满足: blockHeat,
                 },
-                '均线多头': {
-                    'M01': M01,
-                    'M05': M05,
-                    'M10': M10,
-                    'M30': M30,
-                    'M60': M60,
-                    '使用简化规则': useSimpleMA,
-                    '是否满足': maBullish
+                均线多头: {
+                    M01: M01,
+                    M05: M05,
+                    M10: M10,
+                    M30: M30,
+                    M60: M60,
+                    使用简化规则: useSimpleMA,
+                    是否满足: maBullish,
                 },
-                '最终结果': baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish
+                最终结果: baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish,
             })
         }
 
@@ -1265,35 +1330,35 @@ const App = {
             MatchChart.matchedStocks = []
             MatchChart.matchedBlocks = []
             MatchChart.selectedBlock = null
-            
+
             const stockName = row['股票简称']
             const industry = row['行业'] || ''
             const concepts = row['概念'] || []
 
             // 设置选中的 Stock
             MatchChart.selectedStock = { name: stockName, industry, concepts }
-            
+
             // 计算匹配的 Block（行业或概念）
             const matchedBlocks = []
-            
+
             // 查找匹配的行业 Block
             if (industry) {
-                const industryBlock = Industries.Data[0].filters.find(item => item['指数简称'] === industry)
+                const industryBlock = Industries.Data[0].filters.find((item) => item['指数简称'] === industry)
                 if (industryBlock) {
                     matchedBlocks.push({ name: industry, type: '行业' })
                 }
             }
-            
+
             // 查找匹配的概念 Block
             if (Array.isArray(concepts)) {
                 concepts.forEach((concept) => {
-                    const conceptBlock = Concepts.Data[0].filters.find(item => item['指数简称'] === concept)
+                    const conceptBlock = Concepts.Data[0].filters.find((item) => item['指数简称'] === concept)
                     if (conceptBlock) {
                         matchedBlocks.push({ name: concept, type: '概念' })
                     }
                 })
             }
-            
+
             MatchChart.matchedBlocks = matchedBlocks
             MatchChart.matchedStocks = [] // 清除匹配的 Stock
 
@@ -1303,9 +1368,10 @@ const App = {
             let block0935Change = 0
 
             if (blockName && blockType) {
-                const blockData = blockType === '行业'
-                    ? Industries.Data[0].filters.find(item => item['指数简称'] === blockName)
-                    : Concepts.Data[0].filters.find(item => item['指数简称'] === blockName)
+                const blockData =
+                    blockType === '行业'
+                        ? Industries.Data[0].filters.find((item) => item['指数简称'] === blockName)
+                        : Concepts.Data[0].filters.find((item) => item['指数简称'] === blockName)
                 block0935Change = blockData?.[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? 0
             }
 
@@ -1325,7 +1391,8 @@ const App = {
             // 强势筛选条件
             const condition1 = pd1Change > 4
             const condition2Standard = pd1NetInflowVol > 0.4
-            const condition2Combo = pd1CapitalFlow > 0 && (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
+            const condition2Combo =
+                pd1CapitalFlow > 0 && td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
             const condition2 = condition2Standard || condition2Combo
             const condition3 = M01 > M05 && M01 > M30
             const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -1356,14 +1423,17 @@ const App = {
                 const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                 const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                 const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
-                const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
-                    ? M01 > M05 && M01 > M10 && M01 > M30
-                    : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
-                const maOrFlowCondition = M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
+                const maBullish =
+                    pd1CapitalFlow > 0 && pd1NetInflow > 0
+                        ? M01 > M05 && M01 > M10 && M01 > M30
+                        : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+                const maOrFlowCondition =
+                    M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
                 const flowNegative = td0935CapitalFlow < 0 && td0935NetInflow < 0
-                const allImproving = td0935Change > td0933Change && 
-                                     td0935CapitalFlow > td0933CapitalFlow && 
-                                     td0935NetInflow > td0933NetInflow
+                const allImproving =
+                    td0935Change > td0933Change &&
+                    td0935CapitalFlow > td0933CapitalFlow &&
+                    td0935NetInflow > td0933NetInflow
                 const flowCondition = !flowNegative || allImproving
                 const flowWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
                 const lowChange = td0935Change < 1
@@ -1371,51 +1441,70 @@ const App = {
                 const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                 const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                return baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition
+                return (
+                    baseCondition &&
+                    (flowPositive || flowImproving) &&
+                    blockHeat &&
+                    maBullish &&
+                    maOrFlowCondition &&
+                    flowCondition &&
+                    !flowWorsening &&
+                    lowChangeCondition
+                )
             }
 
             // 收集所有匹配 Block 的详细数据（用于例外判断）- 只包含强势 Block
-            const matchedBlockDetails = matchedBlocks.map((block) => {
-                const blockData = block.type === '行业'
-                    ? Industries.Data[0].filters.find(item => item['指数简称'] === block.name)
-                    : Concepts.Data[0].filters.find(item => item['指数简称'] === block.name)
-                
-                if (!blockData) return null
+            const matchedBlockDetails = matchedBlocks
+                .map((block) => {
+                    const blockData =
+                        block.type === '行业'
+                            ? Industries.Data[0].filters.find((item) => item['指数简称'] === block.name)
+                            : Concepts.Data[0].filters.find((item) => item['指数简称'] === block.name)
 
-                // 只处理强势 Block
-                if (!isStrongBlock(blockData)) return null
+                    if (!blockData) return null
 
-                const blockTd0935 = blockData[`${Dates.shareDate.td} 09:35`]
-                const blockTd0933 = blockData[`${Dates.shareDate.td} 09:33`]
-                const blockPd1 = blockData[Dates.shareDate.pd1]
+                    // 只处理强势 Block
+                    if (!isStrongBlock(blockData)) return null
 
-                return {
-                    'Block 名称': block.name,
-                    'Block 类型': block.type,
-                    '09:35 涨跌幅': blockTd0935?.涨跌幅 ?? 0,
-                    '09:35 资金流向': blockTd0935?.资金流向 ?? 0,
-                    '09:35 大单净额': blockTd0935?.大单净额 ?? 0,
-                    '09:33 涨跌幅': blockTd0933?.涨跌幅 ?? 0,
-                    '09:33 资金流向': blockTd0933?.资金流向 ?? 0,
-                    '09:33 大单净额': blockTd0933?.大单净额 ?? 0,
-                    '09:35 vs 09:33 涨跌幅对比': (blockTd0935?.涨跌幅 ?? 0) > (blockTd0933?.涨跌幅 ?? 0) ? '改善' : '下降',
-                    '09:35 vs 09:33 资金流向对比': (blockTd0935?.资金流向 ?? 0) > (blockTd0933?.资金流向 ?? 0) ? '改善' : '下降',
-                    '09:35 vs 09:33 大单净额对比': (blockTd0935?.大单净额 ?? 0) > (blockTd0933?.大单净额 ?? 0) ? '改善' : '下降',
-                    '昨日涨跌幅': blockPd1?.涨跌幅 ?? 0,
-                    '昨日资金流向': blockPd1?.资金流向 ?? 0,
-                    '昨日大单净额': blockPd1?.大单净额 ?? 0,
-                    '是否满足例外条件 (资金流向和大单净额均改善且为正)': ((blockTd0935?.资金流向 ?? 0) > (blockTd0933?.资金流向 ?? 0)) && ((blockTd0935?.大单净额 ?? 0) > (blockTd0933?.大单净额 ?? 0)) && ((blockTd0935?.资金流向 ?? 0) > 0) && ((blockTd0935?.大单净额 ?? 0) > 0)
-                }
-            }).filter(Boolean)
+                    const blockTd0935 = blockData[`${Dates.shareDate.td} 09:35`]
+                    const blockTd0933 = blockData[`${Dates.shareDate.td} 09:33`]
+                    const blockPd1 = blockData[Dates.shareDate.pd1]
+
+                    return {
+                        'Block 名称': block.name,
+                        'Block 类型': block.type,
+                        '09:35 涨跌幅': blockTd0935?.涨跌幅 ?? 0,
+                        '09:35 资金流向': blockTd0935?.资金流向 ?? 0,
+                        '09:35 大单净额': blockTd0935?.大单净额 ?? 0,
+                        '09:33 涨跌幅': blockTd0933?.涨跌幅 ?? 0,
+                        '09:33 资金流向': blockTd0933?.资金流向 ?? 0,
+                        '09:33 大单净额': blockTd0933?.大单净额 ?? 0,
+                        '09:35 vs 09:33 涨跌幅对比':
+                            (blockTd0935?.涨跌幅 ?? 0) > (blockTd0933?.涨跌幅 ?? 0) ? '改善' : '下降',
+                        '09:35 vs 09:33 资金流向对比':
+                            (blockTd0935?.资金流向 ?? 0) > (blockTd0933?.资金流向 ?? 0) ? '改善' : '下降',
+                        '09:35 vs 09:33 大单净额对比':
+                            (blockTd0935?.大单净额 ?? 0) > (blockTd0933?.大单净额 ?? 0) ? '改善' : '下降',
+                        昨日涨跌幅: blockPd1?.涨跌幅 ?? 0,
+                        昨日资金流向: blockPd1?.资金流向 ?? 0,
+                        昨日大单净额: blockPd1?.大单净额 ?? 0,
+                        '是否满足例外条件 (资金流向和大单净额均改善且为正)':
+                            (blockTd0935?.资金流向 ?? 0) > (blockTd0933?.资金流向 ?? 0) &&
+                            (blockTd0935?.大单净额 ?? 0) > (blockTd0933?.大单净额 ?? 0) &&
+                            (blockTd0935?.资金流向 ?? 0) > 0 &&
+                            (blockTd0935?.大单净额 ?? 0) > 0,
+                    }
+                })
+                .filter(Boolean)
 
             console.log(`=== 强势筛选分析 - ${stockName} ===`, {
                 'Stock 自身数据': {
-                    '昨日涨幅': pd1Change,
-                    '昨日大单净量': pd1NetInflowVol,
-                    '昨日资金流向': pd1CapitalFlow,
-                    'M01': M01,
-                    'M05': M05,
-                    'M30': M30,
+                    昨日涨幅: pd1Change,
+                    昨日大单净量: pd1NetInflowVol,
+                    昨日资金流向: pd1CapitalFlow,
+                    M01: M01,
+                    M05: M05,
+                    M30: M30,
                     '今日 09:35 涨跌幅': td0935Change,
                     '今日 09:35 资金流向': td0935CapitalFlow,
                     '今日 09:35 大单净额': td0935NetInflow,
@@ -1424,10 +1513,10 @@ const App = {
                     '今日 09:33 大单净额': td0933NetInflow,
                     '09:35 vs 09:33 涨跌幅对比': td0935Change > td0933Change ? '改善' : '下降',
                     '09:35 vs 09:33 资金流向对比': td0935CapitalFlow > td0933CapitalFlow ? '改善' : '下降',
-                    '09:35 vs 09:33 大单净额对比': td0935NetInflow > td0933NetInflow ? '改善' : '下降'
+                    '09:35 vs 09:33 大单净额对比': td0935NetInflow > td0933NetInflow ? '改善' : '下降',
                 },
                 '所点击指数 09:35 涨跌幅': block0935Change,
-                '强势筛选条件': {
+                强势筛选条件: {
                     '条件 1(昨日涨幅>4)': condition1,
                     '条件 2(大单净量>0.4 或组合)': condition2,
                     '  - 标准条件 (大单净量>0.4)': condition2Standard,
@@ -1435,9 +1524,9 @@ const App = {
                     '条件 3(M01>M05&&M01>M30)': condition3,
                     '条件 4(09:35 涨幅>2 且 (>3 或改善))': condition4,
                     '  - 资金流改善': flowImproving,
-                    '是否满足': isStrong
+                    是否满足: isStrong,
                 },
-                '匹配的强势 Block 详情 (数组)': matchedBlockDetails
+                '匹配的强势 Block 详情 (数组)': matchedBlockDetails,
             })
         }
 
@@ -1587,7 +1676,7 @@ const App = {
                 return 'row-highlight'
             }
             // 与选中 Stock 匹配的 Block 高亮
-            if (MatchChart.selectedStock && MatchChart.matchedBlocks.some(b => b.name === blockName)) {
+            if (MatchChart.selectedStock && MatchChart.matchedBlocks.some((b) => b.name === blockName)) {
                 return 'row-highlight'
             }
             return ''
@@ -1601,7 +1690,7 @@ const App = {
                 return 'row-highlight'
             }
             // 与选中 Stock 匹配的 Block 高亮
-            if (MatchChart.selectedStock && MatchChart.matchedBlocks.some(b => b.name === blockName)) {
+            if (MatchChart.selectedStock && MatchChart.matchedBlocks.some((b) => b.name === blockName)) {
                 return 'row-highlight'
             }
             return ''
@@ -1668,7 +1757,10 @@ icons.forEach((name) => {
     const component = ElementPlusIconsVue[name]
     app.component(name, component)
     // 同时注册 kebab-case 格式
-    const kebabName = name.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '')
+    const kebabName = name
+        .replace(/([A-Z])/g, '-$1')
+        .toLowerCase()
+        .replace(/^-/, '')
     app.component(kebabName, component)
 })
 
