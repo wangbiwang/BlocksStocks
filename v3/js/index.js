@@ -409,18 +409,37 @@ async function handleConceptsData(res) {
 }
 
 async function handleStocksData(res) {
-    // 内连接合并：只保留同时在 res[0] 和 res[1] 中存在的 code
+    // 外连接合并：合并 res[0] 和 res[1] 的所有股票，保留来源标识
     const map0 = new Map(res[0]?.map((item) => [item['code'], item]) || [])
     const map1 = new Map(res[1]?.map((item) => [item['code'], item]) || [])
 
     const mergedArr = []
-    map0.forEach((value0, code) => {
-        if (map1.has(code)) {
-            const merged = { ...value0, ...map1.get(code) }
-            const obj = {}
-            handleRate(obj, merged, 'stock', Dates.shareDate)
-            mergedArr.push(obj)
+    const allCodes = new Set([...map0.keys(), ...map1.keys()])
+
+    allCodes.forEach((code) => {
+        const hasSource0 = map0.has(code)
+        const hasSource1 = map1.has(code)
+
+        // 确定来源数组
+        const source = []
+        if (hasSource0) source.push(0)
+        if (hasSource1) source.push(1)
+
+        // 合并数据（优先使用 source[0] 的数据，如果有 source[1] 则覆盖）
+        let merged = {}
+        if (hasSource0) {
+            merged = { ...map0.get(code) }
         }
+        if (hasSource1) {
+            merged = { ...merged, ...map1.get(code) }
+        }
+
+        // 添加来源标识
+        merged.source = source
+
+        const obj = {}
+        handleRate(obj, merged, 'stock', Dates.shareDate)
+        mergedArr.push(obj)
     })
 
     Stocks.Data[0].filters = mergedArr
