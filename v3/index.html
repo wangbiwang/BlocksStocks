@@ -694,17 +694,6 @@
                                         <span class="red f600">{{ row[Dates.shareDate.pd1]?.热度排名 || '-' }}</span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column width="60" align="center">
-                                    <template #header>
-                                        <div class="column-header-with-subtitle">
-                                            <div>来源</div>
-                                            <div class="column-subtitle">questions</div>
-                                        </div>
-                                    </template>
-                                    <template #default="{ row }">
-                                        <span class="red f600">{{ row.source ? row.source.join(',') : '-' }}</span>
-                                    </template>
-                                </el-table-column>
                                 <el-table-column width="70" align="center">
                                     <template #header>
                                         <div class="column-header-with-subtitle">

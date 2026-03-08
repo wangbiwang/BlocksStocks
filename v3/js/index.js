@@ -278,7 +278,7 @@ const Concepts = reactive({
 const MatchChart = reactive({
     industryFilterMode: 'strong', // 行业筛选模式：'all' | 'strong'
     conceptFilterMode: 'strong', // 概念筛选模式：'all' | 'strong'
-    stockFilterMode: 'strong', // Stock 筛选模式：'all' | 'strong' | 'matched'
+    stockFilterMode: 'matched', // Stock 筛选模式：'all' | 'strong' | 'matched'
     selectedBlock: null, // 当前选中的 Block（行业或概念）
     selectedStock: null, // 当前选中的 Stock
     matchedStocks: [], // 与选中 Block 匹配的 Stock 列表
@@ -413,7 +413,7 @@ async function handleConceptsData(res) {
 }
 
 async function handleStocksData(res) {
-    // 外连接合并：合并 res[0] 和 res[1] 的所有股票，保留来源标识
+    // 外连接合并：合并 res[0] 和 res[1] 的所有股票
     const map0 = new Map(res[0]?.map((item) => [item['code'], item]) || [])
     const map1 = new Map(res[1]?.map((item) => [item['code'], item]) || [])
 
@@ -423,11 +423,6 @@ async function handleStocksData(res) {
     allCodes.forEach((code) => {
         const hasSource0 = map0.has(code)
         const hasSource1 = map1.has(code)
-
-        // 确定来源数组
-        const source = []
-        if (hasSource0) source.push(0)
-        if (hasSource1) source.push(1)
 
         // 合并数据（优先使用 source[0] 的数据，如果有 source[1] 则覆盖）
         let merged = {}
@@ -440,9 +435,6 @@ async function handleStocksData(res) {
 
         const obj = {}
         handleRate(obj, merged, 'stock', Dates.shareDate)
-        
-        // 在 handleRate 处理后添加来源标识（因为 handleRate 会创建新对象）
-        obj.source = source
         
         mergedArr.push(obj)
     })
@@ -560,6 +552,129 @@ const App = {
             }
         })
 
+        /**
+         * 计算 Stock 的匹配数
+         * 在三个表数据都加载完成后调用，为每个 Stock 计算与强势 Block 的匹配数量
+         */
+        const calculateStockMatchCounts = () => {
+            // 获取强势 Block 列表（使用与 displayIndustries 和 displayConcepts 相同的筛选逻辑）
+            const strongBlocks = []
+            
+            // 筛选强势行业 Block
+            const strongIndustries = Industries.Data[0].filters.filter(item => {
+                const pd1Change = item[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
+                const pd1NetInflow = item[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
+                const pd1CapitalFlow = item[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
+                const td0935Change = item[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                const td0935CapitalFlow = item[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
+                const td0935NetInflow = item[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
+                const td0933CapitalFlow = item[`${Dates.shareDate.td} 09:33`]?.资金流向 ?? -Infinity
+                const td0933NetInflow = item[`${Dates.shareDate.td} 09:33`]?.大单净额 ?? -Infinity
+                const td0933Change = item[`${Dates.shareDate.td} 09:33`]?.涨跌幅 ?? -Infinity
+                const pd1WinRate = item['昨日上涨家数占比'] ?? 0
+                const pd1LimitUpCount = item['昨日涨停数'] ?? 0
+                const M01 = item.M01 ?? 0
+                const M05 = item.M05 ?? 0
+                const M10 = item.M10 ?? 0
+                const M30 = item.M30 ?? 0
+                const M60 = item.M60 ?? 0
+
+                const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
+                const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
+                const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
+                const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
+                const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
+                    ? M01 > M05 && M01 > M10 && M01 > M30
+                    : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+                const maOrFlowCondition = M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
+                const flowNegative = td0935CapitalFlow < 0 && td0935NetInflow < 0
+                const allImproving = td0935Change > td0933Change && 
+                                     td0935CapitalFlow > td0933CapitalFlow && 
+                                     td0935NetInflow > td0933NetInflow
+                const flowCondition = !flowNegative || allImproving
+                const flowWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
+                const lowChange = td0935Change < 1
+                const flowPositiveBoth = td0935CapitalFlow > 0 && td0935NetInflow > 0
+                const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
+                const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
+
+                const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition
+                
+                if (isStrong) {
+                    strongBlocks.push(item)
+                }
+                return isStrong
+            })
+            
+            // 筛选强势概念 Block
+            Concepts.Data[0].filters.filter(item => {
+                const pd1Change = item[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
+                const pd1NetInflow = item[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
+                const pd1CapitalFlow = item[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
+                const td0935Change = item[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                const td0935CapitalFlow = item[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
+                const td0935NetInflow = item[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
+                const td0933CapitalFlow = item[`${Dates.shareDate.td} 09:33`]?.资金流向 ?? -Infinity
+                const td0933NetInflow = item[`${Dates.shareDate.td} 09:33`]?.大单净额 ?? -Infinity
+                const td0933Change = item[`${Dates.shareDate.td} 09:33`]?.涨跌幅 ?? -Infinity
+                const pd1WinRate = item['昨日上涨家数占比'] ?? 0
+                const pd1LimitUpCount = item['昨日涨停数'] ?? 0
+                const M01 = item.M01 ?? 0
+                const M05 = item.M05 ?? 0
+                const M10 = item.M10 ?? 0
+                const M30 = item.M30 ?? 0
+                const M60 = item.M60 ?? 0
+
+                const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
+                const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
+                const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
+                const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
+                const maBullish = pd1CapitalFlow > 0 && pd1NetInflow > 0
+                    ? M01 > M05 && M01 > M10 && M01 > M30
+                    : M01 > M05 && M01 > M10 && M01 > M30 && M01 > M60
+                const maOrFlowCondition = M01 > M60 || (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
+                const flowNegative = td0935CapitalFlow < 0 && td0935NetInflow < 0
+                const allImproving = td0935Change > td0933Change && 
+                                     td0935CapitalFlow > td0933CapitalFlow && 
+                                     td0935NetInflow > td0933NetInflow
+                const flowCondition = !flowNegative || allImproving
+                const flowWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
+                const lowChange = td0935Change < 1
+                const flowPositiveBoth = td0935CapitalFlow > 0 && td0935NetInflow > 0
+                const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
+                const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
+
+                const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition
+                
+                if (isStrong) {
+                    strongBlocks.push(item)
+                }
+                return isStrong
+            })
+            
+            // 使用 findConnections 计算 Stock 与强势 Block 的匹配关系
+            const connections = findConnections(Stocks.Data[0].filters, strongBlocks)
+            
+            // 首先重置所有 Stock 的 matchCount 为 0
+            Stocks.Data[0].filters.forEach((stock) => {
+                stock.matchCount = 0
+            })
+            
+            // 然后为在 connections 中的 Stock 设置正确的 matchCount
+            const stockMatchCounts = {}
+            connections.forEach((conn) => {
+                if (!stockMatchCounts[conn.stockName]) {
+                    stockMatchCounts[conn.stockName] = 0
+                }
+                stockMatchCounts[conn.stockName]++
+            })
+            
+            // 设置 matchCount
+            Stocks.Data[0].filters.forEach((stock) => {
+                stock.matchCount = stockMatchCounts[stock['股票简称']] || 0
+            })
+        }
+
         const Submit = async () => {
             // 设置请求状态
             GlobalState.isRequesting = true
@@ -586,6 +701,9 @@ const App = {
                     Concepts.init(getLocalforage, setLocalforage, Dates.shareDate),
                     Stocks.init(getLocalforage, setLocalforage, Dates.shareDate),
                 ])
+                
+                // 三个表数据都加载完成后，计算 Stock 的匹配数
+                calculateStockMatchCounts()
             } finally {
                 // 无论成功失败都恢复按钮状态
                 GlobalState.isRequesting = false
@@ -854,48 +972,8 @@ const App = {
             // 三级递进：all -> strong -> matched
             let result = Stocks.Data[0].filters
 
-            // 强势筛选
+            // 强势筛选：筛选 matchCount > 0 的 Stock
             if (MatchChart.stockFilterMode === 'strong' || MatchChart.stockFilterMode === 'matched') {
-
-                // 为每个 Stock 找到匹配的强势 Block 的最高涨幅
-                const stockToMaxBlockChange = new Map()
-                dynamicConnections.forEach((conn) => {
-                    const block = strongBlockData.find((b) => b['指数简称'] === conn.blockName)
-                    if (block) {
-                        const blockChange = block[`${Dates.shareDate.td} 09:35`]?.涨跌幅 || 0
-                        const stockName = conn.stockName
-                        const currentMax = stockToMaxBlockChange.get(stockName) || -Infinity
-                        if (blockChange > currentMax) {
-                            stockToMaxBlockChange.set(stockName, blockChange)
-                        }
-                    }
-                })
-
-                // 强势筛选（Stock 的 09:35 涨跌幅 > 0 且 > 匹配 Block 的最高涨幅）
-                result = result.filter((stock) => {
-                    const data0935 = stock[`${Dates.shareDate.td} 09:35`]
-                    if (!data0935) return false
-                    const 涨跌幅 = data0935.涨跌幅 || 0
-                    const maxBlockChange = stockToMaxBlockChange.get(stock['股票简称'])
-                    // 如果没有匹配的强势 Block，则不满足条件
-                    if (maxBlockChange === undefined) return false
-                    return 涨跌幅 > 0 && 涨跌幅 > maxBlockChange
-                })
-            }
-
-            // 在强势数据基础上重新计算匹配数量
-            // 使用之前计算的 strongBlockData 和 dynamicConnections
-            const dynamicStockSet = new Set(dynamicConnections.map((c) => c.stockName))
-
-            result.forEach((stock) => {
-                const matchCount = dynamicStockSet.has(stock['股票简称'])
-                    ? dynamicConnections.filter((c) => c.stockName === stock['股票简称']).length
-                    : 0
-                stock.matchCount = matchCount
-            })
-
-            // 有匹配筛选（在强势基础上）
-            if (MatchChart.stockFilterMode === 'matched') {
                 result = result.filter((stock) => stock.matchCount > 0)
             }
 
@@ -926,13 +1004,17 @@ const App = {
 
         // 处理行业行点击 - 触发 Stock 数据请求
         const handleIndustryRowClick = async (row) => {
+            // 清除所有旧的高亮状态
+            MatchChart.matchedStocks = []
+            MatchChart.matchedBlocks = []
+            MatchChart.selectedStock = null
+            
             const blockName = row['指数简称']
             Stocks.selectedBlockName = blockName
             Stocks.currentBlockType = '行业'
             
             // 设置选中的 Block
             MatchChart.selectedBlock = { name: blockName, type: '行业' }
-            MatchChart.selectedStock = null // 清除选中的 Stock
             
             // 计算匹配的 Stock（行业匹配或概念匹配）
             const matchedStocks = []
@@ -1012,13 +1094,17 @@ const App = {
 
         // 处理概念行点击 - 触发 Stock 数据请求
         const handleConceptRowClick = async (row) => {
+            // 清除所有旧的高亮状态
+            MatchChart.matchedStocks = []
+            MatchChart.matchedBlocks = []
+            MatchChart.selectedStock = null
+            
             const blockName = row['指数简称']
             Stocks.selectedBlockName = blockName
             Stocks.currentBlockType = '概念'
             
             // 设置选中的 Block
             MatchChart.selectedBlock = { name: blockName, type: '概念' }
-            MatchChart.selectedStock = null // 清除选中的 Stock
             
             // 计算匹配的 Stock（概念匹配）
             const matchedStocks = []
@@ -1095,13 +1181,17 @@ const App = {
 
         // 处理 Stock 行点击 - 打印强势筛选分析信息
         const handleStockRowClick = (row) => {
+            // 清除所有旧的高亮状态
+            MatchChart.matchedStocks = []
+            MatchChart.matchedBlocks = []
+            MatchChart.selectedBlock = null
+            
             const stockName = row['股票简称']
             const industry = row['行业'] || ''
             const concepts = row['概念'] || []
 
             // 设置选中的 Stock
             MatchChart.selectedStock = { name: stockName, industry, concepts }
-            MatchChart.selectedBlock = null // 清除选中的 Block
             
             // 计算匹配的 Block（行业或概念）
             const matchedBlocks = []
@@ -1191,12 +1281,8 @@ const App = {
 
             delete industriesCache[tdcn]
             delete conceptsCache[tdcn]
-            // 删除所有该日期的 Stock 缓存（包括不同板块类型和名称的）
-            Object.keys(stocksCache).forEach((key) => {
-                if (key.startsWith(`${tdcn}#`)) {
-                    delete stocksCache[key]
-                }
-            })
+            // 删除该日期的 Stock 缓存（使用简单日期 key）
+            delete stocksCache[tdcn]
 
             await setLocalforage('Industries', industriesCache)
             await setLocalforage('Concepts', conceptsCache)
