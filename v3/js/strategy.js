@@ -85,8 +85,9 @@ function handleRate(obj, ele, type, dates) {
         obj['股票简称'] = ele['股票简称'] || ''
         obj['行业'] = ele['所属同花顺行业']?.split('-')[1] || ''
         obj['概念'] = ele['所属概念']?.split(';') || []
-
         obj[pd1]['热度排名'] = ele[`个股热度排名[${pd1}]`] || ele[`个股热度排名[${td}]`]
+        obj['09:35'].收盘价 = num(ele[`分时收盘价:不复权[${td} 09:35]`])
+        obj[pd1].流通市值 = ele[`指数@流通市值[${pd1}]`]
     }
 
     obj['code'] = ele['code']
@@ -116,7 +117,7 @@ function getQuestions(type, datas) {
     if (type === 'stock') {
         let q = `${td} 09:35涨跌幅>0.5;${td}前1交易日(M5和M10和M30和M60)均小于收盘价;${pd1}涨跌幅>4；${pd1}大单净量>0.4大单净额正；${pd1}热度排名升序;行业概念主板创业非ST;`
         questions[0] = q + `${td} 09:35资金流向大单净额收盘价；${td} 09:33涨跌幅资金流向大单净额;`
-        questions[1] = q + `${pd1}资金流向；${td}涨跌幅;${pd1}市值`
+        questions[1] = q + `${pd1}资金流向；${td}涨跌幅;${pd1}市流通市值`
         if (nd1) questions[1] = `${nd1}涨跌幅;` + questions[1]
     }
 
