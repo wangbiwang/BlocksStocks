@@ -93,16 +93,9 @@ function handleRate(obj, ele, type, dates) {
  * @param {object} datas 数据
  * @returns {string[]} 问题数组
  */
-function getQuestions(type, datas, blockItem, blockType, blockName) {
-    console.log(type, datas, blockItem, blockType, blockName)
+function getQuestions(type, datas,) {
     const { nd1, td, pd1 } = datas
     let questions = []
-
-    if (blockType === '概念') {
-        blockName = '所属概念所属概念包含' + blockName
-    } else {
-        blockName = '所属二级行业包含' + blockName
-    }
     if (type === 'block-行业') {
         questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${td}前10交易日涨幅；二级行业`
         questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)；二级行业`
