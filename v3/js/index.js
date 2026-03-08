@@ -528,6 +528,56 @@ const App = {
             }
         }
 
+        // 跳转到下一个有 Block 强势筛选结果的日期
+        const jumpToValidDate = async (direction) => {
+            const list = Dates.historicalDate || []
+            const current = Dates.requestDate
+            const idx = list.indexOf(current)
+
+            if (idx === -1) return
+
+            GlobalState.isRequesting = true
+            Industries.loading = true
+            Concepts.loading = true
+
+            try {
+                // 从下一个日期开始遍历
+                for (let i = idx + direction; i >= 0 && i < list.length; i += direction) {
+                    const targetDate = list[i]
+                    
+                    // 临时设置日期
+                    Dates.requestDate = targetDate
+                    Dates.setRequestDate(targetDate)
+                    Dates.setShareDate()
+
+                    // 清空并重新加载数据
+                    Industries.Data[0].filters = []
+                    Concepts.Data[0].filters = []
+                    Stocks.Data[0].filters = []
+
+                    // 等待数据加载完成
+                    await Promise.all([
+                        Industries.init(getLocalforage, setLocalforage, Dates.shareDate, null, null, null),
+                        Concepts.init(getLocalforage, setLocalforage, Dates.shareDate, null, null, null),
+                    ])
+
+                    // 检查是否有强势筛选结果
+                    const industryCount = displayIndustries.value?.length || 0
+                    const conceptCount = displayConcepts.value?.length || 0
+
+                    if (industryCount > 0 || conceptCount > 0) {
+                        // 找到有效日期，停止遍历
+                        console.log(`找到有效日期：${targetDate}, 行业：${industryCount}, 概念：${conceptCount}`)
+                        break
+                    }
+                }
+            } finally {
+                GlobalState.isRequesting = false
+                Industries.loading = false
+                Concepts.loading = false
+            }
+        }
+
         // 计算属性：显示的行业列表（根据筛选模式）
         const displayIndustries = computed(() => {
             let result = Industries.Data[0].filters
@@ -1148,6 +1198,7 @@ const App = {
             GlobalState,
             Submit,
             changeDate,
+            jumpToValidDate,
             precentformater,
             formatNumber,
             isMobile,

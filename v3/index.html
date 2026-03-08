@@ -17,6 +17,16 @@
                     <el-button
                         class="nav-button"
                         :disabled="GlobalState.isRequesting"
+                        @click="jumpToValidDate(-1)"
+                        size="small"
+                        circle
+                        title="跳转到上一个有 Block 强势结果的日期"
+                    >
+                        <el-icon><d-arrow-left /></el-icon>
+                    </el-button>
+                    <el-button
+                        class="nav-button"
+                        :disabled="GlobalState.isRequesting"
                         @click="changeDate(-1)"
                         size="small"
                         circle
@@ -42,6 +52,16 @@
                         circle
                     >
                         <el-icon><arrow-right /></el-icon>
+                    </el-button>
+                    <el-button
+                        class="nav-button"
+                        :disabled="GlobalState.isRequesting"
+                        @click="jumpToValidDate(1)"
+                        size="small"
+                        circle
+                        title="跳转到下一个有 Block 强势结果的日期"
+                    >
+                        <el-icon><d-arrow-right /></el-icon>
                     </el-button>
                     <el-button
                         type="primary"
