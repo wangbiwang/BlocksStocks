@@ -102,14 +102,17 @@ function getQuestions(type, datas) {
     } else if (type === 'block-概念') {
         questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${td}前10交易日涨幅；概念`
         questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)；概念`
-    } else if (type === 'stock') {
-        let q = `${td} 09:35涨跌幅>0.5;${td}前1交易日(M5和M10和M30和M60)均小于收盘价;${pd1}涨跌幅>4；${pd1}大单净量>0.4大单净额正；${pd1}热度排名升序;行业概念主板创业非ST;`
-        questions[0] = q + `${td} 09:35资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;`
-        questions[1] = q + `${pd1}资金流向；${td} 09:33涨跌幅资金流向大单净额;`
     }
     if (nd1) {
         questions[0] = `${nd1}涨跌幅;` + questions[0]
         questions[1] = `${nd1}涨跌幅;` + questions[1]
     }
+    if (type === 'stock') {
+        let q = `${td} 09:35涨跌幅>0.5;${td}前1交易日(M5和M10和M30和M60)均小于收盘价;${pd1}涨跌幅>4；${pd1}大单净量>0.4大单净额正；${pd1}热度排名升序;行业概念主板创业非ST;`
+        questions[0] = q + `${td} 09:35资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;`
+        questions[1] = q + `${pd1}资金流向；${td}涨跌幅;`
+        if (nd1) questions[1] = `${nd1}涨跌幅;` + questions[1]
+    }
+
     return questions
 }
