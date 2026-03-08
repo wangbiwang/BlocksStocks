@@ -274,6 +274,20 @@ const Concepts = reactive({
     },
 })
 
+/** @description Connection Chart Module */
+const ConnectionChart = reactive({
+    data: [],
+    totalPairs: 0,
+
+    updateData: (stocks, industries, concepts) => {
+        // 合并行业和概念数据
+        const allBlocks = [...(industries || []), ...(concepts || [])]
+        const connectionData = findConnections(stocks, allBlocks)
+        ConnectionChart.data = connectionData
+        ConnectionChart.totalPairs = connectionData.length
+    },
+})
+
 /** @description Match Chart Module - 用于管理匹配图的选中状态和筛选模式 */
 const MatchChart = reactive({
     industryFilterMode: 'strong', // 行业筛选模式：'all' | 'strong'
@@ -503,6 +517,8 @@ const App = {
                     Concepts.init(getLocalforage, setLocalforage, Dates.shareDate),
                     Stocks.init(getLocalforage, setLocalforage, Dates.shareDate),
                 ])
+                // 数据都加载完成后，统一更新连线图
+                ConnectionChart.updateData(Stocks.Data[0].filters, Industries.Data[0].filters, Concepts.Data[0].filters)
             } finally {
                 // 无论成功失败都恢复按钮状态
                 GlobalState.isRequesting = false
@@ -1215,7 +1231,7 @@ const app = Vue.createApp(App)
 app.use(ElementPlus, { locale: ElementPlusLocaleZhCn })
 
 // 注册 Element Plus 图标组件（同时注册 PascalCase 和 kebab-case 格式）
-const icons = ['ArrowLeft', 'ArrowRight', 'Moon', 'Opportunity']
+const icons = ['ArrowLeft', 'ArrowRight', 'DArrowLeft', 'DArrowRight', 'Moon', 'Opportunity']
 icons.forEach((name) => {
     const component = ElementPlusIconsVue[name]
     app.component(name, component)
