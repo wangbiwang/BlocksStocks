@@ -551,6 +551,31 @@
                                     width="80"
                                     show-overflow-tooltip
                                 ></el-table-column>
+                                
+                                <el-table-column width="100" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>流通市值</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span>{{ formatNumber(row[Dates.shareDate.pd1]?.流通市值,'shizhi') }}</span>
+                                    </template>
+                                </el-table-column>
+                                
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>收盘价</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:35)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span>{{ row[`${Dates.shareDate.td} 09:35`]?.收盘价 }}</span>
+                                    </template>
+                                </el-table-column>
+
                                 <el-table-column width="60" align="center">
                                     <template #header>
                                         <div class="column-header-with-subtitle">
