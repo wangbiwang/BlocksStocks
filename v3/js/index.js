@@ -579,11 +579,6 @@ const App = {
                 const M30 = item.M30 ?? 0
                 const M60 = item.M60 ?? 0
 
-                // 新增：pd1 成交量与 pd2 对比
-                const pd1Volume = item[Dates.shareDate.pd1]?.成交量 ?? -Infinity
-                const pd2Volume = item[Dates.shareDate.pd2]?.成交量 ?? -Infinity
-                const volumeCondition = pd1Volume > pd2Volume
-
                 const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                 const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                 const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -603,7 +598,7 @@ const App = {
                 const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                 const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition && volumeCondition
+                const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition
                 
                 if (isStrong) {
                     strongBlocks.push(item)
@@ -630,11 +625,6 @@ const App = {
                 const M30 = item.M30 ?? 0
                 const M60 = item.M60 ?? 0
 
-                // 新增：pd1 成交量与 pd2 对比
-                const pd1Volume = item[Dates.shareDate.pd1]?.成交量 ?? -Infinity
-                const pd2Volume = item[Dates.shareDate.pd2]?.成交量 ?? -Infinity
-                const volumeCondition = pd1Volume > pd2Volume
-
                 const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                 const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                 const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -654,7 +644,7 @@ const App = {
                 const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                 const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition && volumeCondition
+                const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition
                 
                 if (isStrong) {
                     strongBlocks.push(item)
@@ -811,11 +801,6 @@ const App = {
                     const M30 = item.M30 ?? 0
                     const M60 = item.M60 ?? 0
 
-                    // 新增：pd1 成交量与 pd2 对比
-                    const pd1Volume = item[Dates.shareDate.pd1]?.成交量 ?? -Infinity
-                    const pd2Volume = item[Dates.shareDate.pd2]?.成交量 ?? -Infinity
-                    const volumeCondition = pd1Volume > pd2Volume
-
                     const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                     const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                     const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -841,7 +826,7 @@ const App = {
                     const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                     const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                    const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition && volumeCondition
+                    const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition
                     
                     return isStrong
                 })
@@ -881,11 +866,6 @@ const App = {
                     const M30 = item.M30 ?? 0
                     const M60 = item.M60 ?? 0
 
-                    // 新增：pd1 成交量与 pd2 对比
-                    const pd1Volume = item[Dates.shareDate.pd1]?.成交量 ?? -Infinity
-                    const pd2Volume = item[Dates.shareDate.pd2]?.成交量 ?? -Infinity
-                    const volumeCondition = pd1Volume > pd2Volume
-
                     const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                     const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                     const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -911,7 +891,7 @@ const App = {
                     const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                     const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                    const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition && volumeCondition
+                    const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition
                     
                     return isStrong
                 })
