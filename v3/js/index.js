@@ -68,6 +68,8 @@ const Dates = reactive({
             pd1cn: dayjs(getSafe(-1)).format('YYYY年MM月DD日'),
             pd2: getSafe(-2),
             pd3: getSafe(-3),
+            pd4: getSafe(-4),
+            pd5: getSafe(-5),
             nd1: getSafe(1),
             nd2: getSafe(2),
             nd3: getSafe(3),
@@ -579,6 +581,13 @@ const App = {
                 const M30 = item.M30 ?? 0
                 const M60 = item.M60 ?? 0
 
+                // 新增：pd1 涨跌幅与 pd2-pd5 对比
+                const pd2Change = item[Dates.shareDate.pd2]?.涨跌幅 ?? -Infinity
+                const pd3Change = item[Dates.shareDate.pd3]?.涨跌幅 ?? -Infinity
+                const pd4Change = item[Dates.shareDate.pd4]?.涨跌幅 ?? -Infinity
+                const pd5Change = item[Dates.shareDate.pd5]?.涨跌幅 ?? -Infinity
+                const pd1Highest = pd1Change > pd2Change && pd1Change > pd3Change && pd1Change > pd4Change && pd1Change > pd5Change
+
                 const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                 const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                 const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -598,7 +607,7 @@ const App = {
                 const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                 const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition
+                const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition && pd1Highest
                 
                 if (isStrong) {
                     strongBlocks.push(item)
@@ -625,6 +634,13 @@ const App = {
                 const M30 = item.M30 ?? 0
                 const M60 = item.M60 ?? 0
 
+                // 新增：pd1 涨跌幅与 pd2-pd5 对比
+                const pd2Change = item[Dates.shareDate.pd2]?.涨跌幅 ?? -Infinity
+                const pd3Change = item[Dates.shareDate.pd3]?.涨跌幅 ?? -Infinity
+                const pd4Change = item[Dates.shareDate.pd4]?.涨跌幅 ?? -Infinity
+                const pd5Change = item[Dates.shareDate.pd5]?.涨跌幅 ?? -Infinity
+                const pd1Highest = pd1Change > pd2Change && pd1Change > pd3Change && pd1Change > pd4Change && pd1Change > pd5Change
+
                 const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                 const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                 const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -644,7 +660,7 @@ const App = {
                 const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                 const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition
+                const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition && pd1Highest
                 
                 if (isStrong) {
                     strongBlocks.push(item)
@@ -801,6 +817,13 @@ const App = {
                     const M30 = item.M30 ?? 0
                     const M60 = item.M60 ?? 0
 
+                    // 新增：pd1 涨跌幅与 pd2-pd5 对比
+                    const pd2Change = item[Dates.shareDate.pd2]?.涨跌幅 ?? -Infinity
+                    const pd3Change = item[Dates.shareDate.pd3]?.涨跌幅 ?? -Infinity
+                    const pd4Change = item[Dates.shareDate.pd4]?.涨跌幅 ?? -Infinity
+                    const pd5Change = item[Dates.shareDate.pd5]?.涨跌幅 ?? -Infinity
+                    const pd1Highest = pd1Change > pd2Change && pd1Change > pd3Change && pd1Change > pd4Change && pd1Change > pd5Change
+
                     const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                     const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                     const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -826,7 +849,7 @@ const App = {
                     const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                     const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                    const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition
+                    const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition && pd1Highest
                     
                     return isStrong
                 })
@@ -866,6 +889,13 @@ const App = {
                     const M30 = item.M30 ?? 0
                     const M60 = item.M60 ?? 0
 
+                    // 新增：pd1 涨跌幅与 pd2-pd5 对比
+                    const pd2Change = item[Dates.shareDate.pd2]?.涨跌幅 ?? -Infinity
+                    const pd3Change = item[Dates.shareDate.pd3]?.涨跌幅 ?? -Infinity
+                    const pd4Change = item[Dates.shareDate.pd4]?.涨跌幅 ?? -Infinity
+                    const pd5Change = item[Dates.shareDate.pd5]?.涨跌幅 ?? -Infinity
+                    const pd1Highest = pd1Change > pd2Change && pd1Change > pd3Change && pd1Change > pd4Change && pd1Change > pd5Change
+
                     const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                     const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                     const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -891,7 +921,7 @@ const App = {
                     const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                     const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
-                    const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition
+                    const isStrong = baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish && maOrFlowCondition && flowCondition && !flowWorsening && lowChangeCondition && pd1Highest
                     
                     return isStrong
                 })

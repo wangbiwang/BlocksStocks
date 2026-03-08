@@ -5,7 +5,7 @@
  */
 function handleRate(obj, ele, type, dates) {
     const num = (e) => (e ? Number(Number(e).toFixed(3)) : 0)
-    const { nd1, td, pd1 } = dates
+    const { nd1, td, pd1, pd2, pd3, pd4, pd5 } = dates
     let t = type === 'block' ? '指数@' : ''
 
     // 基础数据
@@ -75,6 +75,19 @@ function handleRate(obj, ele, type, dates) {
         obj['板块类别'] = ele['指数@所属同花顺行业级别'] ? '二级行业' : '概念'
         obj['昨日涨停数'] = ele[`指数@涨停家数[${pd1}]`] || 0
         obj['昨日上涨家数占比'] = ele[`指数@上涨家数占比[${pd1}]`] || 0
+
+        obj[pd2] = {
+            涨跌幅: num(ele[`${t}涨跌幅:前复权[${pd2}]`] || ele[`${t}分时涨跌幅:前复权[${pd2} 15:00]`]),
+        }
+        obj[pd3] = {
+            涨跌幅: num(ele[`${t}涨跌幅:前复权[${pd3}]`] || ele[`${t}分时涨跌幅:前复权[${pd3} 15:00]`]),
+        }
+        obj[pd4] = {
+            涨跌幅: num(ele[`${t}涨跌幅:前复权[${pd4}]`] || ele[`${t}分时涨跌幅:前复权[${pd4} 15:00]`]),
+        }
+        obj[pd5] = {
+            涨跌幅: num(ele[`${t}涨跌幅:前复权[${pd5}]`] || ele[`${t}分时涨跌幅:前复权[${pd5} 15:00]`]),
+        }
     } else {
         obj['股票简称'] = ele['股票简称'] || ''
         obj['行业'] = ele['所属同花顺行业']?.split('-')[1] || ''
@@ -97,10 +110,10 @@ function getQuestions(type, datas) {
     const { nd1, td, pd1 } = datas
     let questions = []
     if (type === 'block-行业') {
-        questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${td}前10交易日涨幅；二级行业`
+        questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${td}前10交易日每日涨幅；二级行业`
         questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)；二级行业`
     } else if (type === 'block-概念') {
-        questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${td}前10交易日涨幅；概念`
+        questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${td}前10交易日每日涨幅；概念`
         questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)；概念`
     }
     if (nd1) {
