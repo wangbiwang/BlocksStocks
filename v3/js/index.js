@@ -969,12 +969,22 @@ const App = {
             }
 
             // 根据筛选模式返回数据（返回新对象引用以强制刷新）
-            // 三级递进：all -> strong -> matched
+            // 三级递进：all -> matched -> strong
             let result = Stocks.Data[0].filters
 
-            // 强势筛选：筛选 matchCount > 0 的 Stock
-            if (MatchChart.stockFilterMode === 'strong' || MatchChart.stockFilterMode === 'matched') {
+            // 匹配筛选：先筛选 matchCount > 0 的 Stock
+            if (MatchChart.stockFilterMode === 'matched' || MatchChart.stockFilterMode === 'strong') {
                 result = result.filter((stock) => stock.matchCount > 0)
+            }
+
+            // 强势筛选：在匹配基础上再应用强势条件
+            if (MatchChart.stockFilterMode === 'strong') {
+                result = result.filter((stock) => {
+                    const data0935 = stock[`${Dates.shareDate.td} 09:35`]
+                    if (!data0935) return false
+                    const 涨跌幅 = data0935.涨跌幅 || 0
+                    return 涨跌幅 > 0
+                })
             }
 
             // 按热度排名升序排序（排名越小越热门）
