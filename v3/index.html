@@ -511,6 +511,11 @@
                                         @click="toggleStockFilterMode('strong')"
                                         >强势</el-button
                                     >
+                                    <el-button
+                                        :type="MatchChart.stockFilterMode === 'matched' ? 'primary' : ''"
+                                        @click="toggleStockFilterMode('matched')"
+                                        >匹配</el-button
+                                    >
                                 </el-button-group>
                                 <span class="status-indicator-inline">
                                     <span

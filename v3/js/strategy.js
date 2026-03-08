@@ -86,36 +86,104 @@ function handleRate(obj, ele, type, dates) {
     obj['code'] = ele['code']
 }
 
+
 /**
  * 生成查询问题
  *
- * @param {string} type 类型 stock/block-行业/block-概念
+ * @param {string} type 类型 stock/block
  * @param {object} datas 数据
  * @returns {string[]} 问题数组
  */
-function getQuestions(type, datas, blockItem, blockType, blockName) {
-    console.log(type, datas, blockItem, blockType, blockName)
-    const { nd1, td, pd1 } = datas
+function getQuestions(type, datas) {
+    const { nd1, td, pd1, isToday } = datas
     let questions = []
+    if (type === 'stock') {
+        questions[0] = `${td}涨跌幅; ${td} 09:35涨跌幅资金流向大单净额;${pd1}资金流向大单净额；${pd1}大单净量>0.4；${pd1}涨跌幅>4；${pd1}成交量是 5 日均量 2 倍以上；${pd1}大单净额创${pd1}前 30 交易日新高 ；${pd1}收盘价大于 30 日均线；${pd1}热度排名升序；主板创业非 ST；行业或者概念 `
+        questions[1] = `${td}涨跌幅; ${td} 09:35涨跌幅资金流向大单净额;${pd1}资金流向大单净额；${pd1}大单净量>0.4；${pd1}涨跌幅>4；${pd1}收盘价大于 60 日均线；${pd1}热度排名前 250；主板创业非 ST；行业或者概念 `
 
-    if(blockType === '概念'){
-        blockName = '所属概念所属概念包含' + blockName
-    }else{
-        blockName = '所属二级行业包含' + blockName
+        if (nd1) {
+            questions[0] = `${nd1}涨跌幅;` + questions[0]
+            questions[1] = `${nd1}涨跌幅;` + questions[1]
+        }
+    } else if (type === 'block') {
+        questions[0] = `${td}涨跌幅;${td} 09:35涨跌幅资金流向大单净额;${td} 09:33资金流向大单净额;${pd1}资金流向大单净额涨跌幅；${pd1}大单净量>0.2；${pd1}上涨家数占比>60；${pd1}涨停家数>0；${pd1}收盘价大于 30 日均线；${td}前 3 交易日资金流向正；${td}前 10 交易日涨幅<25`
+        questions[1] = `${td}涨跌幅;${td} 09:35涨跌幅资金流向大单净额;${td} 09:33资金流向大单净额;${pd1}涨跌幅>1.5；${pd1}大单净量；${pd1}上涨家数占比>60；${pd1}涨停家数>0；${pd1}收盘价大于 60 日均线；${pd1}资金流向大单净额正`
+        if (nd1) {
+            questions[0] = `${nd1}涨跌幅;` + questions[0]
+            questions[1] = `${nd1}涨跌幅;` + questions[1]
+        }
     }
-    if (type === 'block-行业') {
-        questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${td}前10交易日涨幅；二级行业`
-        questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)；二级行业`
-    } else if (type === 'block-概念') {
-        questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${td}前10交易日涨幅；概念`
-        questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)；概念`
-    } else if (type === 'stock') {
-        questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${pd1}热度排名；主板创业非ST；${blockName} `
-        questions[1] = `${pd1}涨跌幅降序资金流向大单净额大单净量成交量；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)主板创业非ST；${blockName}`
-    }
-    if (nd1) {
-        questions[0] = `${nd1}涨跌幅;` + questions[0]
-        questions[1] = `${nd1}涨跌幅;` + questions[1]
-    }
+
     return questions
+}
+
+/**
+ * 查找 Block 和 Stock 之间的连接关系
+ */
+function findConnections(stocks, blocks) {
+    const connections = []
+    const blockMatchCounts = {} // 统计每个 Block 配对成功的 Stock 数量
+    const stockMatchCounts = {} // 统计每个 Stock 配对成功的 Block 数量
+    const seenPairs = new Set() // 用于去重
+
+    // 遍历所有 Block 和 Stock，找出精确匹配
+    blocks.forEach((block) => {
+        const blockName = block['指数简称']
+        if (!blockName) return
+
+        stocks.forEach((stock) => {
+            const stockName = stock['股票简称']
+            const industry = stock['行业'] || ''
+            const concepts = stock['概念'] || []
+
+            // 检查是否精确匹配
+            let matchType = null
+
+            // 检查行业匹配（字符串精确匹配）
+            if (industry === blockName) {
+                matchType = '行业'
+            }
+            // 检查概念匹配（数组包含匹配）
+            else if (Array.isArray(concepts) && concepts.includes(blockName)) {
+                matchType = '概念'
+            }
+
+            // 如果找到匹配
+            if (matchType) {
+                // 检查是否已存在相同的配对
+                const pairKey = `${blockName}-${stockName}`
+                if (seenPairs.has(pairKey)) return
+                seenPairs.add(pairKey)
+
+                // 记录 Block 配对次数
+                if (!blockMatchCounts[blockName]) {
+                    blockMatchCounts[blockName] = 0
+                }
+                blockMatchCounts[blockName]++
+
+                // 记录 Stock 配对次数
+                if (!stockMatchCounts[stockName]) {
+                    stockMatchCounts[stockName] = 0
+                }
+                stockMatchCounts[stockName]++
+
+                // 添加到连接列表
+                connections.push({
+                    blockName: blockName,
+                    stockName: stockName,
+                    matchType: matchType,
+                    blockMatchCount: blockMatchCounts[blockName], // 临时值，后面会更新
+                    stockMatchCount: stockMatchCounts[stockName], // 临时值，后面会更新
+                })
+            }
+        })
+    })
+
+    // 更新最终的配对次数
+    connections.forEach((conn) => {
+        conn.blockMatchCount = blockMatchCounts[conn.blockName]
+        conn.stockMatchCount = stockMatchCounts[conn.stockName]
+    })
+
+    return connections
 }

@@ -278,7 +278,7 @@ const Concepts = reactive({
 const MatchChart = reactive({
     industryFilterMode: 'strong', // 行业筛选模式：'all' | 'strong'
     conceptFilterMode: 'strong', // 概念筛选模式：'all' | 'strong'
-    stockFilterMode: 'strong', // Stock 筛选模式：'all' | 'strong'
+    stockFilterMode: 'strong', // Stock 筛选模式：'all' | 'strong' | 'matched'
 })
 
 /** @description Stocks Module */
@@ -290,15 +290,11 @@ const Stocks = reactive({
     selectedBlockName: null, // 当前选中的板块名称
     currentBlockType: null, // 当前板块类型：'行业' 或 '概念'
 
-    init: async (catcheGetFunction, catcheSetFunction, dates, blockItem, blockType, blockName) => {
+    init: async (catcheGetFunction, catcheSetFunction, dates) => {
         const { tdcn } = dates
-        Stocks.selectedBlockName = blockName
-        Stocks.currentBlockType = blockType
-        const questions = getQuestions('stock', dates, blockItem, blockType, blockName)
+        const questions = getQuestions('stock', dates)
         const cache = (await catcheGetFunction('Stocks')) || {}
-        // 使用复合 key: 日期#板块类型#板块名称
-        const cacheKey = `${tdcn}#${blockType || 'none'}#${blockName || 'none'}`
-        const target = cache[cacheKey]
+        const target = cache[tdcn]
 
         const isValid = target?.length === questions.length && target.every((d) => Array.isArray(d))
 
@@ -312,11 +308,11 @@ const Stocks = reactive({
             handleStocksData(target)
         } else {
             Stocks.isFromCache = false
-            await Stocks.getData(questions, catcheSetFunction, cache, dates, blockName, blockType)
+            await Stocks.getData(questions, catcheSetFunction, cache, dates)
         }
     },
 
-    getData: async (questions, catcheSetFunction, cache, dates, blockName, blockType) => {
+    getData: async (questions, catcheSetFunction, cache, dates) => {
         const { tdcn, isToday } = dates
         Stocks.loading = true
         Stocks.isFromCache = false
@@ -486,7 +482,7 @@ const App = {
             GlobalState.isRequesting = true
             Industries.loading = true
             Concepts.loading = true
-            Stocks.loading = false // 初始不加载 Stock 数据
+            Stocks.loading = true
 
             // 清空数据
             Industries.Data[0].filters = []
@@ -501,16 +497,18 @@ const App = {
             Dates.setShareDate()
 
             try {
-                // 并行请求行业和概念数据
+                // 并行请求 Block 和 Stock 数据
                 await Promise.all([
-                    Industries.init(getLocalforage, setLocalforage, Dates.shareDate, null, null, null),
-                    Concepts.init(getLocalforage, setLocalforage, Dates.shareDate, null, null, null),
+                    Industries.init(getLocalforage, setLocalforage, Dates.shareDate),
+                    Concepts.init(getLocalforage, setLocalforage, Dates.shareDate),
+                    Stocks.init(getLocalforage, setLocalforage, Dates.shareDate),
                 ])
             } finally {
                 // 无论成功失败都恢复按钮状态
                 GlobalState.isRequesting = false
                 Industries.loading = false
                 Concepts.loading = false
+                Stocks.loading = false
             }
         }
 
@@ -710,122 +708,124 @@ const App = {
 
         // 计算属性：显示的 Stock 列表（根据筛选模式）
         const displayStocks = computed(() => {
-            let result = Stocks.Data[0].filters
+            // 添加依赖：当 selectedBlock 或 selectedStock 变化时重新计算
+            const _selectedBlock = MatchChart.selectedBlock
+            const _selectedStock = MatchChart.selectedStock
 
-            // 强势筛选逻辑
-            if (MatchChart.stockFilterMode === 'strong') {
-                // 获取所点击指数的完整数据
-                const blockName = Stocks.selectedBlockName
-                const blockType = Stocks.currentBlockType
-                let blockData = null
-                let block0935Change = 0
+            if (!ConnectionChart.data || ConnectionChart.data.length === 0) {
+                Stocks.Data[0].filters.forEach((stock) => {
+                    stock.matchCount = 0
+                })
+                // 没有连接数据时：matched 模式返回空数组，strong 模式返回强势数据
+                if (MatchChart.stockFilterMode === 'matched') {
+                    return []
+                }
+                let result = Stocks.Data[0].filters
 
-                if (blockName && blockType) {
-                    blockData = blockType === '行业'
-                        ? Industries.Data[0].filters.find(item => item['指数简称'] === blockName)
-                        : Concepts.Data[0].filters.find(item => item['指数简称'] === blockName)
-                    block0935Change = blockData?.[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? 0
+                // 强势筛选
+                if (MatchChart.stockFilterMode === 'strong') {
+                    result = result.filter((stock) => {
+                        const data0935 = stock[`${Dates.shareDate.td} 09:35`]
+                        if (!data0935) return false
+                        const 涨跌幅 = data0935.涨跌幅 || 0
+                        return 涨跌幅 > 0
+                    })
                 }
 
-                result = result.filter(item => {
-                    const pd1Change = item[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
-                    const pd1NetInflowVol = item[Dates.shareDate.pd1]?.大单净量 ?? -Infinity
-                    const pd1CapitalFlow = item[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
-                    const M01 = item.M01 ?? 0
-                    const M05 = item.M05 ?? 0
-                    const M30 = item.M30 ?? 0
-                    const td0935Change = item[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
-                    const td0935CapitalFlow = item[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
-                    const td0935NetInflow = item[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
-                    const td0933CapitalFlow = item[`${Dates.shareDate.td} 09:33`]?.资金流向 ?? -Infinity
-                    const td0933NetInflow = item[`${Dates.shareDate.td} 09:33`]?.大单净额 ?? -Infinity
-                    const td0933Change = item[`${Dates.shareDate.td} 09:33`]?.涨跌幅 ?? -Infinity
+                // 按热度排名升序排序（排名越小越热门）
+                result.sort((a, b) => {
+                    const aHeat = a[Dates.shareDate.pd1]?.热度排名 ?? Infinity
+                    const bHeat = b[Dates.shareDate.pd1]?.热度排名 ?? Infinity
+                    return aHeat - bHeat
+                })
 
-                    // 获取 block 数据用于豁免条件判断
-                    const block0935ChangeVal = blockData?.[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
-                    const block0935CapitalFlow = blockData?.[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
-                    const block0935NetInflow = blockData?.[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
-                    const block0933ChangeVal = blockData?.[`${Dates.shareDate.td} 09:33`]?.涨跌幅 ?? -Infinity
-                    const block0933CapitalFlow = blockData?.[`${Dates.shareDate.td} 09:33`]?.资金流向 ?? -Infinity
-                    const block0933NetInflow = blockData?.[`${Dates.shareDate.td} 09:33`]?.大单净额 ?? -Infinity
-                    const blockPd1Change = blockData?.[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
-                    const blockPd1CapitalFlow = blockData?.[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
-                    const blockPd1NetInflow = blockData?.[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
+                // 返回新对象引用以强制刷新
+                return result.map((s) => ({ ...s }))
+            }
 
-                    // 豁免条件：如果 block 非常强势且 stock 本身也强势，则豁免筛选
-                    const blockTd0935AllPositive = block0935ChangeVal > 0 && block0935CapitalFlow > 0 && block0935NetInflow > 0
-                    const blockTd0935Improving = block0935CapitalFlow > block0933CapitalFlow && block0935NetInflow > block0933NetInflow
-                    const blockPd1AllPositive = blockPd1Change > 0 && blockPd1CapitalFlow > 0 && blockPd1NetInflow > 0
-                    const stockTd0935Positive = td0935Change > 0
-                    const stockPd1Strong = pd1Change > 9
-                    const stockPd1AllPositive = pd1CapitalFlow > 0 && pd1NetInflowVol > 0
+            // 根据筛选模式返回数据（返回新对象引用以强制刷新）
+            // 三级递进：all -> strong -> matched
+            let result = Stocks.Data[0].filters
 
-                    const isExempt = blockTd0935AllPositive && blockTd0935Improving && blockPd1AllPositive && stockTd0935Positive && stockPd1Strong && stockPd1AllPositive
+            // 声明变量用于强势筛选和匹配计算
+            let strongBlockData = []
+            let dynamicConnections = []
+            let stockToMaxBlockChange = new Map()
 
-                    if (isExempt) {
-                        // 满足豁免条件，直接通过
-                        return true
+            // 强势筛选
+            if (MatchChart.stockFilterMode === 'strong' || MatchChart.stockFilterMode === 'matched') {
+                // 先计算强势 Block 数据（合并行业和概念）
+                const allBlocks = [...(Industries.Data[0].filters || []), ...(Concepts.Data[0].filters || [])]
+                strongBlockData = allBlocks.filter((block) => {
+                    const data0935 = block[`${Dates.shareDate.td} 09:35`]
+                    if (!data0935) return false
+                    const change35 = data0935.涨跌幅 || 0
+                    const flow35 = data0935.资金流向 || 0
+                    const net35 = data0935.大单净额 || 0
+                    const flow33 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
+                    const net33 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
+
+                    return (
+                        change35 > 0.5 &&
+                        (flow35 > 0 || net35 > 0 || (flow35 > flow33 && net35 > net33)) &&
+                        !(flow35 < flow33 && net35 < net33)
+                    )
+                })
+
+                // 计算动态连接关系
+                const strongStockDataForMatch = result
+                dynamicConnections = findConnections(strongStockDataForMatch, strongBlockData)
+
+                // 为每个 Stock 找到匹配的强势 Block 的最高涨幅
+                stockToMaxBlockChange = new Map()
+                dynamicConnections.forEach((conn) => {
+                    const block = strongBlockData.find((b) => b['指数简称'] === conn.blockName)
+                    if (block) {
+                        const blockChange = block[`${Dates.shareDate.td} 09:35`]?.涨跌幅 || 0
+                        const stockName = conn.stockName
+                        const currentMax = stockToMaxBlockChange.get(stockName) || -Infinity
+                        if (blockChange > currentMax) {
+                            stockToMaxBlockChange.set(stockName, blockChange)
+                        }
                     }
+                })
 
-                    // 强势筛选条件
-                    const condition1 = pd1Change > 4 // 昨日涨幅大于 4
-                    const condition2Standard = pd1NetInflowVol > 0.4 // 昨日大单净量大于 0.4
-                    // 组合条件：昨日资金流向为正&& (09:35 资金流向 > 09:33 资金流向 且 09:35 大单净额 > 09:33 大单净额)
-                    const condition2Combo = pd1CapitalFlow > 0 && (td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow)
-                    const condition2 = condition2Standard || condition2Combo // 满足标准条件或组合条件即可
-                    const condition3 = M01 > M05 && M01 > M30 // M01 > M05 && M01 > M30
-                    // condition4: 09:35 涨跌幅>3 或者 (09:35 资金流向>09:33 资金流向 且 09:35 大单净额>09:33 大单净额)，但至少大于 2
-                    const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
-                    const condition4 = td0935Change > 2 && (td0935Change > 3 || flowImproving) // 最低>2，且满足>3 或资金流改善
-
-                    const isStrong = condition1 && condition2 && condition3 && condition4
-
-                    // 打印强势筛选各项条件状态（用于分析）
-                    console.log(`=== 强势筛选分析 - ${item['股票简称']} ===`, {
-                        '昨日涨幅': pd1Change,
-                        '昨日大单净量': pd1NetInflowVol,
-                        '昨日资金流向': pd1CapitalFlow,
-                        'M01': M01,
-                        'M05': M05,
-                        'M30': M30,
-                        '今日 09:35 涨跌幅': td0935Change,
-                        '所点击指数 09:35 涨跌幅': block0935Change,
-                        '条件 1(昨日涨幅>4)': condition1,
-                        '条件 2(大单净量>0.4 或组合)': condition2,
-                        '  - 标准条件 (大单净量>0.4)': condition2Standard,
-                        '  - 组合条件 (资金流>0 且改善)': condition2Combo,
-                        '条件 3(M01>M05&&M01>M30)': condition3,
-                        '条件 4(09:35 涨幅>2 且 (>3 或改善))': condition4,
-                        '  - 资金流改善': flowImproving,
-                        '豁免条件': {
-                            'block0935 全正': blockTd0935AllPositive,
-                            'block0935 改善': blockTd0935Improving,
-                            'block 昨日全正': blockPd1AllPositive,
-                            'stock0935 为正': stockTd0935Positive,
-                            'stock 昨日涨幅>9': stockPd1Strong,
-                            'stock 昨日全正': stockPd1AllPositive,
-                            '是否豁免': isExempt
-                        },
-                        '是否满足': isStrong
-                    })
-
-                    // 如果满足强势策略，直接返回
-                    if (isStrong) {
-                        return true
-                    }
-
-                    return false
+                // 强势筛选（Stock 的 09:35 涨跌幅 > 0 且 > 匹配 Block 的最高涨幅）
+                result = result.filter((stock) => {
+                    const data0935 = stock[`${Dates.shareDate.td} 09:35`]
+                    if (!data0935) return false
+                    const 涨跌幅 = data0935.涨跌幅 || 0
+                    const maxBlockChange = stockToMaxBlockChange.get(stock['股票简称'])
+                    // 如果没有匹配的强势 Block，则不满足条件
+                    if (maxBlockChange === undefined) return false
+                    return 涨跌幅 > 0 && 涨跌幅 > maxBlockChange
                 })
             }
 
-            // 排序：按热度排名升序
+            // 在强势数据基础上重新计算匹配数量
+            // 使用之前计算的 strongBlockData 和 dynamicConnections
+            const dynamicStockSet = new Set(dynamicConnections.map((c) => c.stockName))
+
+            result.forEach((stock) => {
+                const matchCount = dynamicStockSet.has(stock['股票简称'])
+                    ? dynamicConnections.filter((c) => c.stockName === stock['股票简称']).length
+                    : 0
+                stock.matchCount = matchCount
+            })
+
+            // 有匹配筛选（在强势基础上）
+            if (MatchChart.stockFilterMode === 'matched') {
+                result = result.filter((stock) => stock.matchCount > 0)
+            }
+
+            // 按热度排名升序排序（排名越小越热门）
             result.sort((a, b) => {
                 const aHeat = a[Dates.shareDate.pd1]?.热度排名 ?? Infinity
                 const bHeat = b[Dates.shareDate.pd1]?.热度排名 ?? Infinity
                 return aHeat - bHeat
             })
 
-            return result
+            return result.map((s) => ({ ...s }))
         })
 
         // 切换行业筛选模式
@@ -908,10 +908,6 @@ const App = {
                 },
                 '最终结果': baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish
             })
-
-            Stocks.loading = true
-            await Stocks.init(getLocalforage, setLocalforage, Dates.shareDate, row, '行业', blockName)
-            Stocks.loading = false
         }
 
         // 处理概念行点击 - 触发 Stock 数据请求
@@ -977,10 +973,6 @@ const App = {
                 },
                 '最终结果': baseCondition && (flowPositive || flowImproving) && blockHeat && maBullish
             })
-
-            Stocks.loading = true
-            await Stocks.init(getLocalforage, setLocalforage, Dates.shareDate, row, '概念', blockName)
-            Stocks.loading = false
         }
 
         // 处理 Stock 行点击 - 打印强势筛选分析信息
