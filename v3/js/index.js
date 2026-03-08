@@ -1324,7 +1324,7 @@ const App = {
             // await Submit()
         })
 
-        // 行业表格行类名 - 用于高亮匹配的行
+        // 行业表格行类名 - 用于高亮选中的行或与选中 Stock 匹配的行
         const industryRowClassName = ({ row }) => {
             const blockName = row['指数简称']
             // 当前选中的 Block 高亮
@@ -1333,12 +1333,12 @@ const App = {
             }
             // 与选中 Stock 匹配的 Block 高亮
             if (MatchChart.selectedStock && MatchChart.matchedBlocks.some(b => b.name === blockName)) {
-                return 'row-match'
+                return 'row-highlight'
             }
             return ''
         }
 
-        // 概念表格行类名 - 用于高亮匹配的行
+        // 概念表格行类名 - 用于高亮选中的行或与选中 Stock 匹配的行
         const conceptRowClassName = ({ row }) => {
             const blockName = row['指数简称']
             // 当前选中的 Block 高亮
@@ -1347,12 +1347,12 @@ const App = {
             }
             // 与选中 Stock 匹配的 Block 高亮
             if (MatchChart.selectedStock && MatchChart.matchedBlocks.some(b => b.name === blockName)) {
-                return 'row-match'
+                return 'row-highlight'
             }
             return ''
         }
 
-        // Stock 表格行类名 - 用于高亮匹配的行
+        // Stock 表格行类名 - 用于高亮选中的行或与选中 Block 匹配的行
         const stockRowClassName = ({ row }) => {
             const stockName = row['股票简称']
             // 当前选中的 Stock 高亮
@@ -1361,7 +1361,7 @@ const App = {
             }
             // 与选中 Block 匹配的 Stock 高亮
             if (MatchChart.selectedBlock && MatchChart.matchedStocks.includes(stockName)) {
-                return 'row-match'
+                return 'row-highlight'
             }
             return ''
         }

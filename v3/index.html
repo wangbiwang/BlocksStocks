@@ -705,6 +705,17 @@
                                         <span class="red f600">{{ row.source ? row.source.join(',') : '-' }}</span>
                                     </template>
                                 </el-table-column>
+                                <el-table-column width="70" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>匹配数</div>
+                                            <div class="column-subtitle">strong blocks</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span class="red f600">{{ row.matchCount ?? 0 }}</span>
+                                    </template>
+                                </el-table-column>
                             </el-table>
                         </div>
                     </div>
