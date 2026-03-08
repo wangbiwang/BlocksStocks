@@ -832,25 +832,6 @@ const App = {
 
             // 强势筛选
             if (MatchChart.stockFilterMode === 'strong' || MatchChart.stockFilterMode === 'matched') {
-                strongBlockData = allBlocks.filter((block) => {
-                    const data0935 = block[`${Dates.shareDate.td} 09:35`]
-                    if (!data0935) return false
-                    const change35 = data0935.涨跌幅 || 0
-                    const flow35 = data0935.资金流向 || 0
-                    const net35 = data0935.大单净额 || 0
-                    const flow33 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
-                    const net33 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
-
-                    return (
-                        change35 > 0.5 &&
-                        (flow35 > 0 || net35 > 0 || (flow35 > flow33 && net35 > net33)) &&
-                        !(flow35 < flow33 && net35 < net33)
-                    )
-                })
-
-                // 计算动态连接关系
-                const strongStockDataForMatch = result
-                dynamicConnections = findConnections(strongStockDataForMatch, strongBlockData)
 
                 // 为每个 Stock 找到匹配的强势 Block 的最高涨幅
                 stockToMaxBlockChange = new Map()
