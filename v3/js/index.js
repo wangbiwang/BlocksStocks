@@ -600,7 +600,7 @@ const App = {
 
                 // 新增：突破判断
                 const high5 = item['前5交易日区间最高价'] ?? 0
-                const breakoutCondition = M01 >= high5 && high5 > 0
+                const breakoutCondition = M01 >= high5 * 0.965 && high5 > 0
 
                 // 排名判断：行业需要 09:35排名前20 且 昨日排名前20
                 const rank0935 = item['09:35涨跌幅排名'] ?? 9999
@@ -676,7 +676,7 @@ const App = {
 
                 // 新增：突破判断
                 const high5 = item['前5交易日区间最高价'] ?? 0
-                const breakoutCondition = M01 >= high5 && high5 > 0
+                const breakoutCondition = M01 >= high5 * 0.965 && high5 > 0
 
                 // 排名判断：概念需要 09:35排名前30 且 昨日排名前30
                 const rank0935 = item['09:35涨跌幅排名'] ?? 9999
@@ -910,7 +910,7 @@ const App = {
 
                     // 突破判断
                     const high5 = item['前5交易日区间最高价'] ?? 0
-                    const breakoutCondition = M01 >= high5 && high5 > 0
+                    const breakoutCondition = M01 >= high5 * 0.965 && high5 > 0
 
                     // 排名判断：行业需要 09:35排名前20 且 昨日排名前20
                     const rank0935 = item['09:35涨跌幅排名'] ?? 9999
@@ -1005,7 +1005,7 @@ const App = {
 
                     // 突破判断
                     const high5 = item['前5交易日区间最高价'] ?? 0
-                    const breakoutCondition = M01 >= high5 && high5 > 0
+                    const breakoutCondition = M01 >= high5 * 0.965 && high5 > 0
 
                     // 排名判断：概念需要 09:35排名前30 且 昨日排名前30
                     const rank0935 = item['09:35涨跌幅排名'] ?? 9999
@@ -1127,10 +1127,13 @@ const App = {
                     // 基础条件：09:35 涨跌幅 > 0
                     if (change0935 <= 0) return false
 
-                    // 突破前高条件：昨日收盘价 > 前30日区间最高价
+                    // 数据有效性检查：收盘价必须有效
                     const pd1Close = pd1Data?.收盘价 || 0
+                    if (pd1Close <= 0) return false
+
+                    // 突破前高条件：昨日收盘价 > 前30日区间最高价
                     const high30 = stock['前30交易日区间最高价'] || 0
-                    if (pd1Close > 0 && high30 > 0 && pd1Close <= high30) return false
+                    if (high30 > 0 && pd1Close <= high30) return false
 
                     // 新增条件：如果 09:35 涨跌幅/资金流向/大单净额 全部 < 09:33，则需要检查例外
                     const changeDecline = change0935 < change0933
