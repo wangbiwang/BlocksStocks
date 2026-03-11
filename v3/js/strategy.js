@@ -70,6 +70,7 @@ function handleRate(obj, ele, type, dates) {
     obj.v60 = num(ele[`60日${t}vol[${pd1}]`])
 
     // 类型特定数据
+    let idx, start5
     if (type === 'block') {
         obj['指数简称'] = ele['指数简称'] || ''
         obj['板块类别'] = ele['指数@所属同花顺行业级别'] ? '二级行业' : '概念'
@@ -81,16 +82,20 @@ function handleRate(obj, ele, type, dates) {
             涨跌幅: num(ele[`${t}涨跌幅:前复权[${pd2}]`]),
             大单净额: num(ele[`${t}dde大单净额[${pd2}]`]),
         }
+        idx = Dates.historicalDate.indexOf(pd1)
+        start5 = Dates.historicalDate[Math.max(0, idx - 5)]
+        obj['前5交易日区间最高价'] = num(ele[`${t}区间最高价:不复权[${start5}-${pd2}]`])
     } else {
         obj['股票简称'] = ele['股票简称'] || ''
         obj['行业'] = ele['所属同花顺行业']?.split('-')[1] || ''
         obj['概念'] = ele['所属概念']?.split(';') || []
         obj[pd1]['热度排名'] = ele[`个股热度排名[${pd1}]`] || ele[`个股热度排名[${td}]`]
-        obj[`${td} 09:35`]['收盘价'] = num(ele[`分时收盘价:不复权[${td} 09:35]`])||0
-        obj[pd1]['流通市值'] = ele[`a股市值(不含限售股)[${pd1}]`]||0
+        obj[`${td} 09:35`]['收盘价'] = num(ele[`分时收盘价:不复权[${td} 09:35]`]) || 0
+        obj[pd1]['流通市值'] = ele[`a股市值(不含限售股)[${pd1}]`] || 0
     }
 
     obj['code'] = ele['code']
+    console.log(obj, `${start5}-${pd2}`)
 }
 
 /**
@@ -104,10 +109,10 @@ function getQuestions(type, datas) {
     const { nd1, td, pd1, pd2 } = datas
     let questions = []
     if (type === 'block-行业') {
-        questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${pd2}涨跌幅成交量大单净额;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${td}前10交易日涨跌幅；二级行业`
+        questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${pd2}涨跌幅成交量大单净额;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${pd1}前5交易日区间最高价；二级行业`
         questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数成交量；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)；二级行业`
     } else if (type === 'block-概念') {
-        questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${pd2}涨跌幅成交量大单净额;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${td}前10交易日涨跌幅；概念`
+        questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${pd2}涨跌幅成交量大单净额;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${pd1}前5交易日区间最高价；概念`
         questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数成交量；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)；概念`
     }
     if (nd1) {

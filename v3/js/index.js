@@ -586,6 +586,10 @@ const App = {
                 const pd2NetInflow = item[Dates.shareDate.pd2]?.大单净额 ?? -Infinity
                 const volumeCondition = pd1Volume > pd2Volume || pd1NetInflow > pd2NetInflow
 
+                // 新增：突破判断
+                const high5 = item['前5交易日区间最高价'] ?? 0
+                const breakoutCondition = M01 >= high5 && high5 > 0
+
                 const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                 const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                 const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -617,7 +621,8 @@ const App = {
                     flowCondition &&
                     !flowWorsening &&
                     lowChangeCondition &&
-                    volumeCondition
+                    volumeCondition &&
+                    breakoutCondition
 
                 if (isStrong) {
                     strongBlocks.push(item)
@@ -651,6 +656,10 @@ const App = {
                 const pd2NetInflow = item[Dates.shareDate.pd2]?.大单净额 ?? -Infinity
                 const volumeCondition = pd1Volume > pd2Volume || pd1NetInflow > pd2NetInflow
 
+                // 新增：突破判断
+                const high5 = item['前5交易日区间最高价'] ?? 0
+                const breakoutCondition = M01 >= high5 && high5 > 0
+
                 const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                 const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                 const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -682,7 +691,8 @@ const App = {
                     flowCondition &&
                     !flowWorsening &&
                     lowChangeCondition &&
-                    volumeCondition
+                    volumeCondition &&
+                    breakoutCondition
 
                 if (isStrong) {
                     strongBlocks.push(item)
@@ -874,6 +884,10 @@ const App = {
                     const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                     const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
+                    // 突破判断
+                    const high5 = item['前5交易日区间最高价'] ?? 0
+                    const breakoutCondition = M01 >= high5 && high5 > 0
+
                     const isStrong =
                         baseCondition &&
                         (flowPositive || flowImproving) &&
@@ -883,7 +897,8 @@ const App = {
                         flowCondition &&
                         !flowWorsening &&
                         lowChangeCondition &&
-                        volumeCondition
+                        volumeCondition &&
+                        breakoutCondition
 
                     return isStrong
                 })
@@ -958,6 +973,10 @@ const App = {
                     const flowImprovingBoth = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                     const lowChangeCondition = !lowChange || flowPositiveBoth || flowImprovingBoth
 
+                    // 突破判断
+                    const high5 = item['前5交易日区间最高价'] ?? 0
+                    const breakoutCondition = M01 >= high5 && high5 > 0
+
                     const isStrong =
                         baseCondition &&
                         (flowPositive || flowImproving) &&
@@ -967,7 +986,8 @@ const App = {
                         flowCondition &&
                         !flowWorsening &&
                         lowChangeCondition &&
-                        volumeCondition
+                        volumeCondition &&
+                        breakoutCondition
 
                     return isStrong
                 })
