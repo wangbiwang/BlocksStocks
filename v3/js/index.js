@@ -880,7 +880,11 @@ const App = {
                     const pd2NetInflow = item[Dates.shareDate.pd2]?.大单净额 ?? -Infinity
                     const volumeCondition = pd1Volume > pd2Volume || pd1NetInflow > pd2NetInflow
 
-                    const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
+                    // 极热板块：涨停数>=5 且 上涨家数占比>=85%
+                    const isSuperHot = pd1LimitUpCount >= 5 && pd1WinRate >= 85
+
+                    // 基础条件：涨跌幅和资金，但极热板块放宽资金要求
+                    const baseCondition = pd1Change > 1.5 && td0935Change > 0.5 && (pd1NetInflow > 0 || isSuperHot)
                     const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                     const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                     const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
@@ -897,7 +901,7 @@ const App = {
                         td0935Change > td0933Change &&
                         td0935CapitalFlow > td0933CapitalFlow &&
                         td0935NetInflow > td0933NetInflow
-                    const flowCondition = !flowNegative || allImproving
+                    const flowCondition = isSuperHot || !flowNegative || allImproving
 
                     // 剔除条件：如果 09:35 资金流向和大单净额都小于 09:33，则剔除
                     const flowWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
@@ -919,12 +923,12 @@ const App = {
 
                     const isStrong =
                         baseCondition &&
-                        (flowPositive || flowImproving) &&
+                        (isSuperHot || flowPositive || flowImproving) &&
                         blockHeat &&
                         maBullish &&
                         maOrFlowCondition &&
                         flowCondition &&
-                        !flowWorsening &&
+                        (isSuperHot || !flowWorsening) &&
                         lowChangeCondition &&
                         volumeCondition &&
                         breakoutCondition &&
@@ -975,7 +979,11 @@ const App = {
                     const pd2NetInflow = item[Dates.shareDate.pd2]?.大单净额 ?? -Infinity
                     const volumeCondition = pd1Volume > pd2Volume || pd1NetInflow > pd2NetInflow
 
-                    const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
+                    // 极热板块：涨停数>=5 且 上涨家数占比>=85%
+                    const isSuperHot = pd1LimitUpCount >= 5 && pd1WinRate >= 85
+
+                    // 基础条件：涨跌幅和资金，但极热板块放宽资金要求
+                    const baseCondition = pd1Change > 1.5 && td0935Change > 0.5 && (pd1NetInflow > 0 || isSuperHot)
                     const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                     const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
                     const blockHeat = pd1WinRate > 60 && pd1LimitUpCount > 0
@@ -992,7 +1000,7 @@ const App = {
                         td0935Change > td0933Change &&
                         td0935CapitalFlow > td0933CapitalFlow &&
                         td0935NetInflow > td0933NetInflow
-                    const flowCondition = !flowNegative || allImproving
+                    const flowCondition = isSuperHot || !flowNegative || allImproving
 
                     // 剔除条件：如果 09:35 资金流向和大单净额都小于 09:33，则剔除
                     const flowWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
@@ -1007,19 +1015,19 @@ const App = {
                     const high5 = item['前5交易日区间最高价'] ?? 0
                     const breakoutCondition = M01 >= high5 * 0.965 && high5 > 0
 
-                    // 排名判断：概念需要 09:35排名前30 且 昨日排名前30
+                    // 排名判断：概念需要 09:35排名前30 或 昨日排名前50
                     const rank0935 = item['09:35涨跌幅排名'] ?? 9999
                     const rankYesterday = item['昨日涨跌幅排名'] ?? 9999
-                    const rankCondition = rank0935 <= 30 && rankYesterday <= 30
+                    const rankCondition = rank0935 <= 30 || rankYesterday <= 50
 
                     const isStrong =
                         baseCondition &&
-                        (flowPositive || flowImproving) &&
+                        (isSuperHot || flowPositive || flowImproving) &&
                         blockHeat &&
                         maBullish &&
                         maOrFlowCondition &&
                         flowCondition &&
-                        !flowWorsening &&
+                        (isSuperHot || !flowWorsening) &&
                         lowChangeCondition &&
                         volumeCondition &&
                         breakoutCondition &&
@@ -1045,25 +1053,14 @@ const App = {
             const _selectedBlock = MatchChart.selectedBlock
             const _selectedStock = MatchChart.selectedStock
 
-            // 合并行业和概念数据用于匹配计算
-            const allBlocks = [...(Industries.Data[0].filters || []), ...(Concepts.Data[0].filters || [])]
-
-            // 计算强势Block 数据
-            const strongBlockData = allBlocks.filter((block) => {
-                const data0935 = block[`${Dates.shareDate.td} 09:35`]
-                if (!data0935) return false
-                const change35 = data0935.涨跌幅 || 0
-                const flow35 = data0935.资金流向 || 0
-                const net35 = data0935.大单净额 || 0
-                const flow33 = block[`${Dates.shareDate.td} 09:33`]?.资金流向 || 0
-                const net33 = block[`${Dates.shareDate.td} 09:33`]?.大单净额 || 0
-
-                return (
-                    change35 > 0.5 &&
-                    (flow35 > 0 || net35 > 0 || (flow35 > flow33 && net35 > net33)) &&
-                    !(flow35 < flow33 && net35 < net33)
-                )
-            })
+            // 使用已经计算好的强势Block数据（与显示逻辑一致）
+            const strongIndustries = MatchChart.industryFilterMode === 'strong'
+                ? displayIndustries.value
+                : Industries.Data[0].filters
+            const strongConcepts = MatchChart.conceptFilterMode === 'strong'
+                ? displayConcepts.value
+                : Concepts.Data[0].filters
+            const strongBlockData = [...strongIndustries, ...strongConcepts]
 
             // 计算动态连接关系
             const dynamicConnections = findConnections(Stocks.Data[0].filters, strongBlockData)
@@ -1131,9 +1128,9 @@ const App = {
                     const pd1Close = pd1Data?.收盘价 || 0
                     if (pd1Close <= 0) return false
 
-                    // 突破前高条件：昨日收盘价 > 前30日区间最高价
+                    // 突破前高条件：昨日收盘价 >= 前30日区间最高价 * 0.965（3.5%容差）
                     const high30 = stock['前30交易日区间最高价'] || 0
-                    if (high30 > 0 && pd1Close <= high30) return false
+                    if (high30 > 0 && pd1Close < high30 * 0.965) return false
 
                     // 新增条件：如果 09:35 涨跌幅/资金流向/大单净额 全部 < 09:33，则需要检查例外
                     const changeDecline = change0935 < change0933
@@ -1181,6 +1178,30 @@ const App = {
 
                         // 如果没有例外情况，则筛出
                         if (!hasException) return false
+                    }
+
+                    // 相对强度条件：Stock 09:35涨跌幅 > 所有匹配的强势Block的09:35涨跌幅，或者Stock涨跌幅 > 3
+                    if (change0935 <= 3) {
+                        const industry = stock['行业'] || ''
+                        const concepts = stock['概念'] || []
+                        const matchedStrongBlocks = []
+
+                        // 收集匹配的强势Block
+                        strongBlockData.forEach((block) => {
+                            const blockName = block['指数简称']
+                            if (blockName === industry || (Array.isArray(concepts) && concepts.includes(blockName))) {
+                                matchedStrongBlocks.push(block)
+                            }
+                        })
+
+                        // 检查是否大于所有匹配的强势Block的涨跌幅
+                        if (matchedStrongBlocks.length > 0) {
+                            const allStronger = matchedStrongBlocks.every((block) => {
+                                const blockChange0935 = block[`${Dates.shareDate.td} 09:35`]?.涨跌幅 || 0
+                                return change0935 > blockChange0935
+                            })
+                            if (!allStronger) return false
+                        }
                     }
 
                     return true
