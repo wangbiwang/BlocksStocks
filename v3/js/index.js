@@ -1114,6 +1114,7 @@ const App = {
                 result = result.filter((stock) => {
                     const data0935 = stock[`${Dates.shareDate.td} 09:35`]
                     const data0933 = stock[`${Dates.shareDate.td} 09:33`]
+                    const pd1Data = stock[Dates.shareDate.pd1]
                     if (!data0935 || !data0933) return false
 
                     const change0935 = data0935.涨跌幅 || 0
@@ -1125,6 +1126,11 @@ const App = {
 
                     // 基础条件：09:35 涨跌幅 > 0
                     if (change0935 <= 0) return false
+
+                    // 突破前高条件：昨日收盘价 > 前30日区间最高价
+                    const pd1Close = pd1Data?.收盘价 || 0
+                    const high30 = stock['前30交易日区间最高价'] || 0
+                    if (pd1Close > 0 && high30 > 0 && pd1Close <= high30) return false
 
                     // 新增条件：如果 09:35 涨跌幅/资金流向/大单净额 全部 < 09:33，则需要检查例外
                     const changeDecline = change0935 < change0933

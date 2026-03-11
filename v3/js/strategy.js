@@ -70,7 +70,7 @@ function handleRate(obj, ele, type, dates) {
     obj.v60 = num(ele[`60日${t}vol[${pd1}]`])
 
     // 类型特定数据
-    let idx, start5
+    let idx, start5, start30
     if (type === 'block') {
         obj['指数简称'] = ele['指数简称'] || ''
         obj['板块类别'] = ele['指数@所属同花顺行业级别'] ? '二级行业' : '概念'
@@ -93,12 +93,16 @@ function handleRate(obj, ele, type, dates) {
         obj['行业'] = ele['所属同花顺行业']?.split('-')[1] || ''
         obj['概念'] = ele['所属概念']?.split(';') || []
         obj[pd1]['热度排名'] = ele[`个股热度排名[${pd1}]`] || ele[`个股热度排名[${td}]`]
+        obj[pd1]['收盘价'] = obj.M01 || 0
         obj[`${td} 09:35`]['收盘价'] = num(ele[`分时收盘价:不复权[${td} 09:35]`]) || 0
         obj[pd1]['流通市值'] = ele[`a股市值(不含限售股)[${pd1}]`] || 0
+        // 30日区间最高价（用于突破判断）
+        idx = Dates.historicalDate.indexOf(pd1)
+        start30 = Dates.historicalDate[Math.max(0, idx - 30)]
+        obj['前30交易日区间最高价'] = num(ele[`区间最高价:不复权[${start30}-${pd2}]`])
     }
-
+    console.log(obj, obj['指数简称'], obj['股票简称'])
     obj['code'] = ele['code']
-    console.log(obj, `${start5}-${pd2}`)
 }
 
 /**
@@ -125,7 +129,7 @@ function getQuestions(type, datas) {
     if (type === 'stock') {
         let q = `${td} 09:35涨跌幅>0.5;${td}前1交易日(M5和M10和M30和M60)均小于收盘价;${pd1}涨跌幅>4；${pd1}大单净量>0.4大单净额正；${pd1}热度排名升序;行业概念主板创业非ST;`
         questions[0] = q + `${td} 09:35资金流向大单净额收盘价；${td} 09:33涨跌幅资金流向大单净额;`
-        questions[1] = q + `${pd1}资金流向；${td}涨跌幅;${pd1}流通市值`
+        questions[1] = q + `${pd1}资金流向；${td}涨跌幅;${pd1}流通市值;${pd1}前30交易日区间最高价最高价不复权`
         if (nd1) questions[1] = `${nd1}涨跌幅;` + questions[1]
     }
 
