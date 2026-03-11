@@ -85,6 +85,9 @@ function handleRate(obj, ele, type, dates) {
         idx = Dates.historicalDate.indexOf(pd1)
         start5 = Dates.historicalDate[Math.max(0, idx - 5)]
         obj['前5交易日区间最高价'] = num(ele[`${t}区间最高价:不复权[${start5}-${pd2}]`])
+        // 排名字段（已在数据合并时提取）
+        obj['09:35涨跌幅排名'] = ele['09:35涨跌幅排名'] || 9999
+        obj['昨日涨跌幅排名'] = ele['昨日涨跌幅排名'] || 9999
     } else {
         obj['股票简称'] = ele['股票简称'] || ''
         obj['行业'] = ele['所属同花顺行业']?.split('-')[1] || ''

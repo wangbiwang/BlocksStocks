@@ -378,13 +378,19 @@ const Stocks = reactive({
 /** @description Data Processing Functions */
 async function handleIndustriesData(res) {
     // 内连接合并：只保留同时在 res[0] 和 res[1] 中存在的 code
-    const map0 = new Map(res[0]?.map((item) => [item['code'], item]) || [])
-    const map1 = new Map(res[1]?.map((item) => [item['code'], item]) || [])
+    // res[0] 按09:35涨跌幅降序，下标即为09:35排名
+    // res[1] 按昨日涨跌幅降序，下标即为昨日排名
+    const map0 = new Map(res[0]?.map((item, index) => [item['code'], { item, rank: index + 1 }]) || [])
+    const map1 = new Map(res[1]?.map((item, index) => [item['code'], { item, rank: index + 1 }]) || [])
 
     const mergedArr = []
     map0.forEach((value0, code) => {
         if (map1.has(code)) {
-            const merged = { ...value0, ...map1.get(code) }
+            const value1 = map1.get(code)
+            const merged = { ...value0.item, ...value1.item }
+            // 排名字段：根据数组下标确定
+            merged['09:35涨跌幅排名'] = value0.rank
+            merged['昨日涨跌幅排名'] = value1.rank
             const obj = {}
             handleRate(obj, merged, 'block', Dates.shareDate)
             mergedArr.push(obj)
@@ -396,13 +402,19 @@ async function handleIndustriesData(res) {
 
 async function handleConceptsData(res) {
     // 内连接合并：只保留同时在 res[0] 和 res[1] 中存在的 code
-    const map0 = new Map(res[0]?.map((item) => [item['code'], item]) || [])
-    const map1 = new Map(res[1]?.map((item) => [item['code'], item]) || [])
+    // res[0] 按09:35涨跌幅降序，下标即为09:35排名
+    // res[1] 按昨日涨跌幅降序，下标即为昨日排名
+    const map0 = new Map(res[0]?.map((item, index) => [item['code'], { item, rank: index + 1 }]) || [])
+    const map1 = new Map(res[1]?.map((item, index) => [item['code'], { item, rank: index + 1 }]) || [])
 
     const mergedArr = []
     map0.forEach((value0, code) => {
         if (map1.has(code)) {
-            const merged = { ...value0, ...map1.get(code) }
+            const value1 = map1.get(code)
+            const merged = { ...value0.item, ...value1.item }
+            // 排名字段：根据数组下标确定
+            merged['09:35涨跌幅排名'] = value0.rank
+            merged['昨日涨跌幅排名'] = value1.rank
             const obj = {}
             handleRate(obj, merged, 'block', Dates.shareDate)
             mergedArr.push(obj)
@@ -590,6 +602,11 @@ const App = {
                 const high5 = item['前5交易日区间最高价'] ?? 0
                 const breakoutCondition = M01 >= high5 && high5 > 0
 
+                // 排名判断：行业需要 09:35排名前20 且 昨日排名前20
+                const rank0935 = item['09:35涨跌幅排名'] ?? 9999
+                const rankYesterday = item['昨日涨跌幅排名'] ?? 9999
+                const rankCondition = rank0935 <= 20 && rankYesterday <= 20
+
                 const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                 const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                 const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -622,7 +639,8 @@ const App = {
                     !flowWorsening &&
                     lowChangeCondition &&
                     volumeCondition &&
-                    breakoutCondition
+                    breakoutCondition &&
+                    rankCondition
 
                 if (isStrong) {
                     strongBlocks.push(item)
@@ -660,6 +678,11 @@ const App = {
                 const high5 = item['前5交易日区间最高价'] ?? 0
                 const breakoutCondition = M01 >= high5 && high5 > 0
 
+                // 排名判断：概念需要 09:35排名前30 且 昨日排名前30
+                const rank0935 = item['09:35涨跌幅排名'] ?? 9999
+                const rankYesterday = item['昨日涨跌幅排名'] ?? 9999
+                const rankCondition = rank0935 <= 30 && rankYesterday <= 30
+
                 const baseCondition = pd1Change > 1.5 && pd1NetInflow > 0 && td0935Change > 0.5
                 const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
                 const flowImproving = td0935CapitalFlow > td0933CapitalFlow && td0935NetInflow > td0933NetInflow
@@ -692,7 +715,8 @@ const App = {
                     !flowWorsening &&
                     lowChangeCondition &&
                     volumeCondition &&
-                    breakoutCondition
+                    breakoutCondition &&
+                    rankCondition
 
                 if (isStrong) {
                     strongBlocks.push(item)
@@ -888,6 +912,11 @@ const App = {
                     const high5 = item['前5交易日区间最高价'] ?? 0
                     const breakoutCondition = M01 >= high5 && high5 > 0
 
+                    // 排名判断：行业需要 09:35排名前20 且 昨日排名前20
+                    const rank0935 = item['09:35涨跌幅排名'] ?? 9999
+                    const rankYesterday = item['昨日涨跌幅排名'] ?? 9999
+                    const rankCondition = rank0935 <= 20 && rankYesterday <= 20
+
                     const isStrong =
                         baseCondition &&
                         (flowPositive || flowImproving) &&
@@ -898,7 +927,8 @@ const App = {
                         !flowWorsening &&
                         lowChangeCondition &&
                         volumeCondition &&
-                        breakoutCondition
+                        breakoutCondition &&
+                        rankCondition
 
                     return isStrong
                 })
@@ -977,6 +1007,11 @@ const App = {
                     const high5 = item['前5交易日区间最高价'] ?? 0
                     const breakoutCondition = M01 >= high5 && high5 > 0
 
+                    // 排名判断：概念需要 09:35排名前30 且 昨日排名前30
+                    const rank0935 = item['09:35涨跌幅排名'] ?? 9999
+                    const rankYesterday = item['昨日涨跌幅排名'] ?? 9999
+                    const rankCondition = rank0935 <= 30 && rankYesterday <= 30
+
                     const isStrong =
                         baseCondition &&
                         (flowPositive || flowImproving) &&
@@ -987,7 +1022,8 @@ const App = {
                         !flowWorsening &&
                         lowChangeCondition &&
                         volumeCondition &&
-                        breakoutCondition
+                        breakoutCondition &&
+                        rankCondition
 
                     return isStrong
                 })
