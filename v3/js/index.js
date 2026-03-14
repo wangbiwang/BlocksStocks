@@ -534,6 +534,12 @@ function isBlockStrong(item, dates) {
     const M10 = item.M10 ?? 0
     const M30 = item.M30 ?? 0
     const M60 = item.M60 ?? 0
+    const v01 = item.v01 ?? 0
+    const v05 = item.v05 ?? 0
+    const v10 = item.v10 ?? 0
+
+    // 新概念判断：v01和M01有值，但M05、M10、v05、v10都没有值
+    const isNewConcept = v01 > 0 && M01 > 0 && M05 === 0 && M10 === 0 && v05 === 0 && v10 === 0
 
     const pd1Volume = item[dates.pd1]?.成交量 ?? -Infinity
     const pd2Volume = item[dates.pd2]?.成交量 ?? -Infinity
@@ -550,10 +556,10 @@ function isBlockStrong(item, dates) {
     // 极热板块：涨停数>=5 且 上涨家数占比>=85%
     const isSuperHot = pd1LimitUpCount >= 5 && pd1WinRate >= 85
 
-    // 极热板块资金全负且恶化时也应筛除（借热度出货）
+    // 极热板块资金全负且恶化时筛除（行业适用，新概念除外）
     const flowAllNegative = td0935CapitalFlow < 0 && td0935NetInflow < 0
     const flowAllWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
-    const superHotButWeak = isSuperHot && flowAllNegative && flowAllWorsening
+    const superHotButWeak = isSuperHot && flowAllNegative && flowAllWorsening && !isNewConcept
 
     // 基础条件：涨跌幅和资金，但极热板块放宽资金要求
     const baseCondition = pd1Change > 1.5 && td0935Change > 0.5 && (pd1NetInflow > 0 || isSuperHot)
@@ -836,6 +842,12 @@ const App = {
                     const M10 = item.M10 ?? 0
                     const M30 = item.M30 ?? 0
                     const M60 = item.M60 ?? 0
+                    const v01 = item.v01 ?? 0
+                    const v05 = item.v05 ?? 0
+                    const v10 = item.v10 ?? 0
+
+                    // 新概念判断：v01和M01有值，但M05、M10、v05、v10都没有值
+                    const isNewConcept = v01 > 0 && M01 > 0 && M05 === 0 && M10 === 0 && v05 === 0 && v10 === 0
 
                     // 新增：pd1 成交量与 pd2 对比
                     const pd1Volume = item[Dates.shareDate.pd1]?.成交量 ?? -Infinity
@@ -846,6 +858,11 @@ const App = {
 
                     // 极热板块：涨停数>=5 且 上涨家数占比>=85%
                     const isSuperHot = pd1LimitUpCount >= 5 && pd1WinRate >= 85
+
+                    // 极热板块资金全负且恶化时筛除（行业适用，新概念除外）
+                    const flowAllNegative = td0935CapitalFlow < 0 && td0935NetInflow < 0
+                    const flowAllWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
+                    const superHotButWeak = isSuperHot && flowAllNegative && flowAllWorsening && !isNewConcept
 
                     // 基础条件：涨跌幅和资金，但极热板块放宽资金要求
                     const baseCondition = pd1Change > 1.5 && td0935Change > 0.5 && (pd1NetInflow > 0 || isSuperHot)
@@ -896,7 +913,8 @@ const App = {
                         lowChangeCondition &&
                         volumeCondition &&
                         breakoutCondition &&
-                        rankCondition
+                        rankCondition &&
+                        !superHotButWeak
 
                     return isStrong
                 })
@@ -935,6 +953,12 @@ const App = {
                     const M10 = item.M10 ?? 0
                     const M30 = item.M30 ?? 0
                     const M60 = item.M60 ?? 0
+                    const v01 = item.v01 ?? 0
+                    const v05 = item.v05 ?? 0
+                    const v10 = item.v10 ?? 0
+
+                    // 新概念判断：v01和M01有值，但M05、M10、v05、v10都没有值
+                    const isNewConcept = v01 > 0 && M01 > 0 && M05 === 0 && M10 === 0 && v05 === 0 && v10 === 0
 
                     // 新增：pd1 成交量与 pd2 对比
                     const pd1Volume = item[Dates.shareDate.pd1]?.成交量 ?? -Infinity
@@ -945,6 +969,11 @@ const App = {
 
                     // 极热板块：涨停数>=5 且 上涨家数占比>=85%
                     const isSuperHot = pd1LimitUpCount >= 5 && pd1WinRate >= 85
+
+                    // 极热板块资金全负且恶化时筛除（行业适用，新概念除外）
+                    const flowAllNegative = td0935CapitalFlow < 0 && td0935NetInflow < 0
+                    const flowAllWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
+                    const superHotButWeak = isSuperHot && flowAllNegative && flowAllWorsening && !isNewConcept
 
                     // 基础条件：涨跌幅和资金，但极热板块放宽资金要求
                     const baseCondition = pd1Change > 1.5 && td0935Change > 0.5 && (pd1NetInflow > 0 || isSuperHot)
@@ -995,7 +1024,8 @@ const App = {
                         lowChangeCondition &&
                         volumeCondition &&
                         breakoutCondition &&
-                        rankCondition
+                        rankCondition &&
+                        !superHotButWeak
 
                     return isStrong
                 })
