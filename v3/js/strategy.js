@@ -102,7 +102,6 @@ function handleRate(obj, ele, type, dates) {
         start30 = Dates.historicalDate[Math.max(0, idx - 30)]
         obj['前30交易日区间最高价'] = num(ele[`区间最高价:不复权[${start30}-${pd2}]`])
     }
-    console.log(obj, obj['指数简称'], obj['股票简称'])
     obj['code'] = ele['code']
 }
 

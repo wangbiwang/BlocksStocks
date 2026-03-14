@@ -72,6 +72,15 @@
                     >
                         查询
                     </el-button>
+                    <el-button
+                        type="success"
+                        size="small"
+                        @click="downloadCacheData"
+                        :disabled="GlobalState.isRequesting"
+                        style="margin-left: 8px;"
+                    >
+                        下载
+                    </el-button>
                     <el-tag
                         v-if="Industries.isFromCache || Concepts.isFromCache || Stocks.isFromCache"
                         type="warning"
@@ -752,6 +761,8 @@
         <script src="./lib/localForage.js"></script>
         <!-- 引入 day.js -->
         <script src="./lib/day.js"></script>
+        <!-- 引入 JSZip (用于打包下载) -->
+        <script src="./lib/jszip.min.js"></script>
         <!-- 引入 hexin-v -->
         <script src="./lib/hexin-v.js"></script>
         <!-- 引入自定义工具函数 -->
