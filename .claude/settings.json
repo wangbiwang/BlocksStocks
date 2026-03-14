@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(unzip -o \"20260309.zip\" -d \"20260309_extracted\")"
+    ]
+  }
+}

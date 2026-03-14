@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.investopedia.com)",
+      "WebFetch(domain:xueqiu.com)",
+      "WebFetch(domain:zhuanlan.zhihu.com)",
+      "WebFetch(domain:baike.baidu.com)",
+      "WebFetch(domain:www.tradingview.com)",
+      "Bash(node fetch-data.js 20250207)",
+      "Bash(node fetch-history.js 20240101)",
+      "Bash(node fetch-history.js)",
+      "Bash(curl -s -o \"c:/Users/11443/Desktop/BlocksStocks/v3/lib/jszip.min.js\" \"https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js\")"
+    ]
+  }
+}

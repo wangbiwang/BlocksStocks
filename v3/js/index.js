@@ -550,6 +550,11 @@ function isBlockStrong(item, dates) {
     // 极热板块：涨停数>=5 且 上涨家数占比>=85%
     const isSuperHot = pd1LimitUpCount >= 5 && pd1WinRate >= 85
 
+    // 极热板块资金全负且恶化时也应筛除（借热度出货）
+    const flowAllNegative = td0935CapitalFlow < 0 && td0935NetInflow < 0
+    const flowAllWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
+    const superHotButWeak = isSuperHot && flowAllNegative && flowAllWorsening
+
     // 基础条件：涨跌幅和资金，但极热板块放宽资金要求
     const baseCondition = pd1Change > 1.5 && td0935Change > 0.5 && (pd1NetInflow > 0 || isSuperHot)
     const flowPositive = td0935CapitalFlow > 0 || td0935NetInflow > 0
@@ -584,7 +589,8 @@ function isBlockStrong(item, dates) {
         lowChangeCondition &&
         volumeCondition &&
         breakoutCondition &&
-        rankCondition
+        rankCondition &&
+        !superHotButWeak
     )
 }
 
@@ -1133,6 +1139,15 @@ const App = {
                     const high30 = stock['前30交易日区间最高价'] || 0
                     if (high30 > 0 && pd1Close < high30 * 0.965) {
                         console.log(`[Stock筛选] ${stockName} 未突破前高: 收盘价${pd1Close} < 前30日最高${high30}*0.965=${(high30 * 0.965).toFixed(2)}`)
+                        return false
+                    }
+
+                    // 量能均线多头条件：v01 > v05 && v01 > v10
+                    const v01 = stock['v01'] || 0
+                    const v05 = stock['v05'] || 0
+                    const v10 = stock['v10'] || 0
+                    if (v01 <= v05 || v01 <= v10) {
+                        console.log(`[Stock筛选] ${stockName} 量能均线非多头: v01=${v01}, v05=${v05}, v10=${v10}`)
                         return false
                     }
 
