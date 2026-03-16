@@ -551,7 +551,7 @@ function isBlockStrong(item, dates) {
 
     const rank0935 = item['09:35涨跌幅排名'] ?? 9999
     const rankYesterday = item['昨日涨跌幅排名'] ?? 9999
-    const rankCondition = rank0935 <= 5 && (rankYesterday <= 10 || pd1Change > 2)
+    const rankCondition = rank0935 <= 5 && rankYesterday <= 10
 
     // 极热板块：涨停数>=5 且 上涨家数占比>=85%
     const isSuperHot = pd1LimitUpCount >= 5 && pd1WinRate >= 85
@@ -900,7 +900,7 @@ const App = {
                     // 排名判断：行业需要 09:35排名前5 且 (昨日排名前10 或 昨日涨幅>2)
                     const rank0935 = item['09:35涨跌幅排名'] ?? 9999
                     const rankYesterday = item['昨日涨跌幅排名'] ?? 9999
-                    const rankCondition = rank0935 <= 5 && (rankYesterday <= 10 || pd1Change > 2)
+                    const rankCondition = rank0935 <= 5 && rankYesterday <= 10
 
                     const isStrong =
                         baseCondition &&
@@ -1011,7 +1011,7 @@ const App = {
                     // 排名判断：概念需要 09:35排名前5 且 (昨日排名前10 或 昨日涨幅>2)
                     const rank0935 = item['09:35涨跌幅排名'] ?? 9999
                     const rankYesterday = item['昨日涨跌幅排名'] ?? 9999
-                    const rankCondition = rank0935 <= 5 && (rankYesterday <= 10 || pd1Change > 2)
+                    const rankCondition = rank0935 <= 5 && rankYesterday <= 10
 
                     const isStrong =
                         baseCondition &&
@@ -1634,7 +1634,7 @@ const App = {
                 // 排名条件
                 const rank0935 = blockData['09:35涨跌幅排名'] ?? 9999
                 const rankYesterday = blockData['昨日涨跌幅排名'] ?? 9999
-                const rankCondition = rank0935 <= 5 && (rankYesterday <= 10 || pd1Change > 2)
+                const rankCondition = rank0935 <= 5 && rankYesterday <= 10
 
                 // 极热板块判断
                 const isSuperHot = pd1LimitUpCount >= 5 && pd1WinRate >= 85
