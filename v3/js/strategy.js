@@ -101,6 +101,17 @@ function handleRate(obj, ele, type, dates) {
         idx = Dates.historicalDate.indexOf(pd1)
         start30 = Dates.historicalDate[Math.max(0, idx - 30)]
         obj['前30交易日区间最高价'] = num(ele[`区间最高价:不复权[${start30}-${pd2}]`])
+        // 涨停判断（根据涨跌幅和代码判断）
+        const code = ele['code'] || ''
+        const isMainBoard = code.startsWith('60') || code.startsWith('00')
+        const limitUpThreshold = isMainBoard ? 9.5 : 19.5
+        const pd1Change = obj[pd1]['涨跌幅']
+        const tdChange = obj[td]['涨跌幅']
+        obj['昨日涨停'] = pd1Change >= limitUpThreshold
+        obj['今日涨停'] = tdChange >= limitUpThreshold
+        // 排名字段（在 handleStocksData 中计算）
+        obj['09:35涨跌幅排名'] = ele['09:35涨跌幅排名'] || 9999
+        obj['昨日涨跌幅排名'] = ele['昨日涨跌幅排名'] || 9999
     }
     obj['code'] = ele['code']
 }
@@ -112,25 +123,25 @@ function handleRate(obj, ele, type, dates) {
  * @param {object} datas 数据
  * @returns {string[]} 问题数组
  */
-function getQuestions(type, datas) {
+function getQuestions(type, datas,BlockType,BlockName) {
     const { nd1, td, pd1, pd2 } = datas
     let questions = []
     if (type === 'block-行业') {
         questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${pd2}涨跌幅成交量大单净额;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${pd1}前5交易日区间最高价；二级行业`
-        questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数成交量；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)；二级行业`
+        questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数成交量；${td}前1交易日(vol1和vol5和vol10和vol21和vol60)；${td}前1交易日(1日均线和M5和M10和M21和M60)；二级行业`
     } else if (type === 'block-概念') {
         questions[0] = `${td} 09:35涨跌幅降序资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${td}涨跌幅;${pd2}涨跌幅成交量大单净额;${td}前3交易日涨跌幅；${td}前3交易日资金流向；${pd1}前5交易日区间最高价；概念`
-        questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数成交量；${td}前1交易日(vol1和vol5和vol10和vol30和vol60)；${td}前1交易日(1日均线和M5和M10和M30和M60)；概念`
+        questions[1] = `${pd1}涨跌幅降序资金流向大单净额；${pd1}收盘价上涨家数占比涨停家数成交量；${td}前1交易日(vol1和vol5和vol10和vol21和vol60)；${td}前1交易日(1日均线和M5和M10和M21和M60)；概念`
     }
     if (nd1) {
         questions[0] = `${nd1}涨跌幅;` + questions[0]
         questions[1] = `${nd1}涨跌幅;` + questions[1]
     }
     if (type === 'stock') {
-        let q = `${td} 09:35涨跌幅>0.5;${td}前1交易日(M5和M10和M30和M60)均小于收盘价;${pd1}涨跌幅>4；${pd1}大单净量>0.4大单净额正；${pd1}热度排名升序;行业概念主板创业非ST;`
-        questions[0] = q + `${td} 09:35资金流向大单净额收盘价；${td} 09:33涨跌幅资金流向大单净额;${pd1}(vol1和vol5和vol10)`
-        questions[1] = q + `${pd1}资金流向；${td}涨跌幅;${pd1}流通市值;${pd1}前30交易日区间最高价最高价不复权`
-        if (nd1) questions[1] = `${nd1}涨跌幅;` + questions[1]
+        BlockType=BlockType=='行业'?'所属行业包含':'所属概念包含'
+        questions[0] = `${td} 09:35涨跌幅资金流向大单净额；${td} 09:33涨跌幅资金流向大单净额;${pd1}涨跌幅资金流向大单净额大单净量;${pd1}收盘价;${td}涨跌幅流通市值;${td} 09:35收盘价;${pd1}热度排名升序;行业概念主板创业非ST;${BlockType}${BlockName}`
+        questions[1] = `${pd1}(vol1和vol5和vol10和vol21和vol60)；${pd1}(1日均线和M5和M10和M21和M60);${td} 09:35收盘价不复权;${pd1}收盘价不复权;${pd1}前30交易日区间最高价不复权；${pd1}热度排名升序;行业概念主板创业非ST;${BlockType}${BlockName}`
+        if (nd1) questions[0] = `${nd1}涨跌幅;` + questions[0]
     }
 
     return questions

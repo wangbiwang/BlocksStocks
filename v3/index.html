@@ -81,16 +81,6 @@
                     >
                         下载
                     </el-button>
-                    <el-tag
-                        v-if="Industries.isFromCache || Concepts.isFromCache || Stocks.isFromCache"
-                        type="warning"
-                        size="small"
-                        class="cache-tag"
-                        @click="clearCache"
-                        style="cursor: pointer; margin-left: 8px;"
-                    >
-                        缓存
-                    </el-tag>
                     <el-button
                         type="success"
                         size="small"
@@ -157,6 +147,16 @@
                                         :title="'Industry '+status.message"
                                     ></span>
                                 </span>
+                                <el-tag
+                                    v-if="Industries.isFromCache"
+                                    type="warning"
+                                    size="small"
+                                    class="cache-tag"
+                                    @click="clearIndustriesCache"
+                                    style="cursor: pointer; margin-left: 4px;"
+                                >
+                                    缓存
+                                </el-tag>
                             </div>
                             <span class="badge">{{ displayIndustries.length }} 个</span>
                         </div>
@@ -344,6 +344,16 @@
                                         :title="'Concept '+status.message"
                                     ></span>
                                 </span>
+                                <el-tag
+                                    v-if="Concepts.isFromCache"
+                                    type="warning"
+                                    size="small"
+                                    class="cache-tag"
+                                    @click="clearConceptsCache"
+                                    style="cursor: pointer; margin-left: 4px;"
+                                >
+                                    缓存
+                                </el-tag>
                             </div>
                             <span class="badge">{{ displayConcepts.length }} 个</span>
                         </div>
@@ -510,17 +520,12 @@
                     <div class="stock-panel">
                         <div class="panel-header">
                             <div class="panel-title-wrapper">
-                                <span>Stock 策略（{{Dates.shareDate.pd1cn}}热度排名升序）</span>
+                                <span>Stock 策略{{ Stocks.selectedBlockName ? ` - ${Stocks.selectedBlockName}` : '' }}</span>
                                 <el-button-group size="small" class="filter-button-group">
                                     <el-button
                                         :type="MatchChart.stockFilterMode === 'all' ? 'primary' : ''"
                                         @click="toggleStockFilterMode('all')"
                                         >全部</el-button
-                                    >
-                                    <el-button
-                                        :type="MatchChart.stockFilterMode === 'matched' ? 'primary' : ''"
-                                        @click="toggleStockFilterMode('matched')"
-                                        >匹配</el-button
                                     >
                                     <el-button
                                         :type="MatchChart.stockFilterMode === 'strong' ? 'primary' : ''"
@@ -537,6 +542,16 @@
                                         :title="'Stock '+status.message"
                                     ></span>
                                 </span>
+                                <el-tag
+                                    v-if="Stocks.isFromCache"
+                                    type="warning"
+                                    size="small"
+                                    class="cache-tag"
+                                    @click="clearStocksCache"
+                                    style="cursor: pointer; margin-left: 4px;"
+                                >
+                                    缓存
+                                </el-tag>
                             </div>
                             <span class="badge">{{ displayStocks.length }} 只</span>
                         </div>
@@ -726,17 +741,6 @@
                                     </template>
                                     <template #default="{ row }">
                                         <span class="red f600">{{ row[Dates.shareDate.pd1]?.热度排名 || '-' }}</span>
-                                    </template>
-                                </el-table-column>
-                                <el-table-column width="70" align="center">
-                                    <template #header>
-                                        <div class="column-header-with-subtitle">
-                                            <div>匹配数</div>
-                                            <div class="column-subtitle">strong blocks</div>
-                                        </div>
-                                    </template>
-                                    <template #default="{ row }">
-                                        <span class="red f600">{{ row.matchCount ?? 0 }}</span>
                                     </template>
                                 </el-table-column>
                             </el-table>
