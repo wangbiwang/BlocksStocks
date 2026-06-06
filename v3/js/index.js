@@ -725,6 +725,53 @@ const App = {
             }
         }
 
+        // 计算属性：强势行业数量（用于 badge 显示）
+        const strongIndustriesCount = computed(() => {
+            const result = Industries.Data[0].filters.filter((item) => {
+                const v01 = item.v01 ?? 0
+                const v05 = item.v05 ?? 0
+                const v10 = item.v10 ?? 0
+                const M01 = item.M01 ?? 0
+                const M05 = item.M05 ?? 0
+                const M10 = item.M10 ?? 0
+                const M21 = item.M21 ?? 0
+                const M60 = item.M60 ?? 0
+                const pd1WinRate = item['昨日上涨家数占比'] ?? 0
+                const pd1LimitUpCount = item['昨日涨停数'] ?? 0
+                const td0935Change = item[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                const pd1Change = item[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
+                const pd1NetInflow = item[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
+                const pd1CapitalFlow = item[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
+                const td0935CapitalFlow = item[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
+                const td0935NetInflow = item[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
+                const td0933CapitalFlow = item[`${Dates.shareDate.td} 09:33`]?.资金流向 ?? -Infinity
+                const td0933NetInflow = item[`${Dates.shareDate.td} 09:33`]?.大单净额 ?? -Infinity
+                const rank0935 = item['09:35涨跌幅排名'] ?? 9999
+                const rankYesterday = item['昨日涨跌幅排名'] ?? 9999
+                const isNewConcept =
+                    v01 > 0 && M01 > 0 && M05 === 0 && M10 === 0 && v05 === 0 && v10 === 0 && rankYesterday === 1 && rank0935 === 1
+                const rankCondition = (rankYesterday <= 10 || pd1Change > 2) && rank0935 <= 5 && td0935Change > 0.75
+                const volumeCondition = v01 > v05 && v01 > v10
+                const blockHeat = pd1WinRate >= 60 && pd1LimitUpCount >= 1
+                const td0933Change = item[`${Dates.shareDate.td} 09:33`]?.涨跌幅 ?? -Infinity
+                const td0933ChangeCondition = td0933Change > 0
+                const pd1ChangeCondition = pd1Change > 1.5
+                const pd1NetInflowCondition = pd1NetInflow > 0
+                const td0935FlowCondition = td0935CapitalFlow > 0 || td0935NetInflow > 0
+                const maBullishFull = M01 > M05 && M01 > M10 && M01 > M21 && M01 > M60 && M05 > 0 && M10 > 0 && M21 > 0 && M60 > 0
+                const maBullishBasic = M01 > M05 && M01 > M10 && M01 > M21 && M05 > 0 && M10 > 0 && M21 > 0
+                const maRelaxCondition = pd1Change > 3 && pd1CapitalFlow > 0 && pd1NetInflow > 0
+                const maSuperRelaxCondition = pd1Change > 5 && pd1CapitalFlow > 0 && pd1NetInflow > 0
+                const maBullish = maBullishFull || (maRelaxCondition && maBullishBasic) || maSuperRelaxCondition
+                const flowWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
+                return (
+                    isNewConcept ||
+                    (rankCondition && volumeCondition && blockHeat && td0933ChangeCondition && pd1ChangeCondition && pd1NetInflowCondition && td0935FlowCondition && maBullish && !flowWorsening)
+                )
+            })
+            return result.length
+        })
+
         // 计算属性：显示的行业列表（根据筛选模式）
         const displayIndustries = computed(() => {
             let result = Industries.Data[0].filters
@@ -825,6 +872,53 @@ const App = {
             })
 
             return result
+        })
+
+        // 计算属性：强势概念数量（用于 badge 显示）
+        const strongConceptsCount = computed(() => {
+            const result = Concepts.Data[0].filters.filter((item) => {
+                const v01 = item.v01 ?? 0
+                const v05 = item.v05 ?? 0
+                const v10 = item.v10 ?? 0
+                const M01 = item.M01 ?? 0
+                const M05 = item.M05 ?? 0
+                const M10 = item.M10 ?? 0
+                const M21 = item.M21 ?? 0
+                const M60 = item.M60 ?? 0
+                const pd1WinRate = item['昨日上涨家数占比'] ?? 0
+                const pd1LimitUpCount = item['昨日涨停数'] ?? 0
+                const td0935Change = item[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                const pd1Change = item[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
+                const pd1NetInflow = item[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
+                const pd1CapitalFlow = item[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
+                const td0935CapitalFlow = item[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
+                const td0935NetInflow = item[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
+                const td0933CapitalFlow = item[`${Dates.shareDate.td} 09:33`]?.资金流向 ?? -Infinity
+                const td0933NetInflow = item[`${Dates.shareDate.td} 09:33`]?.大单净额 ?? -Infinity
+                const rank0935 = item['09:35涨跌幅排名'] ?? 9999
+                const rankYesterday = item['昨日涨跌幅排名'] ?? 9999
+                const isNewConcept =
+                    v01 > 0 && M01 > 0 && M05 === 0 && M10 === 0 && v05 === 0 && v10 === 0 && rankYesterday === 1 && rank0935 === 1
+                const rankCondition = (rankYesterday <= 10 || pd1Change > 2) && rank0935 <= 5 && td0935Change > 0.75
+                const volumeCondition = v01 > v05 && v01 > v10
+                const blockHeat = pd1WinRate >= 60 && pd1LimitUpCount >= 1
+                const td0933Change = item[`${Dates.shareDate.td} 09:33`]?.涨跌幅 ?? -Infinity
+                const td0933ChangeCondition = td0933Change > 0
+                const pd1ChangeCondition = pd1Change > 1.5
+                const pd1NetInflowCondition = pd1NetInflow > 0
+                const td0935FlowCondition = td0935CapitalFlow > 0 || td0935NetInflow > 0
+                const maBullishFull = M01 > M05 && M01 > M10 && M01 > M21 && M01 > M60 && M05 > 0 && M10 > 0 && M21 > 0 && M60 > 0
+                const maBullishBasic = M01 > M05 && M01 > M10 && M01 > M21 && M05 > 0 && M10 > 0 && M21 > 0
+                const maRelaxCondition = pd1Change > 3 && pd1CapitalFlow > 0 && pd1NetInflow > 0
+                const maSuperRelaxCondition = pd1Change > 5 && pd1CapitalFlow > 0 && pd1NetInflow > 0
+                const maBullish = maBullishFull || (maRelaxCondition && maBullishBasic) || maSuperRelaxCondition
+                const flowWorsening = td0935CapitalFlow < td0933CapitalFlow && td0935NetInflow < td0933NetInflow
+                return (
+                    isNewConcept ||
+                    (rankCondition && volumeCondition && blockHeat && td0933ChangeCondition && pd1ChangeCondition && pd1NetInflowCondition && td0935FlowCondition && maBullish && !flowWorsening)
+                )
+            })
+            return result.length
         })
 
         // 计算属性：显示的概念列表（根据筛选模式）
@@ -1032,6 +1126,75 @@ const App = {
             })
 
             return result.map((s) => ({ ...s }))
+        })
+
+        // 计算属性：强势Stock数量（用于 badge 显示）
+        const strongStocksCount = computed(() => {
+            if (!Stocks.selectedBlockName) {
+                return 0
+            }
+            const blockName = Stocks.selectedBlockName
+            const blockList = Stocks.currentBlockType === '行业' ? Industries.Data[0].filters : Concepts.Data[0].filters
+            const currentBlock = blockList.find((b) => b['指数简称'] === blockName)
+            let blockMaSuperRelax = false
+            let blockTd0935CapitalFlow = 0
+            let blockTd0935NetInflow = 0
+            if (currentBlock) {
+                const blockPd1Change = currentBlock[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
+                const blockPd1CapitalFlow = currentBlock[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
+                const blockPd1NetInflow = currentBlock[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
+                blockMaSuperRelax = blockPd1Change > 5 && blockPd1CapitalFlow > 0 && blockPd1NetInflow > 0
+                blockTd0935CapitalFlow = currentBlock[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
+                blockTd0935NetInflow = currentBlock[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
+            }
+            const result = Stocks.Data[0].filters.filter((stock) => {
+                const v01 = stock['v01'] || 0
+                const v05 = stock['v05'] || 0
+                const v10 = stock['v10'] || 0
+                const M01 = stock['M01'] || 0
+                const M05 = stock['M05'] || 0
+                const M10 = stock['M10'] || 0
+                const M21 = stock['M21'] || 0
+                const M60 = stock['M60'] || 0
+                const td0935Change = stock[`${Dates.shareDate.td} 09:35`]?.涨跌幅 ?? -Infinity
+                const td0935CapitalFlow = stock[`${Dates.shareDate.td} 09:35`]?.资金流向 ?? -Infinity
+                const td0935NetInflow = stock[`${Dates.shareDate.td} 09:35`]?.大单净额 ?? -Infinity
+                const td0933CapitalFlow = stock[`${Dates.shareDate.td} 09:33`]?.资金流向 ?? -Infinity
+                const td0933NetInflow = stock[`${Dates.shareDate.td} 09:33`]?.大单净额 ?? -Infinity
+                const pd1Change = stock[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity
+                const pd1NetInflowVol = stock[Dates.shareDate.pd1]?.大单净量 ?? -Infinity
+                const pd1CapitalFlow = stock[Dates.shareDate.pd1]?.资金流向 ?? -Infinity
+                const pd1NetInflow = stock[Dates.shareDate.pd1]?.大单净额 ?? -Infinity
+                const isPd1LimitUp = stock['昨日涨停'] || false
+                const volumeCondition = v01 > v05 && v01 > v10
+                const maBullishFull = M01 > M05 && M01 > M10 && M01 > M21 && M01 > M60
+                const stockMaSuperRelax = pd1Change > 6 && pd1CapitalFlow > 0 && pd1NetInflow > 0
+                const maBullish =
+                    maBullishFull ||
+                    isPd1LimitUp ||
+                    (!maBullishFull && !isPd1LimitUp && blockMaSuperRelax && stockMaSuperRelax)
+                const changeCondition = td0935Change > 0
+                const pd1ChangeCondition = pd1Change > 5
+                const pd1NetInflowCondition = pd1NetInflowVol > 0.4 || (pd1CapitalFlow > 0 && pd1NetInflow > 0)
+                const flowWorsening =
+                    td0935CapitalFlow > 0 &&
+                    td0935CapitalFlow < td0933CapitalFlow &&
+                    td0935NetInflow > 0 &&
+                    td0935NetInflow < td0933NetInflow
+                const stockTd0935FlowNegative = td0935CapitalFlow < 0 && td0935NetInflow < 0
+                const blockTd0935NotAllPositive = !(blockTd0935CapitalFlow > 0 && blockTd0935NetInflow > 0)
+                const blockStockFlowMismatch = blockTd0935NotAllPositive && stockTd0935FlowNegative
+                return (
+                    volumeCondition &&
+                    maBullish &&
+                    changeCondition &&
+                    pd1ChangeCondition &&
+                    pd1NetInflowCondition &&
+                    !flowWorsening &&
+                    !blockStockFlowMismatch
+                )
+            })
+            return result.length
         })
 
         // 切换行业筛选模式
@@ -1802,6 +1965,9 @@ const App = {
             displayIndustries,
             displayConcepts,
             displayStocks,
+            strongIndustriesCount,
+            strongConceptsCount,
+            strongStocksCount,
             toggleIndustryFilterMode,
             toggleConceptFilterMode,
             toggleStockFilterMode,

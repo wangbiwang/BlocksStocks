@@ -158,7 +158,7 @@
                                     缓存
                                 </el-tag>
                             </div>
-                            <span class="badge">{{ displayIndustries.length }} 个</span>
+                            <span class="badge">全部{{ Industries.Data[0].filters.length }}/强势{{ strongIndustriesCount }}</span>
                         </div>
                         <div class="panel-content">
                             <!-- 行业表格 -->
@@ -355,7 +355,7 @@
                                     缓存
                                 </el-tag>
                             </div>
-                            <span class="badge">{{ displayConcepts.length }} 个</span>
+                            <span class="badge">全部{{ Concepts.Data[0].filters.length }}/强势{{ strongConceptsCount }}</span>
                         </div>
                         <div class="panel-content">
                             <!-- 概念表格 -->
@@ -553,7 +553,7 @@
                                     缓存
                                 </el-tag>
                             </div>
-                            <span class="badge">{{ displayStocks.length }} 只</span>
+                            <span class="badge">全部{{ Stocks.Data[0].filters.length }}/强势{{ strongStocksCount }}</span>
                         </div>
                         <div class="panel-content">
                             <!-- Stock 表格 -->
