@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(unzip -o \"20260309.zip\" -d \"20260309_extracted\")"
+      "Bash(unzip -o \"20260309.zip\" -d \"20260309_extracted\")",
+      "Bash(ls -la ~/.claude/ 2>/dev/null || echo \"No .claude directory found\")",
+      "Read(//c/Users/11443/.claude/**)"
     ]
   }
 }

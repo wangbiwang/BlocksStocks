@@ -1,0 +1,652 @@
+@charset "UTF-8";
+
+/**
+ * v4 样式文件 — 专业暗色主题
+ *
+ * 设计原则：
+ *   - 四级表面层级区分页面/控制栏/面板/表格头
+ *   - 数据色（涨跌）针对暗色背景优化，不过饱和刺眼
+ *   - 边框可见但不喧宾夺主
+ *   - 交互元素带过渡动效，操作反馈清晰
+ */
+
+/* ================================================================
+ * 基础重置
+ * ================================================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ================================================================
+ * 设计令牌
+ * ================================================================ */
+:root {
+    /* ============================================================
+     * 基础调色板
+     * ============================================================ */
+    --color-white:    #ffffff;
+    --color-gray-50:  #f9fafb;
+    --color-gray-100: #f3f4f6;
+    --color-gray-200: #e5e7eb;
+    --color-gray-300: #d1d5db;
+    --color-gray-400: #9ca3af;
+    --color-gray-500: #6b7280;
+    --color-gray-600: #4b5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1f2937;
+    --color-gray-900: #111827;
+
+    /* ============================================================
+     * 暗色主题（默认）
+     * 层级：页面(最深) < 控制栏 < 面板 < 表头(最亮)
+     * ============================================================ */
+
+    /* ---- 表面层级 ---- */
+    --bg-page:          #0c1017;   /* L0: 页面底色，最暗 */
+    --bg-control-bar:   #141922;   /* L1: 控制栏，微抬 */
+    --bg-panel:         #161c26;   /* L2: 面板 / 表格行 */
+    --bg-table-header:  #111720;   /* L3: 表头，比行略暗以形成对比 */
+    --bg-table-stripe:  #191f2b;   /*    斑马纹，介于 L2-L3 之间 */
+    --bg-table-hover:   #1e2633;   /* L4: hover 状态，明显提亮 */
+    --bg-panel-header:  #111720;   /*    面板标题栏，与表头同色系 */
+
+    /* ---- 文字 ---- */
+    --text-primary:       #e6e8ec;   /* 面板标题 */
+    --text-secondary:     #8896a6;   /* 次要说明 */
+    --text-table:         #c4c9d1;   /* 表格数据 */
+    --text-table-header:  #8896a6;   /* 表头文字 */
+    --text-subtitle:      #5c697a;   /* 子标题/日期标注 */
+    --text-muted:         #444e5c;   /* 禁用/占位 */
+
+    /* ---- 边框（比 v3 可见度更高） ---- */
+    --border-control:   #262d38;   /* 控制栏边框 */
+    --border-panel:     #1e2633;   /* 面板/表头底部边框 */
+    --border-row:       #1a212c;   /* 表格行间分隔线 */
+
+    /* ---- 数据色：涨/跌 — 暗色背景专用，略降饱和度避免刺眼 ---- */
+    --color-up:         #f87171;   /* 涨(红) */
+    --color-down:       #4ade80;   /* 跌(绿) */
+
+    /* ---- 交互色 ---- */
+    --color-accent:     #58a6ff;   /* 主交互蓝 */
+    --color-accent-dim: #1f6feb;   /* 深蓝（hover 边框等） */
+
+    /* ---- 行高亮 ---- */
+    --row-highlight-bg: rgba(210, 153, 34, 0.13);   /* 琥珀色选中 */
+    --row-match-bg:     rgba(88, 166, 255, 0.10);   /* 蓝色关联 */
+
+    /* ---- 阴影 ---- */
+    --shadow-control: 0 2px 12px rgba(0, 0, 0, 0.5);
+    --shadow-panel:   0 2px 10px rgba(0, 0, 0, 0.35);
+
+    /* ---- 遮罩 / tag ---- */
+    --loading-mask-bg: rgba(12, 16, 23, 0.90);
+    --badge-bg:        rgba(255, 255, 255, 0.07);
+
+    /* ---- 语义色 ---- */
+    --color-success: #3fb950;
+    --color-error:   #f85149;
+    --color-warning: #d29922;
+
+    /* ============================================================
+     * 间距 / 圆角 / 尺寸（主题无关）
+     * ============================================================ */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 18px;
+    --spacing-xl: 24px;
+
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 20px;
+
+    --scrollbar-size: 6px;
+    --status-dot-size: 8px;
+    --control-bar-h: 52px;
+    --control-item-h: 30px;
+    --control-item-h-sm: 32px;
+
+    /* ---- 动效 ---- */
+    --transition-fast: 150ms ease;
+}
+
+/* ================================================================
+ * 浅色主题覆写
+ * ================================================================ */
+body.light-theme {
+    /* ---- 表面层级 ---- */
+    --bg-page:          #f0f2f5;
+    --bg-control-bar:   #ffffff;
+    --bg-panel:         #ffffff;
+    --bg-table-header:  #f8f9fb;
+    --bg-table-stripe:  #fafafa;
+    --bg-table-hover:   #f0f4ff;
+    --bg-panel-header:  #1f2937;
+
+    /* ---- 文字 ---- */
+    --text-primary:       #ffffff;
+    --text-secondary:     #6b7280;
+    --text-table:         #111827;
+    --text-table-header:  #374151;
+    --text-subtitle:      #9ca3af;
+    --text-muted:         #d1d5db;
+
+    /* ---- 边框 ---- */
+    --border-control:   #e5e7eb;
+    --border-panel:     #e5e7eb;
+    --border-row:       #f3f4f6;
+
+    /* ---- 数据色：涨/跌 — 浅色背景专用 ---- */
+    --color-up:         #dc2626;
+    --color-down:       #16a34a;
+
+    /* ---- 交互色 ---- */
+    --color-accent:     #3b82f6;
+    --color-accent-dim: #2563eb;
+
+    /* ---- 行高亮 ---- */
+    --row-highlight-bg: #fff7e6;
+    --row-match-bg:     #fff0e6;
+
+    /* ---- 阴影 ---- */
+    --shadow-control: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-panel:   0 2px 8px rgba(0, 0, 0, 0.06);
+
+    /* ---- 遮罩 / tag ---- */
+    --loading-mask-bg: rgba(255, 255, 255, 0.90);
+    --badge-bg:        rgba(0, 0, 0, 0.08);
+
+    /* ---- 语义色 ---- */
+    --color-success: #22c55e;
+    --color-error:   #ef4444;
+    --color-warning: #f59e0b;
+}
+
+/* ================================================================
+ * 全局
+ * ================================================================ */
+html, body, #app {
+    width: 100%;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    overflow: hidden;
+    background: var(--bg-page);
+    color: var(--text-table);
+}
+
+/* ================================================================
+ * 主容器
+ * ================================================================ */
+.v3-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
+    background: var(--bg-page);
+}
+
+/* ================================================================
+ * 控制栏
+ * ================================================================ */
+.global-control-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 0 var(--spacing-xl);
+    background: var(--bg-control-bar);
+    color: var(--text-table);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-control);
+    box-shadow: var(--shadow-control);
+    flex-shrink: 0;
+    height: var(--control-bar-h);
+    min-height: var(--control-bar-h);
+}
+
+.global-control-bar .time-display {
+    color: var(--text-table);
+    font-weight: 600;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    min-width: 150px;
+    height: var(--control-item-h-sm);
+    line-height: var(--control-item-h-sm);
+    flex-shrink: 0;
+}
+
+.global-control-bar .nav-button {
+    width: var(--control-item-h-sm);
+    height: var(--control-item-h-sm);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-control);
+    background: var(--bg-table-header);
+    color: var(--text-table);
+    transition: background var(--transition-fast),
+                border-color var(--transition-fast);
+}
+
+.global-control-bar .nav-button:hover:not(.is-disabled) {
+    background: var(--bg-table-hover);
+    border-color: var(--color-accent);
+}
+
+.global-control-bar .nav-button.is-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.global-control-bar .theme-toggle {
+    margin-left: auto;
+    border: 1px solid var(--border-control);
+    background: var(--bg-table-header);
+    color: var(--text-table);
+}
+
+.global-control-bar .date-picker {
+    height: var(--control-item-h-sm);
+    line-height: var(--control-item-h-sm);
+    flex-shrink: 0;
+}
+
+.global-control-bar .date-picker .el-input__wrapper {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-control);
+    border-radius: var(--radius-md);
+    box-shadow: none;
+    transition: border-color var(--transition-fast);
+    height: var(--control-item-h);
+    line-height: var(--control-item-h);
+    padding: 0 var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+.global-control-bar .date-picker .el-input__wrapper:hover,
+.global-control-bar .date-picker .el-input__wrapper.is-focus {
+    border-color: var(--color-accent);
+    box-shadow: none;
+}
+
+.global-control-bar .date-picker .el-input__inner {
+    color: var(--text-table);
+}
+
+.global-control-bar .el-button {
+    border-radius: var(--radius-md);
+    padding: 0 var(--spacing-md);
+    font-weight: 500;
+    height: var(--control-item-h);
+    line-height: var(--control-item-h);
+    text-align: center;
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+}
+
+.global-control-bar .el-button i,
+.global-control-bar .nav-button i,
+.global-control-bar .theme-toggle i {
+    font-size: 15px;
+    line-height: 1;
+}
+
+/* ================================================================
+ * 面板
+ * ================================================================ */
+.top-section {
+    display: flex;
+    flex: 1;
+    gap: var(--spacing-md);
+    min-height: 0;
+    overflow: hidden;
+}
+
+.bottom-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.stock-panel,
+.industry-panel,
+.concept-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-control);
+    box-shadow: var(--shadow-panel);
+    overflow: hidden;
+    min-width: 0;
+}
+
+/* ---- 面板头部 ---- */
+.panel-header {
+    padding: 0 var(--spacing-lg);
+    height: 38px;
+    min-height: 38px;
+    background: var(--bg-panel-header);
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border-panel);
+}
+
+.panel-header .badge {
+    background: var(--badge-bg);
+    padding: 2px 12px;
+    border-radius: var(--radius-xl);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: 0.3px;
+}
+
+.panel-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.panel-title-wrapper > span {
+    color: var(--text-primary);
+}
+
+.panel-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    padding: 0;
+    background: var(--bg-panel);
+}
+
+/* ================================================================
+ * 筛选按钮组
+ * ================================================================ */
+.filter-button-group {
+    margin-left: var(--spacing-sm);
+}
+
+.filter-button-group .el-button {
+    padding: 2px 10px;
+    font-size: 11px;
+    min-width: auto;
+    height: 24px;
+    line-height: 24px;
+}
+
+/* "强势/全部" 按钮选中态 */
+.filter-button-group .el-button--primary {
+    --el-button-bg-color: var(--color-accent);
+    --el-button-border-color: var(--color-accent);
+    --el-button-text-color: #ffffff;
+}
+
+/* ================================================================
+ * Element Plus 表格：全局深色覆写
+ * ================================================================ */
+
+.el-table {
+    font-size: 13px;
+    border: none;
+    width: 100%;
+    /* 注入 Element Plus CSS 变量 */
+    --el-table-bg-color:           var(--bg-panel);
+    --el-table-tr-bg-color:        var(--bg-panel);
+    --el-table-header-bg-color:    var(--bg-table-header);
+    --el-table-border-color:       var(--border-row);
+    --el-table-text-color:         var(--text-table);
+    --el-table-header-text-color:  var(--text-table-header);
+    --el-table-row-hover-bg-color: var(--bg-table-hover);
+    background-color: var(--bg-panel);
+    color: var(--text-table);
+}
+
+.el-table::before { display: none; }
+.el-table__header-wrapper { overflow: hidden; }
+.el-table__header { width: 100%; }
+.el-table__body { width: 100%; }
+
+/* ---- 表头 ---- */
+.el-table th.el-table__cell {
+    background-color: var(--bg-table-header) !important;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-table-header);
+    padding: 5px var(--spacing-xs);
+    border-bottom: 2px solid var(--border-panel);
+    white-space: pre-wrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.2px;
+}
+
+/* ---- 数据单元格 ---- */
+.el-table td.el-table__cell {
+    padding: 3px var(--spacing-xs);
+    border-bottom: 1px solid var(--border-row);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background-color: var(--bg-panel);
+    color: var(--text-table);
+    transition: background-color var(--transition-fast);
+}
+
+/* ---- 斑马纹 ---- */
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+    background-color: var(--bg-table-stripe) !important;
+}
+
+/* ---- 行 hover ---- */
+.el-table__body tr:hover > td.el-table__cell {
+    background-color: var(--bg-table-hover) !important;
+}
+
+/* ---- 单元格内容 ---- */
+.el-table .cell {
+    padding: 0 var(--spacing-xs);
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-table);
+}
+
+/* ---- 表头子标题 ---- */
+.column-header-with-subtitle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.3;
+}
+
+.column-subtitle {
+    font-size: 9px;
+    color: var(--text-subtitle);
+    font-weight: 400;
+    margin-top: 1px;
+}
+
+/* ---- 空状态 ---- */
+.el-table__empty-block {
+    background-color: var(--bg-panel);
+}
+.el-table__empty-text {
+    color: var(--text-secondary);
+}
+.el-table__fixed-right-patch {
+    background-color: var(--bg-table-header) !important;
+}
+
+/* ================================================================
+ * 行高亮（数据关联反馈）
+ * ================================================================ */
+.el-table .row-highlight,
+.el-table .row-highlight td.el-table__cell {
+    background-color: var(--row-highlight-bg) !important;
+}
+
+.el-table .row-match,
+.el-table .row-match td.el-table__cell {
+    background-color: var(--row-match-bg) !important;
+}
+
+/* ================================================================
+ * 工具类：涨跌色
+ * ================================================================ */
+.red {
+    color: var(--color-up);
+    font-weight: 600;
+}
+
+.green {
+    color: var(--color-down);
+    font-weight: 600;
+}
+
+.f600 {
+    font-weight: 600;
+}
+
+/* ================================================================
+ * 状态点
+ * ================================================================ */
+.status-indicator-inline {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-left: var(--spacing-sm);
+}
+
+.status-indicator-inline .status-dot,
+.status-dot {
+    display: inline-block;
+    width: var(--status-dot-size);
+    height: var(--status-dot-size);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-dot.wait    { background-color: var(--text-muted); }
+.status-dot.process { background-color: var(--color-accent); animation: pulse 1.5s infinite; }
+.status-dot.success { background-color: var(--color-success); }
+.status-dot.error   { background-color: var(--color-error); }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.35; }
+}
+
+/* ================================================================
+ * 滚动条
+ * ================================================================ */
+::-webkit-scrollbar {
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border-control);
+    border-radius: var(--radius-sm);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* ================================================================
+ * 加载遮罩
+ * ================================================================ */
+.el-loading-mask {
+    background-color: var(--loading-mask-bg) !important;
+}
+.el-loading-spinner .el-loading-text {
+    color: var(--text-secondary) !important;
+}
+.el-loading-spinner .path {
+    stroke: var(--color-accent);
+}
+
+/* ================================================================
+ * DatePicker 下拉面板适配
+ * ================================================================ */
+.el-picker__popper {
+    background-color: var(--bg-panel) !important;
+    border: 1px solid var(--border-control) !important;
+    box-shadow: var(--shadow-control) !important;
+}
+.el-picker__popper .el-date-picker__header-label,
+.el-picker__popper .el-date-table td {
+    color: var(--text-table) !important;
+}
+.el-picker__popper .el-date-table td.disabled .cell {
+    color: var(--text-muted) !important;
+    background-color: transparent !important;
+}
+.el-picker__popper .el-date-table td.current:not(.disabled) .cell {
+    color: #ffffff !important;
+    background-color: var(--color-accent) !important;
+}
+.el-picker__popper .el-date-table td.today .cell {
+    color: var(--color-accent);
+    font-weight: 600;
+}
+.el-picker__popper .el-date-table td:hover:not(.disabled) .cell {
+    background-color: var(--bg-table-hover) !important;
+}
+/* DatePicker 头部按钮 */
+.el-picker__popper .el-date-picker__header button {
+    color: var(--text-secondary);
+}
+.el-picker__popper .el-date-picker__header button:hover {
+    color: var(--color-accent);
+}
+
+/* ================================================================
+ * Element Plus 通用组件适配
+ * ================================================================ */
+
+/* 默认按钮 */
+.el-button--default {
+    --el-button-bg-color: var(--bg-table-header);
+    --el-button-border-color: var(--border-control);
+    --el-button-text-color: var(--text-table);
+}
+.el-button--default:hover:not(.is-disabled) {
+    --el-button-bg-color: var(--bg-table-hover);
+    --el-button-border-color: var(--color-accent);
+    --el-button-text-color: var(--text-primary);
+}
+
+/* 输入框数字选择器 */
+.el-input-number .el-input__wrapper {
+    background-color: var(--bg-panel);
+}
+.el-input-number .el-input__inner {
+    color: var(--text-table);
+}
+
+/* ================================================================
+ * 缓存标签
+ * ================================================================ */
+.cache-tag {
+    cursor: pointer;
+    margin-left: var(--spacing-xs);
+}

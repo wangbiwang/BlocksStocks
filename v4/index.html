@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>BlocksStocks v4 - 策略分析</title>
+        <!-- 引入样式文件 -->
+        <link rel="stylesheet" href="./lib/elementplus.css" />
+        <link rel="stylesheet" type="text/css" href="./css/index.css" />
+    </head>
+    <body>
+        <div id="app">
+            <div class="v3-container">
+                <!-- 全局控制栏 -->
+                <div class="global-control-bar">
+                    <span class="time-display">{{ Intervals.time }}</span>
+                    <el-button
+                        class="nav-button"
+                        :disabled="GlobalState.isRequesting"
+                        @click="jumpToValidDate(-1)"
+                        size="small"
+                        circle
+                        title="跳转到上一个有 Block 强势结果的日期"
+                    >
+                        <el-icon><d-arrow-left /></el-icon>
+                    </el-button>
+                    <el-button
+                        class="nav-button"
+                        :disabled="GlobalState.isRequesting"
+                        @click="changeDate(-1)"
+                        size="small"
+                        circle
+                    >
+                        <el-icon><arrow-left /></el-icon>
+                    </el-button>
+                    <el-date-picker
+                        class="date-picker"
+                        v-model="Dates.requestDate"
+                        type="date"
+                        format="YYYY/MM/DD"
+                        placeholder="选择日期"
+                        :disabled-date="Dates.disabledDate"
+                        :disabled="GlobalState.isRequesting"
+                        @change="Submit"
+                    >
+                    </el-date-picker>
+                    <el-button
+                        class="nav-button"
+                        :disabled="GlobalState.isRequesting"
+                        @click="changeDate(1)"
+                        size="small"
+                        circle
+                    >
+                        <el-icon><arrow-right /></el-icon>
+                    </el-button>
+                    <el-button
+                        class="nav-button"
+                        :disabled="GlobalState.isRequesting"
+                        @click="jumpToValidDate(1)"
+                        size="small"
+                        circle
+                        title="跳转到下一个有 Block 强势结果的日期"
+                    >
+                        <el-icon><d-arrow-right /></el-icon>
+                    </el-button>
+                    <el-button
+                        type="primary"
+                        size="small"
+                        @click="Submit"
+                        :disabled="GlobalState.isRequesting"
+                        :loading="GlobalState.isRequesting"
+                    >
+                        查询
+                    </el-button>
+                    <el-button
+                        type="success"
+                        size="small"
+                        @click="downloadCacheData"
+                        :disabled="GlobalState.isRequesting"
+                        style="margin-left: 8px;"
+                    >
+                        下载
+                    </el-button>
+                    <el-button
+                        type="success"
+                        size="small"
+                        @click="startBacktest"
+                        :disabled="Backtest.isRunning"
+                        :loading="Backtest.isRunning"
+                        style="margin-left: 8px;"
+                    >
+                        回测
+                    </el-button>
+                    <el-input-number
+                        v-model="Backtest.intervalSeconds"
+                        :min="1"
+                        :max="300"
+                        :step="1"
+                        size="small"
+                        controls-position="right"
+                        style="width: 80px; margin-left: 4px;"
+                        :disabled="Backtest.isRunning"
+                    ></el-input-number>
+                    <span style="margin-left: 2px; font-size: 12px; color: #666;">秒</span>
+                    <el-button
+                        type="danger"
+                        size="small"
+                        @click="stopBacktest"
+                        v-if="Backtest.isRunning"
+                        style="margin-left: 4px;"
+                    >
+                        停止
+                    </el-button>
+                    <span v-if="Backtest.result.totalDays > 0" style="margin-left: 12px; font-size: 13px;">
+                        总:{{ Backtest.result.totalDays }} | 可购:{{ Backtest.result.buyableDays }} | 胜率:{{ Backtest.result.winRate }}
+                    </span>
+                    <el-button class="theme-toggle" @click="GlobalState.toggleTheme" size="small" circle>
+                        <el-icon v-if="GlobalState.isDarkTheme"><opportunity /></el-icon>
+                        <el-icon v-else><moon /></el-icon>
+                    </el-button>
+                </div>
+
+                <!-- 上部分：行业 table + 概念 table -->
+                <div class="top-section">
+                    <div class="industry-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-wrapper">
+                                <span>行业策略（{{Dates.shareDate.pd1cn}}涨跌幅降序）</span>
+                                <el-button-group size="small" class="filter-button-group">
+                                    <el-button
+                                        :type="MatchChart.industryFilterMode === 'all' ? 'primary' : ''"
+                                        @click="toggleIndustryFilterMode('all')"
+                                        >全部</el-button
+                                    >
+                                    <el-button
+                                        :type="MatchChart.industryFilterMode === 'strong' ? 'primary' : ''"
+                                        @click="toggleIndustryFilterMode('strong')"
+                                        >强势</el-button
+                                    >
+                                </el-button-group>
+                                <span class="status-indicator-inline">
+                                    <span
+                                        v-if="Industries.requestStatus.length > 0"
+                                        v-for="(status, index) in Industries.requestStatus"
+                                        :key="'i-'+index"
+                                        :class="['status-dot', status.status]"
+                                        :title="'Industry '+status.message"
+                                    ></span>
+                                </span>
+                                <el-tag
+                                    v-if="Industries.isFromCache"
+                                    type="warning"
+                                    size="small"
+                                    class="cache-tag"
+                                    @click="clearIndustriesCache"
+                                >
+                                    缓存
+                                </el-tag>
+                            </div>
+                            <span class="badge">全部{{ Industries.Data[0].filters.length }}/强势{{ strongIndustriesCount }}</span>
+                        </div>
+                        <div class="panel-content">
+                            <!-- 行业表格 -->
+                            <el-table
+                                :data="displayIndustries"
+                                height="100%"
+                                stripe
+                                border
+                                v-loading="Industries.loading"
+                                element-loading-text="加载中..."
+                                size="small"
+                                style="width: 100%"
+                                @row-click="handleIndustryRowClick"
+                                :row-class-name="industryRowClassName"
+                            >
+                                <el-table-column prop="指数简称" label="指数简称" width="80" show-overflow-tooltip></el-table-column>
+                                <el-table-column width="65" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.nd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.nd1]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="65" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.td]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:35)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[`${Dates.shareDate.td} 09:35`]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>资金流向</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:35)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[`${Dates.shareDate.td} 09:35`]?.资金流向)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>大单净额</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:35)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[`${Dates.shareDate.td} 09:35`]?.大单净额)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[`${Dates.shareDate.td} 09:33`]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>资金流向</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[`${Dates.shareDate.td} 09:33`]?.资金流向)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>大单净额</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[`${Dates.shareDate.td} 09:33`]?.大单净额)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="60" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.pd1]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="90" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>资金流向</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[Dates.shareDate.pd1]?.资金流向)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="90" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>大单净额</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[Dates.shareDate.pd1]?.大单净额)"></span>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                    </div>
+
+                    <div class="concept-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-wrapper">
+                                <span>概念策略（{{Dates.shareDate.pd1cn}}涨跌幅降序）</span>
+                                <el-button-group size="small" class="filter-button-group">
+                                    <el-button
+                                        :type="MatchChart.conceptFilterMode === 'all' ? 'primary' : ''"
+                                        @click="toggleConceptFilterMode('all')"
+                                        >全部</el-button
+                                    >
+                                    <el-button
+                                        :type="MatchChart.conceptFilterMode === 'strong' ? 'primary' : ''"
+                                        @click="toggleConceptFilterMode('strong')"
+                                        >强势</el-button
+                                    >
+                                </el-button-group>
+                                <span class="status-indicator-inline">
+                                    <span
+                                        v-if="Concepts.requestStatus.length > 0"
+                                        v-for="(status, index) in Concepts.requestStatus"
+                                        :key="'c-'+index"
+                                        :class="['status-dot', status.status]"
+                                        :title="'Concept '+status.message"
+                                    ></span>
+                                </span>
+                                <el-tag
+                                    v-if="Concepts.isFromCache"
+                                    type="warning"
+                                    size="small"
+                                    class="cache-tag"
+                                    @click="clearConceptsCache"
+                                >
+                                    缓存
+                                </el-tag>
+                            </div>
+                            <span class="badge">全部{{ Concepts.Data[0].filters.length }}/强势{{ strongConceptsCount }}</span>
+                        </div>
+                        <div class="panel-content">
+                            <!-- 概念表格 -->
+                            <el-table
+                                :data="displayConcepts"
+                                height="100%"
+                                stripe
+                                border
+                                v-loading="Concepts.loading"
+                                element-loading-text="加载中..."
+                                size="small"
+                                style="width: 100%"
+                                @row-click="handleConceptRowClick"
+                                :row-class-name="conceptRowClassName"
+                            >
+                                <el-table-column prop="指数简称" label="指数简称" width="80" show-overflow-tooltip></el-table-column>
+                                <el-table-column width="65" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.nd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.nd1]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="65" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.td]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:35)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[`${Dates.shareDate.td} 09:35`]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>资金流向</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:35)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[`${Dates.shareDate.td} 09:35`]?.资金流向)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>大单净额</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:35)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[`${Dates.shareDate.td} 09:35`]?.大单净额)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[`${Dates.shareDate.td} 09:33`]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>资金流向</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[`${Dates.shareDate.td} 09:33`]?.资金流向)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>大单净额</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[`${Dates.shareDate.td} 09:33`]?.大单净额)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="60" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.pd1]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="90" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>资金流向</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[Dates.shareDate.pd1]?.资金流向)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="90" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>大单净额</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[Dates.shareDate.pd1]?.大单净额)"></span>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 下部分：Stock table -->
+                <div class="bottom-section">
+                    <div class="stock-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-wrapper">
+                                <span>Stock 策略{{ Stocks.selectedBlockName ? ` - ${Stocks.selectedBlockName}` : '' }}</span>
+                                <el-button-group size="small" class="filter-button-group">
+                                    <el-button
+                                        :type="MatchChart.stockFilterMode === 'all' ? 'primary' : ''"
+                                        @click="toggleStockFilterMode('all')"
+                                        >全部</el-button
+                                    >
+                                    <el-button
+                                        :type="MatchChart.stockFilterMode === 'strong' ? 'primary' : ''"
+                                        @click="toggleStockFilterMode('strong')"
+                                        >强势</el-button
+                                    >
+                                </el-button-group>
+                                <span class="status-indicator-inline">
+                                    <span
+                                        v-if="Stocks.requestStatus.length > 0"
+                                        v-for="(status, index) in Stocks.requestStatus"
+                                        :key="'s-'+index"
+                                        :class="['status-dot', status.status]"
+                                        :title="'Stock '+status.message"
+                                    ></span>
+                                </span>
+                                <el-tag
+                                    v-if="Stocks.isFromCache"
+                                    type="warning"
+                                    size="small"
+                                    class="cache-tag"
+                                    @click="clearStocksCache"
+                                >
+                                    缓存
+                                </el-tag>
+                            </div>
+                            <span class="badge">全部{{ Stocks.Data[0].filters.length }}/强势{{ strongStocksCount }}</span>
+                        </div>
+                        <div class="panel-content">
+                            <!-- Stock 表格 -->
+                            <el-table
+                                :data="displayStocks"
+                                height="100%"
+                                stripe
+                                border
+                                v-loading="Stocks.loading"
+                                element-loading-text="加载中..."
+                                size="small"
+                                style="width: 100%"
+                                @row-click="handleStockRowClick"
+                                :row-class-name="stockRowClassName"
+                            >
+                                <el-table-column prop="股票简称" label="股票简称" width="80" show-overflow-tooltip></el-table-column>
+                                <el-table-column width="100" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>流通市值</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span>{{ formatNumber(row[Dates.shareDate.pd1]?.流通市值,'shizhi') }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>收盘价</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:35)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span>{{ row[`${Dates.shareDate.td} 09:35`]?.收盘价 }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="60" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.nd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.nd1]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="60" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.td]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:35)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[`${Dates.shareDate.td} 09:35`]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>资金流向</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:35)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[`${Dates.shareDate.td} 09:35`]?.资金流向)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>大单净额</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:35)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[`${Dates.shareDate.td} 09:35`]?.大单净额)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[`${Dates.shareDate.td} 09:33`]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>资金流向</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[`${Dates.shareDate.td} 09:33`]?.资金流向)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="80" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>大单净额</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}} 09:33)</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[`${Dates.shareDate.td} 09:33`]?.大单净额)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="75" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨跌幅</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="precentformater(row[Dates.shareDate.pd1]?.涨跌幅)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="85" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>资金流向</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[Dates.shareDate.pd1]?.资金流向)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="85" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>大单净额</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-html="formatNumber(row[Dates.shareDate.pd1]?.大单净额)"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column width="75" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>热度排名</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span class="red f600">{{ row[Dates.shareDate.pd1]?.热度排名 || '-' }}</span>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第三方库（顺序敏感） -->
+        <script src="./lib/vue@3.4.14.js"></script>
+        <script src="./lib/elementplus@v2.7.7.js"></script>
+        <script src="./lib/elementplus-icons-vue.js"></script>
+        <script src="./lib/elementplus@v2.7.7-zhCn.js"></script>
+        <script src="./lib/echarts@5.5.0.js"></script>
+        <script src="./lib/axios@1.6.7.js"></script>
+        <script src="./lib/localForage.js"></script>
+        <script src="./lib/day.js"></script>
+        <script src="./lib/jszip.min.js"></script>
+        <script src="./lib/hexin-v.js"></script>
+        <!-- v4 自定义模块 -->
+        <script src="./js/utils.js"></script>
+        <script src="./js/strategy.js"></script>
+        <script src="./js/index.js"></script>
+    </body>
+</html>
