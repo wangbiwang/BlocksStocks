@@ -9,6 +9,7 @@
  *   - 添加数据处理错误边界 (try-catch)
  *   - 完善资源清理（AbortController、Backtest timer）
  *   - 回测胜率计算逻辑
+ *   - 可选代理模式：本地 proxy-server 提供 IP 轮换防封禁
  */
 
 const { createApp, onMounted, onUnmounted, reactive, computed } = Vue
@@ -17,6 +18,14 @@ const { createApp, onMounted, onUnmounted, reactive, computed } = Vue
  * 全局调试开关（生产环境设为 false）
  * ================================================================ */
 const DEBUG = false
+
+/* ================================================================
+ * 代理模式开关
+ *   当 service/proxy-server.js 在本地运行后，V4 自动检测并启用代理模式
+ *   请求会通过代理池轮换 IP 访问同花顺，防止高频访问被封 IP
+ *   代理不可用时自动降级直连
+ * ================================================================ */
+let _useProxy = false
 function debugLog(...args) {
     if (DEBUG) console.log(...args)
 }
@@ -42,7 +51,6 @@ async function fetchWithRetry(requestParams, question, options = {}) {
     const { maxRetries = 2, retryDelay = 1000, signal } = options
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        // 检查是否已中断
         if (signal?.aborted) {
             throw new DOMException('Request aborted', 'AbortError')
         }
@@ -52,7 +60,18 @@ async function fetchWithRetry(requestParams, question, options = {}) {
                 await new Promise((r) => setTimeout(r, retryDelay))
             }
 
-            const res = await axios(hexin_vJsRequests(requestParams, question), signal ? { signal } : {})
+            let res
+            const reqConfig = hexin_vJsRequests(requestParams, question)
+
+            if (_useProxy) {
+                // 代理模式：通过本地 proxy-server 转发
+                const proxyResult = await proxyRequest(reqConfig, 20000)
+                res = proxyResult
+            } else {
+                // 直连模式
+                res = await axios(reqConfig, signal ? { signal } : {})
+            }
+
             const data = res?.data?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0]?.data?.datas
 
             if (Array.isArray(data) && data.length > 0 ? data[0]['code'] : true) {
@@ -61,10 +80,10 @@ async function fetchWithRetry(requestParams, question, options = {}) {
             throw new Error('Invalid data')
         } catch (e) {
             if (e.name === 'AbortError' || e.code === 'ERR_CANCELED') {
-                throw e // 不吞掉中断信号
+                throw e
             }
             if (attempt >= maxRetries) {
-                throw e // 重试耗尽
+                throw e
             }
         }
     }
@@ -1064,6 +1083,9 @@ const App = {
 
         onMounted(async () => {
             Intervals.timer = setInterval(Intervals.updateTime, 1000)
+
+            // 初始化代理模式（检测本地 proxy-server 是否在运行）
+            _useProxy = await initProxyMode()
 
             await Dates.init(getLocalforage, setLocalforage)
             Dates.setShareDate()

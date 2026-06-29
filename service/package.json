@@ -1,0 +1,14 @@
+{
+  "name": "blocksstocks-proxy-service",
+  "version": "1.0.0",
+  "description": "代理池服务 - 为 BlocksStocks v4 提供 IP 轮换，防止同花顺 API 封 IP",
+  "main": "proxy-server.js",
+  "scripts": {
+    "start": "node proxy-server.js",
+    "dev": "node --watch proxy-server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "playwright": "^1.61.1"
+  }
+}
