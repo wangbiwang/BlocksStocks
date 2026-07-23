@@ -33,7 +33,16 @@ async function initBrowser() {
 
   page = await context.newPage();
   console.log('Loading iwencai.com...');
-  await page.goto('https://www.iwencai.com/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+  // 带重试的页面加载
+  for (let retry = 0; retry < 3; retry++) {
+    try {
+      await page.goto('https://www.iwencai.com/', { waitUntil: 'domcontentloaded', timeout: 45000 });
+      break;
+    } catch (e) {
+      if (retry < 2) { console.log(`Retry ${retry + 1}/2: ${e.message?.substring(0,60)}`); await new Promise(r=>setTimeout(r,3000)); }
+      else throw e;
+    }
+  }
   await page.waitForTimeout(5000);
 
   isReady = true;
@@ -67,10 +76,10 @@ async function queryAPI(question, type = 'zhishu', perpage = 100, pageNum = 1) {
         xhr.ontimeout = () => reject(new Error('timeout'));
         xhr.send(JSON.stringify({
           source: 'Ths_iwencai_Xuangu', version: '2.0',
-          query_area: '', block_list: '',
+          question: params.question, perpage: params.perpage, page: params.pageNum,
+          secondary_intent: params.type,
           add_info: '{"urp":{"scene":1,"company":1,"business":1},"contentType":"json","searchInfo":true}',
-          question: params.question, perpage: params.perpage, page: 1,
-          secondary_intent: params.type, log_info: '{"input_type":"typewrite"}',
+          log_info: '{"input_type":"typewrite"}',
         }));
       });
 
@@ -78,13 +87,19 @@ async function queryAPI(question, type = 'zhishu', perpage = 100, pageNum = 1) {
         return { status: 200, data: [], _raw: firstResp, error: firstResp.status_msg };
       }
 
-      const comp = firstResp?.data?.answer?.[0]?.txt?.[0]?.content?.components?.[0];
-      const showType = comp?.show_type;
-      const footerUrl = comp?.config?.other_info?.footer_info?.url;
+      // 遍历所有组件，找第一个有数据的 xuangu_tableV1
+      const comps = firstResp?.data?.answer?.[0]?.txt?.[0]?.content?.components || [];
+      let comp = comps[0], showType = '', footerUrl = '', datas = [];
+      for (const c of comps) {
+        if (c.data?.datas?.length > 0 && (c.show_type === 'xuangu_tableV1' || c.show_type === 'common')) {
+          comp = c; datas = c.data.datas; showType = c.show_type;
+          footerUrl = c.config?.other_info?.footer_info?.url || '';
+          break;
+        }
+      }
 
       // 非 xuangu_tableV1 或第一页：直接返回
       if (showType !== 'xuangu_tableV1' || params.pageNum === 1) {
-        const datas = comp?.data?.datas || [];
         return { status: 200, data: datas, _raw: firstResp };
       }
 
@@ -110,12 +125,11 @@ async function queryAPI(question, type = 'zhishu', perpage = 100, pageNum = 1) {
         xhr.send();
       });
 
-      // 提取数据（footer URL 响应在 answer.components[0].data.datas）
-      const datas = pageResp?.answer?.components?.[0]?.data?.datas
+      // 提取数据（footer URL 响应）
+      const footerDatas = pageResp?.answer?.components?.[0]?.data?.datas
         || pageResp?.data?.list
-        || pageResp?.data
         || [];
-      return { status: 200, data: Array.isArray(datas) ? datas : [], _raw: pageResp };
+      return { status: 200, data: Array.isArray(footerDatas) ? footerDatas : [], _raw: pageResp };
 
     }, { question, type, perpage, pageNum });
 
@@ -170,8 +184,12 @@ app.post('/api/query', async (req, res) => {
   }
 });
 
-// V5 静态文件
-app.use(express.static(path.join(__dirname, '../v5')));
+// 数据目录
+app.use('/data', express.static(path.join(__dirname, '../data')));
+// V7 静态文件（根路径）
+app.use(express.static(path.join(__dirname, '../v7')));
+// V6 手机版
+app.use('/m', express.static(path.join(__dirname, '../v6/mobile')));
 
 async function start() {
   await initBrowser();
