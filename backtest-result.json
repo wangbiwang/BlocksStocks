@@ -1,0 +1,681 @@
+[
+  {
+    "date": "20240222",
+    "strongBlocks": [
+      {
+        "type": "概念",
+        "name": "TOPCON电池",
+        "strong": true,
+        "strongStocks": []
+      },
+      {
+        "type": "概念",
+        "name": "HJT电池",
+        "strong": true,
+        "strongStocks": []
+      }
+    ],
+    "stockResults": []
+  },
+  {
+    "date": "20240227",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "汽车整车",
+        "strong": true,
+        "strongStocks": [
+          "江铃汽车"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "汽车整车",
+        "type": "行业",
+        "stock": "江铃汽车"
+      }
+    ]
+  },
+  {
+    "date": "20240228",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "证券",
+        "strong": true,
+        "strongStocks": [
+          "西部证券"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "证券",
+        "type": "行业",
+        "stock": "西部证券"
+      }
+    ]
+  },
+  {
+    "date": "20240301",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "消费电子",
+        "strong": true,
+        "strongStocks": [
+          "光弘科技"
+        ]
+      },
+      {
+        "type": "行业",
+        "name": "通信设备",
+        "strong": true,
+        "strongStocks": [
+          "光迅科技"
+        ]
+      },
+      {
+        "type": "概念",
+        "name": "液冷服务器",
+        "strong": true,
+        "strongStocks": [
+          "雪人集团",
+          "光弘科技"
+        ]
+      },
+      {
+        "type": "概念",
+        "name": "第三代半导体",
+        "strong": true,
+        "strongStocks": [
+          "紫光国微",
+          "合盛硅业"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "消费电子",
+        "type": "行业",
+        "stock": "光弘科技"
+      },
+      {
+        "block": "通信设备",
+        "type": "行业",
+        "stock": "光迅科技"
+      },
+      {
+        "block": "液冷服务器",
+        "type": "概念",
+        "stock": "雪人集团"
+      },
+      {
+        "block": "液冷服务器",
+        "type": "概念",
+        "stock": "光弘科技"
+      },
+      {
+        "block": "第三代半导体",
+        "type": "概念",
+        "stock": "紫光国微"
+      },
+      {
+        "block": "第三代半导体",
+        "type": "概念",
+        "stock": "合盛硅业"
+      }
+    ]
+  },
+  {
+    "date": "20240305",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "贵金属",
+        "strong": true,
+        "strongStocks": [
+          "湖南白银"
+        ]
+      },
+      {
+        "type": "概念",
+        "name": "金属锌",
+        "strong": true,
+        "strongStocks": [
+          "湖南白银"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "贵金属",
+        "type": "行业",
+        "stock": "湖南白银"
+      },
+      {
+        "block": "金属锌",
+        "type": "概念",
+        "stock": "湖南白银"
+      }
+    ]
+  },
+  {
+    "date": "20240311",
+    "strongBlocks": [
+      {
+        "type": "概念",
+        "name": "BC电池",
+        "strong": true,
+        "strongStocks": [
+          "福斯特",
+          "横店东磁"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "BC电池",
+        "type": "概念",
+        "stock": "福斯特"
+      },
+      {
+        "block": "BC电池",
+        "type": "概念",
+        "stock": "横店东磁"
+      }
+    ]
+  },
+  {
+    "date": "20240312",
+    "strongBlocks": [
+      {
+        "type": "概念",
+        "name": "DRG/DIP",
+        "strong": true,
+        "strongStocks": []
+      }
+    ],
+    "stockResults": []
+  },
+  {
+    "date": "20240313",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "家居用品",
+        "strong": true,
+        "strongStocks": []
+      },
+      {
+        "type": "概念",
+        "name": "DRG/DIP",
+        "strong": true,
+        "strongStocks": []
+      },
+      {
+        "type": "概念",
+        "name": "丙烯酸",
+        "strong": true,
+        "strongStocks": []
+      }
+    ],
+    "stockResults": []
+  },
+  {
+    "date": "20240314",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "工业金属",
+        "strong": true,
+        "strongStocks": [
+          "华峰铝业"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "工业金属",
+        "type": "行业",
+        "stock": "华峰铝业"
+      }
+    ]
+  },
+  {
+    "date": "20240315",
+    "strongBlocks": [
+      {
+        "type": "概念",
+        "name": "汽车拆解概念",
+        "strong": true,
+        "strongStocks": []
+      },
+      {
+        "type": "概念",
+        "name": "金属铜",
+        "strong": true,
+        "strongStocks": [
+          "锡业股份",
+          "云南铜业"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "金属铜",
+        "type": "概念",
+        "stock": "锡业股份"
+      },
+      {
+        "block": "金属铜",
+        "type": "概念",
+        "stock": "云南铜业"
+      }
+    ]
+  },
+  {
+    "date": "20240318",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "汽车整车",
+        "strong": true,
+        "strongStocks": [
+          "东风股份"
+        ]
+      },
+      {
+        "type": "概念",
+        "name": "金属钴",
+        "strong": true,
+        "strongStocks": [
+          "格林美",
+          "鹏欣资源"
+        ]
+      },
+      {
+        "type": "概念",
+        "name": "长安汽车概念",
+        "strong": true,
+        "strongStocks": [
+          "水晶光电",
+          "中光学"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "汽车整车",
+        "type": "行业",
+        "stock": "东风股份"
+      },
+      {
+        "block": "金属钴",
+        "type": "概念",
+        "stock": "格林美"
+      },
+      {
+        "block": "金属钴",
+        "type": "概念",
+        "stock": "鹏欣资源"
+      },
+      {
+        "block": "长安汽车概念",
+        "type": "概念",
+        "stock": "水晶光电"
+      },
+      {
+        "block": "长安汽车概念",
+        "type": "概念",
+        "stock": "中光学"
+      }
+    ]
+  },
+  {
+    "date": "20240319",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "文化传媒",
+        "strong": true,
+        "strongStocks": [
+          "电广传媒",
+          "因赛集团"
+        ]
+      },
+      {
+        "type": "行业",
+        "name": "互联网电商",
+        "strong": true,
+        "strongStocks": []
+      },
+      {
+        "type": "概念",
+        "name": "MR(混合现实)",
+        "strong": true,
+        "strongStocks": [
+          "因赛集团",
+          "宏景科技"
+        ]
+      },
+      {
+        "type": "概念",
+        "name": "多模态AI",
+        "strong": true,
+        "strongStocks": [
+          "泓博医药",
+          "因赛集团"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "文化传媒",
+        "type": "行业",
+        "stock": "电广传媒"
+      },
+      {
+        "block": "文化传媒",
+        "type": "行业",
+        "stock": "因赛集团"
+      },
+      {
+        "block": "MR(混合现实)",
+        "type": "概念",
+        "stock": "因赛集团"
+      },
+      {
+        "block": "MR(混合现实)",
+        "type": "概念",
+        "stock": "宏景科技"
+      },
+      {
+        "block": "多模态AI",
+        "type": "概念",
+        "stock": "泓博医药"
+      },
+      {
+        "block": "多模态AI",
+        "type": "概念",
+        "stock": "因赛集团"
+      }
+    ]
+  },
+  {
+    "date": "20240321",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "文化传媒",
+        "strong": true,
+        "strongStocks": [
+          "掌阅科技",
+          "皖新传媒"
+        ]
+      },
+      {
+        "type": "行业",
+        "name": "教育",
+        "strong": true,
+        "strongStocks": []
+      },
+      {
+        "type": "概念",
+        "name": "短剧游戏",
+        "strong": true,
+        "strongStocks": [
+          "华策影视",
+          "慈文传媒"
+        ]
+      },
+      {
+        "type": "概念",
+        "name": "知识产权保护",
+        "strong": true,
+        "strongStocks": [
+          "华策影视",
+          "掌阅科技"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "文化传媒",
+        "type": "行业",
+        "stock": "掌阅科技"
+      },
+      {
+        "block": "文化传媒",
+        "type": "行业",
+        "stock": "皖新传媒"
+      },
+      {
+        "block": "短剧游戏",
+        "type": "概念",
+        "stock": "华策影视"
+      },
+      {
+        "block": "短剧游戏",
+        "type": "概念",
+        "stock": "慈文传媒"
+      },
+      {
+        "block": "知识产权保护",
+        "type": "概念",
+        "stock": "华策影视"
+      },
+      {
+        "block": "知识产权保护",
+        "type": "概念",
+        "stock": "掌阅科技"
+      }
+    ]
+  },
+  {
+    "date": "20240326",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "银行",
+        "strong": true,
+        "strongStocks": [
+          "浙商银行"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "银行",
+        "type": "行业",
+        "stock": "浙商银行"
+      }
+    ]
+  },
+  {
+    "date": "20240401",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "工业金属",
+        "strong": true,
+        "strongStocks": [
+          "北方铜业",
+          "众源新材"
+        ]
+      },
+      {
+        "type": "概念",
+        "name": "黄金概念",
+        "strong": true,
+        "strongStocks": [
+          "北方铜业",
+          "赤峰黄金"
+        ]
+      },
+      {
+        "type": "概念",
+        "name": "金属锌",
+        "strong": true,
+        "strongStocks": [
+          "盛达资源",
+          "恒邦股份"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "工业金属",
+        "type": "行业",
+        "stock": "北方铜业"
+      },
+      {
+        "block": "工业金属",
+        "type": "行业",
+        "stock": "众源新材"
+      },
+      {
+        "block": "黄金概念",
+        "type": "概念",
+        "stock": "北方铜业"
+      },
+      {
+        "block": "黄金概念",
+        "type": "概念",
+        "stock": "赤峰黄金"
+      },
+      {
+        "block": "金属锌",
+        "type": "概念",
+        "stock": "盛达资源"
+      },
+      {
+        "block": "金属锌",
+        "type": "概念",
+        "stock": "恒邦股份"
+      }
+    ]
+  },
+  {
+    "date": "20240402",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "小金属",
+        "strong": true,
+        "strongStocks": [
+          "东方锆业"
+        ]
+      },
+      {
+        "type": "行业",
+        "name": "综合",
+        "strong": true,
+        "strongStocks": []
+      },
+      {
+        "type": "概念",
+        "name": "染料",
+        "strong": true,
+        "strongStocks": []
+      },
+      {
+        "type": "概念",
+        "name": "金属镍",
+        "strong": true,
+        "strongStocks": [
+          "厦门信达",
+          "寒锐钴业"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "小金属",
+        "type": "行业",
+        "stock": "东方锆业"
+      },
+      {
+        "block": "金属镍",
+        "type": "概念",
+        "stock": "厦门信达"
+      },
+      {
+        "block": "金属镍",
+        "type": "概念",
+        "stock": "寒锐钴业"
+      }
+    ]
+  },
+  {
+    "date": "20240403",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "油气开采及服务",
+        "strong": true,
+        "strongStocks": [
+          "新天然气"
+        ]
+      },
+      {
+        "type": "行业",
+        "name": "港口航运",
+        "strong": true,
+        "strongStocks": [
+          "中远海能"
+        ]
+      },
+      {
+        "type": "概念",
+        "name": "石墨电极",
+        "strong": true,
+        "strongStocks": [
+          "翔丰华"
+        ]
+      },
+      {
+        "type": "概念",
+        "name": "中韩自贸区",
+        "strong": true,
+        "strongStocks": [
+          "中创物流"
+        ]
+      }
+    ],
+    "stockResults": [
+      {
+        "block": "油气开采及服务",
+        "type": "行业",
+        "stock": "新天然气"
+      },
+      {
+        "block": "港口航运",
+        "type": "行业",
+        "stock": "中远海能"
+      },
+      {
+        "block": "石墨电极",
+        "type": "概念",
+        "stock": "翔丰华"
+      },
+      {
+        "block": "中韩自贸区",
+        "type": "概念",
+        "stock": "中创物流"
+      }
+    ]
+  },
+  {
+    "date": "20240408",
+    "strongBlocks": [
+      {
+        "type": "行业",
+        "name": "小金属",
+        "strong": true
+      }
+    ],
+    "stockResults": []
+  }
+]

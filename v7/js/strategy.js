@@ -82,6 +82,8 @@ function handleRate(obj, ele, type, dates) {
         obj.volDaily3 = num(ele[`成交量[${pd3}]`])
         const code = ele['code'] || ''
         obj['code'] = code
+        obj[pd1]['涨停时间'] = ele[`首次涨停时间[${pd1}]`] || ''
+        obj[pd1]['连板天数'] = ele[`连续涨停天数[${pd1}]`] || 0
         const isMain = code.startsWith('60') || code.startsWith('00')
         obj['昨日涨停'] = obj[pd1]['涨跌幅'] >= (isMain ? 9.5 : 19.5)
         obj['09:35涨跌幅排名'] = ele['09:35涨跌幅排名'] || 9999
@@ -215,6 +217,7 @@ function getQuestions(type, datas, BlockType, BlockName) {
         questions[0] = `${td} 09:35涨跌幅降序;${pd1}涨跌幅资金流向大单净额;${pd1}收盘价;${pd1}热度排名;${pd1}前5交易日区间最高价不复权;${pd1}成交量;${td} 09:35涨跌幅资金流向大单净额;${td} 09:33涨跌幅资金流向大单净额;行业概念主板创业非ST;${BlockType}${BlockName}`
         questions[1] = `${pd1}涨跌幅降序;${nd1}涨跌幅;${td}涨跌幅;${pd2}涨跌幅;${pd2}成交量;${pd2}大单净额;三级行业;${pd1}(1日均线和M5);${pd2}(1日均线和M5);行业概念主板创业非ST;${BlockType}${BlockName}`
         questions[2] = `${pd1}涨跌幅降序;${macdStock};${pd1}(M10和M21和M60);${pd2}(M10和M21和M60);行业概念主板创业非ST;${BlockType}${BlockName}`
+        questions[3] = `${pd1} 首次涨停时间;${pd1} 连续涨停天数;行业概念主板创业非ST;${BlockType}${BlockName}`
     }
     return questions
 }

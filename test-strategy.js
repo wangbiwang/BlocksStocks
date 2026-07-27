@@ -201,6 +201,7 @@ function buildStockQueries(d, blockType, blockName) {
         td + ' 09:35涨跌幅降序;' + pd1 + '涨跌幅资金流向大单净额;' + pd1 + '收盘价;' + pd1 + '热度排名;' + pd1 + '前5交易日区间最高价不复权;' + pd1 + '成交量;' + td + ' 09:35涨跌幅资金流向大单净额;' + td + ' 09:33涨跌幅资金流向大单净额;行业概念主板创业非ST;' + bf + blockName,
         pd1 + '涨跌幅降序;' + nd1 + '涨跌幅;' + td + '涨跌幅;' + pd2 + '涨跌幅;' + pd2 + '成交量;' + pd2 + '大单净额;三级行业;' + pd1 + '(1日均线和M5);' + pd2 + '(1日均线和M5);行业概念主板创业非ST;' + bf + blockName,
         pd1 + '涨跌幅降序;' + macdStock + ';' + pd1 + '(M10和M21和M60);' + pd2 + '(M10和M21和M60);行业概念主板创业非ST;' + bf + blockName,
+        pd1 + ' 首次涨停时间;' + pd1 + ' 连续涨停天数;行业概念主板创业非ST;' + bf + blockName,
     ];
 }
 

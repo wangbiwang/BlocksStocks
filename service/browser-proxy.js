@@ -14,54 +14,136 @@ if (!fs.existsSync(CACHE_DIR)) {
 }
 
 const PORT = 3001;
+const PROXY_FILE = path.join(__dirname, '../v7/proxies.json');
 
 let browser, context, page;
 let isReady = false;
+let proxyIndex = 0;
+let proxyList = [];
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
 
-async function initBrowser() {
-  console.log('Starting browser...');
-  browser = await chromium.launch({
-    headless: true,
-    args: ['--disable-blink-features=AutomationControlled', '--no-sandbox'],
-  });
-  context = await browser.newContext({
-    userAgent: UA,
-    viewport: { width: 1920, height: 1080 },
-  });
+// ===== 代理管理器 =====
+const PROXY_SOURCES = [
+  'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all',
+  'https://www.proxynova.com/proxy-server-list/country-cn/',
+];
 
-  await context.addInitScript(() => {
-    Object.defineProperty(navigator, 'webdriver', { get: () => false });
-    window.chrome = { runtime: {} };
-    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-    Object.defineProperty(navigator, 'languages', { get: () => ['zh-CN', 'zh', 'en'] });
-  });
+async function fetchProxyList() {
+  const all = [];
+  // 加载本地缓存
+  try {
+    if (fs.existsSync(PROXY_FILE)) {
+      const cached = JSON.parse(fs.readFileSync(PROXY_FILE, 'utf8'));
+      if (Array.isArray(cached)) all.push(...cached);
+    }
+  } catch (e) {}
 
-  page = await context.newPage();
-  console.log('Loading iwencai.com...');
-  // 带重试的页面加载
-  for (let retry = 0; retry < 3; retry++) {
+  // 抓取在线代理
+  for (const url of PROXY_SOURCES) {
     try {
-      await page.goto('https://www.iwencai.com/', { waitUntil: 'domcontentloaded', timeout: 45000 });
-      break;
+      const resp = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      const txt = await resp.text();
+      const matches = txt.match(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{2,5}\b/g);
+      if (matches) all.push(...matches);
     } catch (e) {
-      if (retry < 2) { console.log(`Retry ${retry + 1}/2: ${e.message?.substring(0,60)}`); await new Promise(r=>setTimeout(r,3000)); }
-      else throw e;
+      console.log('Proxy fetch failed:', url.split('/').pop(), e.message.substring(0, 40));
     }
   }
-  await page.waitForTimeout(5000);
 
-  isReady = true;
-  console.log('Ready');
+  // 去重
+  const unique = [...new Set(all)];
+  if (unique.length > 0) {
+    proxyList = unique;
+    try { fs.writeFileSync(PROXY_FILE, JSON.stringify(proxyList, null, 2)); } catch (e) {}
+    console.log('Proxy list:', proxyList.length, 'proxies');
+  } else {
+    console.log('No online proxies, using cached:', proxyList.length);
+  }
+}
 
-  // 每 30 分钟刷新保持会话
-  setInterval(async () => {
+function getNextProxy() {
+  if (proxyList.length === 0) return null;
+  const p = proxyList[proxyIndex % proxyList.length];
+  proxyIndex++;
+  return p;
+}
+
+async function initBrowser() {
+  console.log('Starting browser...');
+
+  // 尝试用代理启动（最多尝试 3 个代理）
+  for (let attempt = 0; attempt < Math.max(1, proxyList.length); attempt++) {
+    const proxy = proxyList.length > 0 ? getNextProxy() : null;
+    if (proxy) console.log('Trying proxy:', proxy);
+
     try {
-      await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
-      await page.waitForTimeout(4000);
-    } catch (e) {}
-  }, 30 * 60 * 1000);
+      browser = await chromium.launch({
+        headless: true,
+        args: [
+          '--disable-blink-features=AutomationControlled',
+          '--no-sandbox',
+          ...(proxy ? [`--proxy-server=http://${proxy}`] : []),
+        ],
+      });
+
+      context = await browser.newContext({
+        userAgent: UA,
+        viewport: { width: 1920, height: 1080 },
+        ...(proxy ? { proxy: { server: `http://${proxy}` } } : {}),
+      });
+
+      await context.addInitScript(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => false });
+        window.chrome = { runtime: {} };
+        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+        Object.defineProperty(navigator, 'languages', { get: () => ['zh-CN', 'zh', 'en'] });
+      });
+
+      page = await context.newPage();
+      page.on('pageerror', err => console.log('PAGE ERROR:', err.message));
+      page.on('crash', () => {
+    console.log('PAGE CRASHED! restarting...');
+    isReady = false;
+    // 自动重启
+    (async () => {
+      try { await browser.close(); } catch (e) {}
+      await new Promise(r => setTimeout(r, 3000));
+      await initBrowser();
+    })();
+  });
+      page.on('console', msg => { if (msg.type() === 'error') console.log('PAGE CONSOLE ERROR:', msg.text()); });
+      console.log('Loading iwencai.com...');
+      for (let retry = 0; retry < 3; retry++) {
+        try {
+          await page.goto('https://www.iwencai.com/', { waitUntil: 'domcontentloaded', timeout: 45000 });
+          break;
+        } catch (e) {
+          if (retry < 2) { console.log(`Retry ${retry + 1}/2: ${e.message?.substring(0,60)}`); await new Promise(r=>setTimeout(r,3000)); }
+          else throw e;
+        }
+      }
+      await page.waitForTimeout(5000);
+
+      isReady = true;
+      console.log('Ready' + (proxy ? ' via ' + proxy : ' (direct)'));
+
+      setInterval(async () => {
+        try { await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 }); await page.waitForTimeout(4000); } catch (e) {}
+      }, 30 * 60 * 1000);
+
+      return; // 成功启动，退出重试循环
+    } catch (e) {
+      const msg = e.message || '';
+      if (msg.includes('ERR_PROXY_CONNECTION_FAILED') || msg.includes('Forbidden') || msg.includes('403')) {
+        console.log('Proxy failed, try next:', proxy || 'direct');
+        try { if (browser) await browser.close(); } catch (ex) {}
+        continue;
+      }
+      throw e; // 非代理错误，直接抛出
+    }
+  }
+  if (!isReady) throw new Error('All proxies failed');
 }
 
 async function queryAPI(question, type = 'zhishu', perpage = 100, pageNum = 1) {
@@ -77,7 +159,10 @@ async function queryAPI(question, type = 'zhishu', perpage = 100, pageNum = 1) {
         xhr.timeout = 20000;
         xhr.onload = () => {
           try { resolve(JSON.parse(xhr.responseText)); }
-          catch (e) { reject(new Error('parse error')); }
+          catch (e) {
+            const preview = (xhr.responseText || '').substring(0, 300);
+            reject(new Error('iwencai返回非JSON: ' + preview));
+          }
         };
         xhr.onerror = () => reject(new Error('network error'));
         xhr.ontimeout = () => reject(new Error('timeout'));
@@ -125,7 +210,10 @@ async function queryAPI(question, type = 'zhishu', perpage = 100, pageNum = 1) {
         xhr.timeout = 20000;
         xhr.onload = () => {
           try { resolve(JSON.parse(xhr.responseText)); }
-          catch (e) { reject(new Error('parse error')); }
+          catch (e) {
+            const preview = (xhr.responseText || '').substring(0, 300);
+            reject(new Error('iwencai返回非JSON: ' + preview));
+          }
         };
         xhr.onerror = () => reject(new Error('network error'));
         xhr.ontimeout = () => reject(new Error('timeout'));
@@ -142,7 +230,7 @@ async function queryAPI(question, type = 'zhishu', perpage = 100, pageNum = 1) {
 
     return result;
   } catch (err) {
-    console.log('Query failed, reloading page:', err.message);
+    console.log('Query failed, reloading page:', err.message.substring(0, 120));
     try {
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
       await page.waitForTimeout(5000);
@@ -270,6 +358,7 @@ app.use(express.static(path.join(__dirname, '../v7')));
 app.use('/m', express.static(path.join(__dirname, '../v6/mobile')));
 
 async function start() {
+  await fetchProxyList();
   await initBrowser();
   app.listen(PORT, () => {
     console.log('V5 ready: http://localhost:' + PORT);

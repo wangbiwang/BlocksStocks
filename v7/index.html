@@ -119,7 +119,7 @@
                         <el-icon v-if="GlobalState.isDarkTheme"><opportunity /></el-icon>
                         <el-icon v-else><moon /></el-icon>
                     </el-button>
-                    <span style="font-size:11px;color:#999;white-space:nowrap;">V7.20260716-7</span>
+                    <span style="font-size: 11px; color: #999; white-space: nowrap">V7.20260716-9</span>
                 </div>
 
                 <!-- 上部分：行业 table + 概念 table -->
@@ -178,12 +178,7 @@
                                 @row-click="handleIndustryRowClick"
                                 :row-class-name="industryRowClassName"
                             >
-                                <el-table-column
-                                    prop="指数简称"
-                                    label="指数简称"
-                                    width="80"
-                                   
-                                ></el-table-column>
+                                <el-table-column prop="指数简称" label="指数简称" width="80"></el-table-column>
                                 <el-table-column width="65" align="center">
                                     <template #header>
                                         <div class="column-header-with-subtitle">
@@ -325,7 +320,7 @@
                                         </div>
                                     </template>
                                     <template #default="{ row }">
-                                        <span>{{ row.limitUpCount || "-" }}</span>
+                                        <span :class="row.limitUpCount>0?'red':''">{{ row.limitUpCount || "-" }}</span>
                                     </template>
                                 </el-table-column>
                                 <el-table-column width="90" align="center">
@@ -351,7 +346,7 @@
                                     </template>
                                 </el-table-column>
                             </el-table>
-                                                    </div>
+                        </div>
                     </div>
 
                     <div class="concept-panel">
@@ -408,12 +403,7 @@
                                 @row-click="handleConceptRowClick"
                                 :row-class-name="conceptRowClassName"
                             >
-                                <el-table-column
-                                    prop="指数简称"
-                                    label="指数简称"
-                                    width="80"
-                                   
-                                ></el-table-column>
+                                <el-table-column prop="指数简称" label="指数简称" width="80"></el-table-column>
                                 <el-table-column width="65" align="center">
                                     <template #header>
                                         <div class="column-header-with-subtitle">
@@ -555,7 +545,7 @@
                                         </div>
                                     </template>
                                     <template #default="{ row }">
-                                        <span>{{ row.limitUpCount || "-" }}</span>
+                                        <span :class="row.limitUpCount>0?'red':''">{{ row.limitUpCount || "-" }}</span>
                                     </template>
                                 </el-table-column>
                                 <el-table-column width="90" align="center">
@@ -624,7 +614,9 @@
                                 >
                                     缓存
                                 </el-tag>
-                                <el-button size="small" plain @click="clearStocksCache" v-if="Stocks.selectedBlockName">重试</el-button>
+                                <el-button size="small" plain @click="clearStocksCache" v-if="Stocks.selectedBlockName"
+                                    >重试</el-button
+                                >
                             </div>
                             <span class="badge"
                                 >全部{{ Stocks.Data[0].filters.length }}/强势{{ strongStocksCount }}</span
@@ -644,12 +636,8 @@
                                 @row-click="handleStockRowClick"
                                 :row-class-name="stockRowClassName"
                             >
-                                <el-table-column
-                                    prop="股票简称"
-                                    label="股票简称"
-                                    width="80"
+                                <el-table-column prop="股票简称" label="股票简称" width="80"></el-table-column>
 
-                                ></el-table-column>
                                 <el-table-column width="100" align="center">
                                     <template #header>
                                         <div class="column-header-with-subtitle">
@@ -828,6 +816,23 @@
                                         <span class="red f600">{{ row[Dates.shareDate.pd1]?.热度排名 || '-' }}</span>
                                     </template>
                                 </el-table-column>
+                                <el-table-column width="100" align="center">
+                                    <template #header>
+                                        <div class="column-header-with-subtitle">
+                                            <div>涨停详情</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.pd1}})</div>
+                                        </div>
+                                    </template>
+                                    <template #default="{ row }">
+                                        <span v-if="row['昨日涨停']" style="color: #f56c6c; font-weight: 700">
+                                            {{ row[Dates.shareDate.pd1]?.涨停时间 || "--:--" }}
+                                            <span style="font-weight: 400; color: #999; margin-left: 2px"
+                                                >{{ row[Dates.shareDate.pd1]?.连板天数 || 0 }}板</span
+                                            >
+                                        </span>
+                                        <span v-else style="color: #999">-</span>
+                                    </template>
+                                </el-table-column>
                             </el-table>
                         </div>
                     </div>
@@ -850,7 +855,7 @@
         <script src="./lib/hexin-v.js"></script>
         <!-- v5 自定义模块 -->
         <script src="./js/utils.js"></script>
-        <script src="./js/strategy.js?v=V7.20260716-7"></script>
+        <script src="./js/strategy.js?v=V7.20260716-9"></script>
         <script src="./js/proxy-client.js"></script>
         <script src="./js/index.js"></script>
     </body>

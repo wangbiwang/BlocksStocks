@@ -359,6 +359,7 @@ const Stocks = createDataModule({
         const m0 = new Map((results[0] || []).map((item, i) => [item['code'], { item, rank0935: i + 1 }]))
         const m1 = new Map((results[1] || []).map((item, i) => [item['code'], { item, rankPd1: i + 1 }]))
         const m2 = new Map((results[2] || []).map(item => [item['code'], item]))
+        const m3 = new Map((results[3] || []).map(item => [item['code'], item]))
 
         const result = []
         m0.forEach((v0, code) => {
@@ -371,6 +372,7 @@ const Stocks = createDataModule({
                 merged['昨日涨跌幅排名'] = 9999
             }
             if (m2.has(code)) Object.assign(merged, m2.get(code))
+            if (m3.has(code)) Object.assign(merged, m3.get(code))
 
             const obj = {}
             handleRate(obj, merged, 'stock', Dates.shareDate)
@@ -662,8 +664,9 @@ const App = {
                 )
             }
 
-            // 按热度排名升序
+            // 涨停股排最前，再按热度排名
             result.sort((a, b) => {
+                if (a['昨日涨停'] !== b['昨日涨停']) return a['昨日涨停'] ? -1 : 1
                 const aHeat = a[Dates.shareDate.pd1]?.热度排名 ?? Infinity
                 const bHeat = b[Dates.shareDate.pd1]?.热度排名 ?? Infinity
                 return aHeat - bHeat
