@@ -4,7 +4,14 @@
  */
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const { chromium } = require('playwright');
+
+// 缓存目录（绝对路径避免 __dirname 歧义）
+const CACHE_DIR = path.join(__dirname, '../v7/cache');
+if (!fs.existsSync(CACHE_DIR)) {
+  try { fs.mkdirSync(CACHE_DIR, { recursive: true }); } catch (e) { console.log('Cache dir error:', e.message); }
+}
 
 const PORT = 3001;
 
@@ -171,13 +178,84 @@ app.post('/api/reload', async (req, res) => {
   }
 });
 
+function extractDate(question) {
+  // 先找 "YYYYMMDD 09:" → td 日期（q0 的格式）
+  let m = question.match(/\b(\d{8}) 09:/);
+  if (m) return m[1];
+  // 再找 "YYYYMMDD涨跌幅" 但不跟"降序"（= td 日期）
+  m = question.match(/\b(\d{8})涨跌幅(?!降序)/);
+  if (m) return m[1];
+  // 最后取第一个 8 位数字
+  m = question.match(/\b(\d{8})\b/);
+  return m ? m[1] : 'unknown';
+}
+
+function extractType(question) {
+  if (question.includes('二级行业')) return '行业';
+  if (question.includes('概念') && !question.includes('所属概念')) return '概念';
+  return 'stock';
+}
+
+function cacheKey(question, type, perpage, page) {
+  const td = extractDate(question);
+  // 构建文件夹路径: {td}/{type}/{blockName}/
+  let sub = '';
+  if (type === 'stock' || question.includes('所属行业') || question.includes('所属概念')) {
+    const m = question.match(/所属(行业|概念)包含([^;]+)/);
+    const bt = m ? (m[1] === '行业' ? '行业' : '概念') : 'unknown';
+    const bn = m ? m[2].replace(/[^a-zA-Z0-9_一-鿿]/g, '_').slice(0, 30) : 'all';
+    sub = path.join(td, 'stock', `${bt}-${bn}`);
+  } else {
+    sub = path.join(td, extractType(question).replace(/[^a-zA-Z0-9_一-鿿]/g, '_'));
+  }
+  const dir = path.join(CACHE_DIR, sub);
+  if (!fs.existsSync(dir)) {
+    try { fs.mkdirSync(dir, { recursive: true }); } catch (e) { console.log('Cache mkdir error:', e.message); }
+  }
+  // 文件名用 hash
+  const s = `${type}|${perpage}|${page}|${question}`;
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+  const sig = question.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30);
+  return path.join(dir, `${h}_q${page}_${sig}.json`);
+}
+
 app.post('/api/query', async (req, res) => {
-  const { question, type, perpage, page } = req.body;
+  const { question, type, perpage, page, nocache } = req.body;
   if (!question) return res.status(400).json({ error: 'missing question' });
+  const cacheFile = cacheKey(question, type || 'zhishu', perpage || 100, page || 1);
+
+  // 非重试 + 有缓存 → 直接返回
+  if (!nocache && fs.existsSync(cacheFile)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+      cached._cached = true;
+      console.log('Cache hit:', path.basename(cacheFile));
+      return res.json(cached);
+    } catch (e) {
+      console.log('Cache read error, re-fetch:', e.message);
+    }
+  }
+
   try {
     const start = Date.now();
     const result = await queryAPI(question, type || 'zhishu', perpage || 100, page || 1);
     result.latency = Date.now() - start;
+    result._cached = false;
+
+    // 成功且非重试 → 保存缓存
+    if (result.data && result.data.length > 0) {
+      try {
+        const dataStr = JSON.stringify(result, null, 2);
+        fs.writeFileSync(cacheFile, dataStr, 'utf8');
+        console.log('Cache saved:', path.basename(cacheFile), 'size:', dataStr.length);
+      } catch (e) {
+        console.log('Cache write error:', path.basename(cacheFile), e.message);
+      }
+    } else {
+      console.log('Cache skip - no data:', typeof result.data, result.data ? result.data.length : 0);
+    }
+
     res.json(result);
   } catch (err) {
     res.status(502).json({ error: err.message });

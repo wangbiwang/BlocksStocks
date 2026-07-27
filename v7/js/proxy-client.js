@@ -23,6 +23,9 @@ async function checkProxyAvailable() {
   return false;
 }
 
+let _forceNoCache = false;
+function setNoCache(v) { _forceNoCache = v; }
+
 async function proxyRequest(axiosConfig, timeout = 20000) {
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), timeout);
@@ -36,11 +39,12 @@ async function proxyRequest(axiosConfig, timeout = 20000) {
         type: axiosConfig.data?.secondary_intent || 'zhishu',
         perpage: axiosConfig.data?.perpage || 100,
         page: axiosConfig.data?.page || 1,
+        nocache: _forceNoCache || undefined,
       }),
       signal: ctrl.signal,
     });
     clearTimeout(tid);
-
+    _forceNoCache = false;  // 请求后自动复位
     const result = await resp.json();
     if (!resp.ok || result.error) throw new Error(result.error || `HTTP ${resp.status}`);
 
@@ -58,6 +62,8 @@ async function proxyRequest(axiosConfig, timeout = 20000) {
     throw err;
   }
 }
+
+async function forceNoCache() { _forceNoCache = true; }
 
 async function initProxyMode() {
   _proxyAvailable = await checkProxyAvailable();

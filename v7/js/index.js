@@ -724,25 +724,23 @@ const App = {
          * ================================================================ */
 
         const clearIndustriesCache = async () => {
+            if (typeof forceNoCache === 'function') forceNoCache()
             Industries.loading = true
-            const { tdcn } = Dates.shareDate
-            // 缓存已禁用
             Industries.Data[0].filters = []
             Industries.isFromCache = false
             await Industries.init(Dates.shareDate, null, buildIndustryQuestions)
         }
 
         const clearConceptsCache = async () => {
+            if (typeof forceNoCache === 'function') forceNoCache()
             Concepts.loading = true
-            const { tdcn } = Dates.shareDate
-            // 缓存已禁用
-
             Concepts.Data[0].filters = []
             Concepts.isFromCache = false
             await Concepts.init(Dates.shareDate, null, buildConceptQuestions)
         }
 
         const clearStocksCache = async () => {
+            if (typeof forceNoCache === 'function') forceNoCache()
             const blockName = Stocks.selectedBlockName
             const blockType = Stocks.currentBlockType
             await Stocks.clear()

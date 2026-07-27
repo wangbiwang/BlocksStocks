@@ -61,9 +61,6 @@ function handleRate(obj, ele, type, dates) {
     obj.prevMacdDiff = num(ele[`${t}macd(diff值)[${pd2}]`] || 0)
     obj.prevMacdDea  = num(ele[`${t}macd(dea值)[${pd2}]`] || 0)
     obj.prevMacdMacd = num(ele[`${t}macd${macdSuffix}[${pd2}]`] || 0)
-    obj.prevMacdDiff2 = num(ele[`${t}macd(diff值)[${pd3}]`] || 0)
-    obj.prevMacdDea2  = num(ele[`${t}macd(dea值)[${pd3}]`] || 0)
-    obj.prevMacdMacd2 = num(ele[`${t}macd${macdSuffix}[${pd3}]`] || 0)
 
     if (type !== 'block') {
         obj['股票简称'] = ele['股票简称'] || ''
@@ -214,11 +211,10 @@ function getQuestions(type, datas, BlockType, BlockName) {
     }
     if (type === 'stock') {
         BlockType = BlockType == '行业' ? '所属行业包含' : '所属概念包含'
-        const macdStock = `${pd1}(MACD(DIFF值);MACD(DEA值);MACD);${pd2}(MACD(DIFF值);MACD(DEA值);MACD);${pd3}(MACD(DIFF值);MACD(DEA值);MACD)`
-        const maStock   = `${pd1}(1日均线和M5和M10和M21和M60);${pd2}(1日均线和M5和M10和M21和M60)`
-        questions[0] = `${td} 09:35涨跌幅降序;${pd1}涨跌幅资金流向大单净额;${pd1}收盘价;${pd1}热度排名;${pd1}前5交易日区间最高价不复权;${pd1}成交量;${td} 09:35涨跌幅资金流向大单净额;行业概念主板创业非ST;${BlockType}${BlockName}`
-        questions[1] = `${pd1}涨跌幅降序;${nd1}涨跌幅;${td}涨跌幅;${pd2}涨跌幅;${pd2}成交量;${pd2}大单净额;${td} 09:33涨跌幅资金流向大单净额;三级行业;${maStock};行业概念主板创业非ST;${BlockType}${BlockName}`
-        questions[2] = `${pd1}涨跌幅降序;${macdStock};行业概念主板创业非ST;${BlockType}${BlockName}`
+        const macdStock = `${pd1}(MACD(DIFF值);MACD(DEA值);MACD);${pd2}(MACD(DIFF值);MACD(DEA值);MACD)`
+        questions[0] = `${td} 09:35涨跌幅降序;${pd1}涨跌幅资金流向大单净额;${pd1}收盘价;${pd1}热度排名;${pd1}前5交易日区间最高价不复权;${pd1}成交量;${td} 09:35涨跌幅资金流向大单净额;${td} 09:33涨跌幅资金流向大单净额;行业概念主板创业非ST;${BlockType}${BlockName}`
+        questions[1] = `${pd1}涨跌幅降序;${nd1}涨跌幅;${td}涨跌幅;${pd2}涨跌幅;${pd2}成交量;${pd2}大单净额;三级行业;${pd1}(1日均线和M5);${pd2}(1日均线和M5);行业概念主板创业非ST;${BlockType}${BlockName}`
+        questions[2] = `${pd1}涨跌幅降序;${macdStock};${pd1}(M10和M21和M60);${pd2}(M10和M21和M60);行业概念主板创业非ST;${BlockType}${BlockName}`
     }
     return questions
 }
