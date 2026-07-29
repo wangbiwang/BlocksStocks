@@ -732,6 +732,7 @@ const App = {
             Industries.Data[0].filters = []
             Industries.isFromCache = false
             await Industries.init(Dates.shareDate, null, buildIndustryQuestions)
+            if (typeof setNoCache === 'function') setNoCache(false)
         }
 
         const clearConceptsCache = async () => {
@@ -740,6 +741,7 @@ const App = {
             Concepts.Data[0].filters = []
             Concepts.isFromCache = false
             await Concepts.init(Dates.shareDate, null, buildConceptQuestions)
+            if (typeof setNoCache === 'function') setNoCache(false)
         }
 
         const clearStocksCache = async () => {
@@ -750,6 +752,7 @@ const App = {
             if (blockName && blockType) {
                 await Stocks.fetchByBlock(blockName, blockType, Dates.shareDate)
             }
+            if (typeof setNoCache === 'function') setNoCache(false)
         }
 
         /* ================================================================

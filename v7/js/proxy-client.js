@@ -44,7 +44,6 @@ async function proxyRequest(axiosConfig, timeout = 20000) {
       signal: ctrl.signal,
     });
     clearTimeout(tid);
-    _forceNoCache = false;  // 请求后自动复位
     const result = await resp.json();
     if (!resp.ok || result.error) throw new Error(result.error || `HTTP ${resp.status}`);
 

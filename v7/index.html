@@ -183,17 +183,6 @@
                                     <template #header>
                                         <div class="column-header-with-subtitle">
                                             <div>涨跌幅</div>
-                                            <div class="column-subtitle">({{Dates.shareDate.nd1}})</div>
-                                        </div>
-                                    </template>
-                                    <template #default="{ row }">
-                                        <span v-html="precentformater(row[Dates.shareDate.nd1]?.涨跌幅)"></span>
-                                    </template>
-                                </el-table-column>
-                                <el-table-column width="65" align="center">
-                                    <template #header>
-                                        <div class="column-header-with-subtitle">
-                                            <div>涨跌幅</div>
                                             <div class="column-subtitle">({{Dates.shareDate.td}})</div>
                                         </div>
                                     </template>
@@ -404,17 +393,6 @@
                                 :row-class-name="conceptRowClassName"
                             >
                                 <el-table-column prop="指数简称" label="指数简称" width="80"></el-table-column>
-                                <el-table-column width="65" align="center">
-                                    <template #header>
-                                        <div class="column-header-with-subtitle">
-                                            <div>涨跌幅</div>
-                                            <div class="column-subtitle">({{Dates.shareDate.nd1}})</div>
-                                        </div>
-                                    </template>
-                                    <template #default="{ row }">
-                                        <span v-html="precentformater(row[Dates.shareDate.nd1]?.涨跌幅)"></span>
-                                    </template>
-                                </el-table-column>
                                 <el-table-column width="65" align="center">
                                     <template #header>
                                         <div class="column-header-with-subtitle">
@@ -664,7 +642,7 @@
                                     <template #header>
                                         <div class="column-header-with-subtitle">
                                             <div>涨跌幅</div>
-                                            <div class="column-subtitle">({{Dates.shareDate.nd1}})</div>
+                                            <div class="column-subtitle">({{Dates.shareDate.td}})</div>
                                         </div>
                                     </template>
                                     <template #default="{ row }">

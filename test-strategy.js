@@ -187,7 +187,7 @@ function buildBlockQueries(type, d) {
     const macdBlock = pd1 + '(MACD(DIFF值);MACD(DEA值);MACD);' + pd2 + '(MACD(DIFF值);MACD(DEA值);MACD)';
     const maBlock   = pd1 + '(1日均线和M5和M10和M21和M60);' + pd2 + '(1日均线和M5和M10和M21和M60)';
     return [
-        nd1 + '涨跌幅;' + td + ' 09:35涨跌幅降序;' + td + ' 09:35资金流向大单净额;' + td + ' 09:33涨跌幅资金流向大单净额;' + pd2 + '涨跌幅成交量大单净额;' + td + '前3交易日涨跌幅;' + td + '前3交易日资金流向;' + pd1 + '前5交易日区间最高价;' + pd1 + '资金流向大单净额;' + blockField,
+        td + '涨跌幅;' + td + ' 09:35涨跌幅降序;' + td + ' 09:35资金流向大单净额;' + td + ' 09:33涨跌幅资金流向大单净额;' + pd2 + '涨跌幅成交量大单净额;' + td + '前3交易日涨跌幅;' + td + '前3交易日资金流向;' + pd1 + '前5交易日区间最高价;' + pd1 + '资金流向大单净额;' + blockField,
         pd1 + '涨跌幅降序;' + pd1 + '成交量;' + pd2 + '成交量;' + pd3 + '成交量;' + pd1 + '涨停家数;' + maBlock + ';' + blockField,
         pd1 + '涨跌幅降序;' + macdBlock + ';' + blockField,
     ];
