@@ -20,6 +20,39 @@ const { createApp, onMounted, onUnmounted, reactive, computed } = Vue
 const DEBUG = false
 
 /* ================================================================
+ * V8 预筛缓存读取（昨日数据融合）
+ * ================================================================ */
+let _presetCache = null
+let _presetLoadedFor = null
+async function loadPresetCache(td) {
+    if (_presetLoadedFor === td) return _presetCache
+    _presetLoadedFor = td
+    _presetCache = null
+    try {
+        const ctrl = new AbortController()
+        const tid = setTimeout(() => ctrl.abort(), 3000)
+        const resp = await fetch(`/data/preset/${td}.json`, { signal: ctrl.signal })
+        clearTimeout(tid)
+        if (resp.ok) _presetCache = await resp.json()
+    } catch {}
+    return _presetCache
+}
+function buildPresetMap(preset, type) {
+    const m = new Map()
+    if (!preset) return m
+    const list = type === 'stock' ? (preset.stocks || []) : (preset.blocks || [])
+    for (const entry of list) {
+        if (type !== 'stock' && type && entry.__type !== type) continue
+        const obj = entry.obj || entry
+        const key = obj['code'] || obj['指数简称'] || entry.__code || entry.__name
+        if (key) m.set(key, obj)
+        if (obj['指数简称']) m.set(obj['指数简称'], obj)
+    }
+    return m
+}
+
+
+/* ================================================================
  * 代理模式开关
  *   当 service/proxy-server.js 在本地运行后，V4 自动检测并启用代理模式
  *   请求会通过代理池轮换 IP 访问同花顺，防止高频访问被封 IP
@@ -180,7 +213,7 @@ function createDataModule(config) {
                 // 缓存已禁用
                 // if (!isToday) await setLocalforage(cacheKey, cache)
                 try {
-                    dataHandler(successResults, dates)
+                    await dataHandler(successResults, dates)
                 } catch (err) {
                     console.error(`[${name}] Data processing error:`, err)
                 }
@@ -286,7 +319,7 @@ const Industries = createDataModule({
     name: '行业策略',
     cacheKey: 'Industries',
     requestType: 'zhishu',
-    dataHandler: (results, dates) => {
+    dataHandler: async (results, dates) => {
         // 内连接合并：只保留同时在 res[0] 和 res[1] 中存在的 code
         const m0 = new Map((results[0] || []).map((item, i) => [item['code'], { item, rank: i + 1 }]))
         const m1 = new Map((results[1] || []).map(item => [item['code'], item]))
@@ -304,6 +337,13 @@ const Industries = createDataModule({
         })
         const ranked = [...mergedArr].sort((a, b) => (b[Dates.shareDate.pd1]?.涨跌幅 ?? -1e9) - (a[Dates.shareDate.pd1]?.涨跌幅 ?? -1e9))
         ranked.forEach((item, i) => { item['昨日涨跌幅排名'] = i + 1 })
+        // V8：昨日数据融合（有预筛缓存则用缓存覆盖昨日字段，无缓存用源数据）
+        const preset = await loadPresetCache(Dates.shareDate.td)
+        const pmap = buildPresetMap(preset, '行业')
+        for (const obj of mergedArr) {
+            const cacheObj = pmap.get(obj['指数简称'])
+            if (cacheObj) Preselect.mergeYesterday(obj, cacheObj, Dates.shareDate)
+        }
         Industries.Data[0].filters = mergedArr
     },
 })
@@ -320,7 +360,7 @@ const Concepts = createDataModule({
     name: '概念策略',
     cacheKey: 'Concepts',
     requestType: 'zhishu',
-    dataHandler: (results, dates) => {
+    dataHandler: async (results, dates) => {
         const m0 = new Map((results[0] || []).map((item, i) => [item['code'], { item, rank: i + 1 }]))
         const m1 = new Map((results[1] || []).map(item => [item['code'], item]))
         const m2 = new Map((results[2] || []).map(item => [item['code'], item]))
@@ -337,6 +377,13 @@ const Concepts = createDataModule({
         })
         const ranked = [...mergedArr].sort((a, b) => (b[Dates.shareDate.pd1]?.涨跌幅 ?? -1e9) - (a[Dates.shareDate.pd1]?.涨跌幅 ?? -1e9))
         ranked.forEach((item, i) => { item['昨日涨跌幅排名'] = i + 1 })
+        // V8：昨日数据融合（有预筛缓存则用缓存覆盖昨日字段，无缓存用源数据）
+        const preset = await loadPresetCache(Dates.shareDate.td)
+        const pmap = buildPresetMap(preset, '概念')
+        for (const obj of mergedArr) {
+            const cacheObj = pmap.get(obj['指数简称'])
+            if (cacheObj) Preselect.mergeYesterday(obj, cacheObj, Dates.shareDate)
+        }
         Concepts.Data[0].filters = mergedArr
     },
 })
@@ -353,7 +400,7 @@ const Stocks = createDataModule({
     name: 'Stock 策略',
     cacheKey: 'Stocks',
     requestType: 'stock',
-    dataHandler: (results, dates) => {
+    dataHandler: async (results, dates) => {
         // q0 按 td 09:35涨跌幅降序 → 位置即今日开盘排名
         // q1 按 pd1涨跌幅降序         → 位置即昨日涨幅排名
         const m0 = new Map((results[0] || []).map((item, i) => [item['code'], { item, rank0935: i + 1 }]))
@@ -379,6 +426,13 @@ const Stocks = createDataModule({
             result.push(obj)
         })
 
+        // V8：昨日数据融合（有预筛缓存则用缓存覆盖昨日字段，无缓存用源数据）
+        const preset = await loadPresetCache(Dates.shareDate.td)
+        const pmap = buildPresetMap(preset, 'stock')
+        for (const obj of result) {
+            const cacheObj = pmap.get(obj['code'])
+            if (cacheObj) Preselect.mergeYesterday(obj, cacheObj, Dates.shareDate)
+        }
         Stocks.Data[0].filters = result
     },
 })
