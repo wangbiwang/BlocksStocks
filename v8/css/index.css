@@ -663,3 +663,22 @@ html, body, #app {
     cursor: pointer;
     margin-left: var(--spacing-xs);
 }
+
+/* ================================================================
+ * 页面 Tab 切换
+ * ================================================================ */
+.page-tabs { display: inline-flex; align-items: center; gap: 2px; margin-right: 12px; }
+.page-tab {
+    padding: 4px 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+.page-tab:hover { color: var(--text-table); background: var(--bg-table-hover); }
+.page-tab.active {
+    color: var(--color-accent);
+    background: rgba(88, 166, 255, 0.1);
+    font-weight: 600;
+}
