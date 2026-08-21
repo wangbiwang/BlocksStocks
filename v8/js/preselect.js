@@ -389,7 +389,7 @@ const App = {
             if (typeof forceNoCache === 'function') forceNoCache()
             Industries.loading = true
             Industries.Data[0].filters = []
-            await Industries.init(ed, null, buildIndustryQuestions)
+            await Industries.init(evalDates(), null, buildIndustryQuestions)
             await savePreset()
             if (typeof setNoCache === 'function') setNoCache(false)
         }
@@ -397,7 +397,7 @@ const App = {
             if (typeof forceNoCache === 'function') forceNoCache()
             Concepts.loading = true
             Concepts.Data[0].filters = []
-            await Concepts.init(ed, null, buildConceptQuestions)
+            await Concepts.init(evalDates(), null, buildConceptQuestions)
             await savePreset()
             if (typeof setNoCache === 'function') setNoCache(false)
         }
