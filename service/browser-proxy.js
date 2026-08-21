@@ -350,6 +350,21 @@ app.post('/api/query', async (req, res) => {
   }
 });
 
+
+// V8 预筛缓存保存
+const PRESET_DIR = path.join(__dirname, '../data/preset');
+app.post('/api/preset', (req, res) => {
+  const { targetDate, blocks, stocks, meta } = req.body || {};
+  if (!targetDate || !Array.isArray(blocks)) return res.status(400).json({ error: 'bad payload' });
+  try {
+    if (!fs.existsSync(PRESET_DIR)) fs.mkdirSync(PRESET_DIR, { recursive: true });
+    const file = path.join(PRESET_DIR, `${targetDate}.json`);
+    const tmp = file + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify({ ...req.body, savedAt: new Date().toISOString() }, null, 2), 'utf8');
+    fs.renameSync(tmp, file);
+    res.json({ ok: true, file: `${targetDate}.json`, blocks: blocks.length, stocks: (stocks || []).length });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 // 数据目录
 app.use('/data', express.static(path.join(__dirname, '../data')));
 // V7 静态文件（根路径）

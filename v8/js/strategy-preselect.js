@@ -35,8 +35,10 @@
     if (type === 'stock') {
       const bf = BlockType === '行业' ? '所属行业包含' : '所属概念包含';
       const macdStock = `${pd1}(MACD(DIFF值);MACD(DEA值);MACD);${pd2}(MACD(DIFF值);MACD(DEA值);MACD)`;
+      // 拆成 4 个小查询，避免问财免费用户 chunk 数超限
       return [
-        `${pd1}涨跌幅降序;${pd1}涨跌幅资金流向大单净额;${pd1}收盘价;${pd1}热度排名;${pd1}前5交易日区间最高价不复权;${pd1}成交量;${pd2}涨跌幅;${pd2}成交量;${pd2}大单净额;三级行业;${pd1}(1日均线和M5);${pd2}(1日均线和M5);行业概念主板创业非ST;${bf}${BlockName}`,
+        `${pd1}涨跌幅降序;${pd1}涨跌幅资金流向大单净额;${pd1}收盘价;${pd1}热度排名;${pd1}前5交易日区间最高价不复权;${pd1}成交量;三级行业;行业概念主板创业非ST;${bf}${BlockName}`,
+        `${pd1}涨跌幅降序;${pd2}涨跌幅;${pd2}成交量;${pd2}大单净额;${pd1}(1日均线和M5);${pd2}(1日均线和M5);三级行业;行业概念主板创业非ST;${bf}${BlockName}`,
         `${pd1}涨跌幅降序;${macdStock};${pd1}(M10和M21和M60);${pd2}(M10和M21和M60);行业概念主板创业非ST;${bf}${BlockName}`,
         `${pd1} 首次涨停时间;${pd1} 连续涨停天数;行业概念主板创业非ST;${bf}${BlockName}`,
       ];
