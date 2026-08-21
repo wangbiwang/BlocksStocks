@@ -8,13 +8,13 @@ const fs = require('fs');
 const { chromium } = require('playwright');
 
 // 缓存目录（绝对路径避免 __dirname 歧义）
-const CACHE_DIR = path.join(__dirname, '../v7/cache');
+const CACHE_DIR = path.join(__dirname, '../v8/cache');
 if (!fs.existsSync(CACHE_DIR)) {
   try { fs.mkdirSync(CACHE_DIR, { recursive: true }); } catch (e) { console.log('Cache dir error:', e.message); }
 }
 
 const PORT = 3001;
-const PROXY_FILE = path.join(__dirname, '../v7/proxies.json');
+const PROXY_FILE = path.join(__dirname, '../v8/proxies.json');
 
 let browser, context, page;
 let isReady = false;
@@ -353,9 +353,9 @@ app.post('/api/query', async (req, res) => {
 // 数据目录
 app.use('/data', express.static(path.join(__dirname, '../data')));
 // V7 静态文件（根路径）
-app.use(express.static(path.join(__dirname, '../v7')));
+app.use(express.static(path.join(__dirname, '../v8')));
 // V6 手机版
-app.use('/m', express.static(path.join(__dirname, '../v6/mobile')));
+app.use('/m', express.static(path.join(__dirname, '../v8/mobile')));
 
 async function start() {
   await fetchProxyList();

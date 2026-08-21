@@ -1,0 +1,52 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body,#app { height:100%; font-size:13px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#0c1017; color:#c4c9d1; overflow:hidden; }
+.mobile-container { display:flex; flex-direction:column; height:100vh; background:#0c1017; }
+
+/* 日期栏 */
+.date-bar { display:flex; align-items:center; gap:6px; padding:6px 8px; background:#141922; border-bottom:1px solid #262d38; flex-shrink:0; }
+.date-bar .time-label { font-size:11px; color:#8896a6; margin-left:auto; white-space:nowrap; }
+.date-bar .el-button { height:28px; min-width:28px; }
+.date-bar .el-date-editor { --el-input-bg-color:#111720; --el-input-border-color:#262d38; }
+
+/* Block 行 */
+.block-row { display:flex; flex:1; min-height:0; overflow:hidden; gap:1px; border-bottom:1px solid #262d38; }
+.block-panel { flex:1; display:flex; flex-direction:column; min-width:0; overflow:hidden; }
+
+.block-header { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:#111720; border-bottom:1px solid #1e2633; flex-shrink:0; }
+.block-header span { font-size:13px; font-weight:600; color:#e6e8ec; }
+.block-filter { display:flex; gap:4px; }
+.block-filter .el-button { height:24px; font-size:11px; padding:0 8px; }
+
+.block-list { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.block-item { display:flex; align-items:center; padding:8px 10px; border-bottom:1px solid #1a212c; cursor:pointer; }
+.block-item:active { background:#1e2633; }
+.block-item.active { background:rgba(210,153,34,.13); }
+.bi-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+.bi-chg { font-size:12px; font-weight:600; white-space:nowrap; margin-left:8px; }
+
+/* Stock 面板 */
+.stock-panel-m { flex:1; display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+.stock-header { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:#111720; border-bottom:1px solid #1e2633; flex-shrink:0; }
+.stock-header span { font-size:13px; font-weight:600; color:#e6e8ec; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.stock-filter { display:flex; gap:4px; }
+.stock-filter .el-button { height:24px; font-size:11px; padding:0 8px; }
+
+.stock-list { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.stock-item-m { padding:10px 12px; border-bottom:1px solid #1a212c; cursor:pointer; }
+.stock-item-m:active { background:#1e2633; }
+.si-top { display:flex; align-items:center; justify-content:space-between; }
+.si-name { font-size:13px; font-weight:600; }
+.si-chg { font-size:13px; font-weight:600; }
+.si-info { display:flex; gap:12px; margin-top:4px; font-size:11px; color:#5c697a; }
+
+/* 公用 */
+.empty { text-align:center; padding:30px 20px; color:#5c697a; font-size:12px; }
+.red,.up { color:#f87171; }
+.green,.down { color:#4ade80; }
+
+/* 滚动条 */
+.block-list::-webkit-scrollbar, .stock-list::-webkit-scrollbar { width:3px; }
+.block-list::-webkit-scrollbar-thumb, .stock-list::-webkit-scrollbar-thumb { background:#262d38; border-radius:2px; }
+
+/* Element */
+.el-loading-mask { background:rgba(12,16,23,.85)!important; }

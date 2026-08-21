@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>V6 手机版</title>
+    <link rel="stylesheet" href="../lib/elementplus.css" />
+    <link rel="stylesheet" href="./css/mobile.css" />
+</head>
+<body>
+    <div id="app">
+        <div class="mobile-container">
+
+            <!-- 日期栏 -->
+            <div class="date-bar">
+                <el-button size="small" circle @click="changeDate(-1)" :disabled="GlobalState.isRequesting">
+                    <el-icon><arrow-left /></el-icon>
+                </el-button>
+                <el-date-picker
+                    v-model="Dates.requestDate" type="date" format="YYYY/MM/DD" size="small"
+                    :disabled="GlobalState.isRequesting" @change="Submit"
+                    style="flex:1;max-width:140px"
+                />
+                <el-button size="small" circle @click="changeDate(1)" :disabled="GlobalState.isRequesting">
+                    <el-icon><arrow-right /></el-icon>
+                </el-button>
+                <span class="time-label">{{ Intervals.time }}</span>
+                <el-button type="primary" size="small" @click="Submit"
+                    :disabled="GlobalState.isRequesting" :loading="GlobalState.isRequesting">
+                    查询
+                </el-button>
+            </div>
+
+            <!-- Block 面板：行业 | 概念 -->
+            <div class="block-row">
+                <!-- 行业 -->
+                <div class="block-panel">
+                    <div class="block-header">
+                        <span>行业</span>
+                        <div class="block-filter">
+                            <el-button size="small" :type="MatchChart.industryFilterMode==='all'?'primary':''" @click="MatchChart.industryFilterMode='all'">全</el-button>
+                            <el-button size="small" :type="MatchChart.industryFilterMode==='strong'?'primary':''" @click="MatchChart.industryFilterMode='strong'">强</el-button>
+                        </div>
+                    </div>
+                    <div class="block-list" v-loading="Industries.loading">
+                        <div v-for="item in displayIndustries" :key="item.指数简称" class="block-item"
+                            @click="handleIndustryRowClick(item)"
+                            :class="{ active: Stocks.selectedBlockName===item.指数简称 && Stocks.currentBlockType==='行业' }">
+                            <span class="bi-name">{{ item.指数简称 }}</span>
+                            <span class="bi-chg" v-html="precentformater(item[Dates.shareDate.pd1]?.涨跌幅)"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 概念 -->
+                <div class="block-panel">
+                    <div class="block-header">
+                        <span>概念</span>
+                        <div class="block-filter">
+                            <el-button size="small" :type="MatchChart.conceptFilterMode==='all'?'primary':''" @click="MatchChart.conceptFilterMode='all'">全</el-button>
+                            <el-button size="small" :type="MatchChart.conceptFilterMode==='strong'?'primary':''" @click="MatchChart.conceptFilterMode='strong'">强</el-button>
+                        </div>
+                    </div>
+                    <div class="block-list" v-loading="Concepts.loading">
+                        <div v-for="item in displayConcepts" :key="item.指数简称" class="block-item"
+                            @click="handleConceptRowClick(item)"
+                            :class="{ active: Stocks.selectedBlockName===item.指数简称 && Stocks.currentBlockType==='概念' }">
+                            <span class="bi-name">{{ item.指数简称 }}</span>
+                            <span class="bi-chg" v-html="precentformater(item[Dates.shareDate.pd1]?.涨跌幅)"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock 面板 -->
+            <div class="stock-panel-m">
+                <div class="stock-header">
+                    <span>{{ Stocks.selectedBlockName || '请选择行业/概念' }}</span>
+                    <div class="stock-filter">
+                        <el-button size="small" :type="MatchChart.stockFilterMode==='all'?'primary':''" @click="MatchChart.stockFilterMode='all'">全</el-button>
+                        <el-button size="small" :type="MatchChart.stockFilterMode==='strong'?'primary':''" @click="MatchChart.stockFilterMode='strong'">强</el-button>
+                    </div>
+                </div>
+                <div class="stock-list" v-loading="Stocks.loading">
+                    <div v-for="item in displayStocks" :key="item.股票简称" class="stock-item-m">
+                        <div class="si-top">
+                            <span class="si-name">{{ item.股票简称 }}</span>
+                            <span class="si-chg" v-html="precentformater(item[Dates.shareDate.pd1]?.涨跌幅)"></span>
+                        </div>
+                        <div class="si-info">
+                            <span>大单: {{ formatNumber(item[Dates.shareDate.pd1]?.大单净额) }}</span>
+                            <span>排名: {{ item[Dates.shareDate.pd1]?.热度排名 || '-' }}</span>
+                        </div>
+                    </div>
+                    <div v-if="!displayStocks.length && !Stocks.loading" class="empty">
+                        {{ Stocks.selectedBlockName ? '无strong个股' : '← 先选行业/概念' }}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 库 -->
+    <script src="../lib/vue@3.4.14.js"></script>
+    <script src="../lib/elementplus@v2.7.7.js"></script>
+    <script src="../lib/elementplus-icons-vue.js"></script>
+    <script src="../lib/elementplus@v2.7.7-zhCn.js"></script>
+    <script src="../lib/axios@1.6.7.js"></script>
+    <script src="../lib/day.js"></script>
+    <script src="../lib/localForage.js"></script>
+    <script src="../lib/chameleon.1.9.min.js"></script>
+    <script src="../lib/hexin-v.js"></script>
+    <script src="../js/strategy.js"></script>
+    <script src="../js/proxy-client.js"></script>
+    <script src="./js/mobile.js"></script>
+</body>
+</html>

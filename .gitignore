@@ -22,3 +22,6 @@ npm-debug.log*
 # 环境变量
 .env
 .env.local
+
+# V8 预筛缓存
+.data/preset/
