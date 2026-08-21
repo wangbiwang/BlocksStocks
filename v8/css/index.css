@@ -275,7 +275,12 @@ html, body, #app {
 .global-control-bar .date-picker .el-input__wrapper:hover,
 .global-control-bar .date-picker .el-input__wrapper.is-focus {
     border-color: var(--color-accent);
-    box-shadow: none;
+}
+.global-control-bar .date-picker .el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.15);
+}
+.global-control-bar .date-picker .el-input__wrapper.is-focus .el-input__inner {
+    color: var(--color-accent);
 }
 
 .global-control-bar .date-picker .el-input__inner {
@@ -609,20 +614,28 @@ html, body, #app {
 .el-picker__popper .el-date-table td {
     color: var(--text-table) !important;
 }
-.el-picker__popper .el-date-table td.disabled .cell {
+/* Element Plus 2.7.7 单元格结构为 .el-date-table-cell / .el-date-table-cell__text（旧 .cell 选择器失效） */
+.el-picker__popper .el-date-table td.disabled .el-date-table-cell__text {
     color: var(--text-muted) !important;
-    background-color: transparent !important;
 }
-.el-picker__popper .el-date-table td.current:not(.disabled) .cell {
-    color: #ffffff !important;
+/* 选中日：主色圆角块，白字加粗 */
+.el-picker__popper .el-date-table td.current:not(.disabled) .el-date-table-cell {
     background-color: var(--color-accent) !important;
+    border-radius: 6px;
 }
-.el-picker__popper .el-date-table td.today .cell {
-    color: var(--color-accent);
+.el-picker__popper .el-date-table td.current:not(.disabled) .el-date-table-cell__text {
+    color: #ffffff !important;
     font-weight: 600;
 }
-.el-picker__popper .el-date-table td:hover:not(.disabled) .cell {
+/* 今天（未选中时）：主色文字 */
+.el-picker__popper .el-date-table td.today:not(.current) .el-date-table-cell__text {
+    color: var(--color-accent);
+    font-weight: 500;
+}
+/* hover：浅色圆角块 */
+.el-picker__popper .el-date-table td.available:not(.disabled):hover .el-date-table-cell {
     background-color: var(--bg-table-hover) !important;
+    border-radius: 6px;
 }
 /* DatePicker 头部按钮 */
 .el-picker__popper .el-date-picker__header button {
