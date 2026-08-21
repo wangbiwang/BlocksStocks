@@ -338,7 +338,7 @@ const Industries = createDataModule({
         const ranked = [...mergedArr].sort((a, b) => (b[Dates.shareDate.pd1]?.涨跌幅 ?? -1e9) - (a[Dates.shareDate.pd1]?.涨跌幅 ?? -1e9))
         ranked.forEach((item, i) => { item['昨日涨跌幅排名'] = i + 1 })
         // V8：昨日数据融合（有预筛缓存则用缓存覆盖昨日字段，无缓存用源数据）
-        const preset = await loadPresetCache(Dates.shareDate.td)
+        const preset = await loadPresetCache(Dates.shareDate.pd1)
         const pmap = buildPresetMap(preset, '行业')
         for (const obj of mergedArr) {
             const cacheObj = pmap.get(obj['指数简称'])
@@ -378,7 +378,7 @@ const Concepts = createDataModule({
         const ranked = [...mergedArr].sort((a, b) => (b[Dates.shareDate.pd1]?.涨跌幅 ?? -1e9) - (a[Dates.shareDate.pd1]?.涨跌幅 ?? -1e9))
         ranked.forEach((item, i) => { item['昨日涨跌幅排名'] = i + 1 })
         // V8：昨日数据融合（有预筛缓存则用缓存覆盖昨日字段，无缓存用源数据）
-        const preset = await loadPresetCache(Dates.shareDate.td)
+        const preset = await loadPresetCache(Dates.shareDate.pd1)
         const pmap = buildPresetMap(preset, '概念')
         for (const obj of mergedArr) {
             const cacheObj = pmap.get(obj['指数简称'])
@@ -427,7 +427,7 @@ const Stocks = createDataModule({
         })
 
         // V8：昨日数据融合（有预筛缓存则用缓存覆盖昨日字段，无缓存用源数据）
-        const preset = await loadPresetCache(Dates.shareDate.td)
+        const preset = await loadPresetCache(Dates.shareDate.pd1)
         const pmap = buildPresetMap(preset, 'stock')
         for (const obj of result) {
             const cacheObj = pmap.get(obj['code'])

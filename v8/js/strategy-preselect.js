@@ -110,6 +110,22 @@
   ];
 
   // 用缓存 obj 覆盖 liveObj 的昨日字段；td 相关键始终保留实时值
+  // 问财对指数查询的字段前缀不稳定（有时"指数@"有时无）：统一归一化为带前缀，供 handleRate(block) 解析
+  const INDEX_FIELDS = [
+    '涨跌幅:前复权', '资金流向', 'dde大单净额', 'dde大单净量', '成交量', '涨停家数',
+    '区间最高价:不复权', '分时涨跌幅:前复权', '分时资金流向', '分时dde大单净额', '分时成交量', '分时dde大单净量',
+  ];
+  function normalizeIndexFields(merged) {
+    if (Object.keys(merged).some(k => k.startsWith('指数@'))) return merged
+    const out = Object.assign({}, merged)
+    for (const k of Object.keys(merged)) {
+      for (const f of INDEX_FIELDS) {
+        if (k.startsWith(f)) { out['指数@' + k] = merged[k]; break }
+      }
+    }
+    return out
+  }
+
   function mergeYesterday(liveObj, cacheObj, dates) {
     const { td, pd1, pd2, pd3 } = dates;
     for (const k of YESTERDAY_FIELDS) {
@@ -126,5 +142,5 @@
     return liveObj;
   }
 
-  global.Preselect = { PRESELECT_CONFIG, getYesterdayQuestions, evaluateBlockYesterday, evaluateStockYesterday, YESTERDAY_FIELDS, mergeYesterday };
+  global.Preselect = { PRESELECT_CONFIG, getYesterdayQuestions, evaluateBlockYesterday, evaluateStockYesterday, YESTERDAY_FIELDS, mergeYesterday, normalizeIndexFields };
 })(typeof window !== 'undefined' ? window : globalThis);

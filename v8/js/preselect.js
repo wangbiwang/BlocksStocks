@@ -151,14 +151,14 @@ const Industries = createDataModule({
                 const merged = { ...v0.item, ...m1.get(code), ...m2.get(code) }
                 merged['昨日涨跌幅排名'] = v0.rank          // r0 按 pd1 涨跌幅降序 → 位置即排名
                 const obj = {}
-                handleRate(obj, merged, 'block', Dates.shareDate)
-                const r = Preselect.evaluateBlockYesterday(obj, Dates.shareDate)
+                handleRate(obj, Preselect.normalizeIndexFields(merged), 'block', dates)
+                const r = Preselect.evaluateBlockYesterday(obj, dates)
                 obj.__isCandidate = r.isYesterday || r.isSuperHotBase
                 obj.__conditions = r.conditions
                 mergedArr.push(obj)
             }
         })
-        mergedArr.sort((a, b) => (b[Dates.shareDate.pd1]?.涨跌幅 ?? -1e9) - (a[Dates.shareDate.pd1]?.涨跌幅 ?? -1e9))
+        mergedArr.sort((a, b) => (b[dates.pd1]?.涨跌幅 ?? -1e9) - (a[dates.pd1]?.涨跌幅 ?? -1e9))
         Industries.Data[0].filters = mergedArr
     },
 })
@@ -177,14 +177,14 @@ const Concepts = createDataModule({
                 const merged = { ...v0.item, ...m1.get(code), ...m2.get(code) }
                 merged['昨日涨跌幅排名'] = v0.rank
                 const obj = {}
-                handleRate(obj, merged, 'block', Dates.shareDate)
-                const r = Preselect.evaluateBlockYesterday(obj, Dates.shareDate)
+                handleRate(obj, Preselect.normalizeIndexFields(merged), 'block', dates)
+                const r = Preselect.evaluateBlockYesterday(obj, dates)
                 obj.__isCandidate = r.isYesterday || r.isSuperHotBase
                 obj.__conditions = r.conditions
                 mergedArr.push(obj)
             }
         })
-        mergedArr.sort((a, b) => (b[Dates.shareDate.pd1]?.涨跌幅 ?? -1e9) - (a[Dates.shareDate.pd1]?.涨跌幅 ?? -1e9))
+        mergedArr.sort((a, b) => (b[dates.pd1]?.涨跌幅 ?? -1e9) - (a[dates.pd1]?.涨跌幅 ?? -1e9))
         Concepts.Data[0].filters = mergedArr
     },
 })
@@ -206,8 +206,8 @@ const Stocks = createDataModule({
             if (m2.has(code)) Object.assign(merged, m2.get(code))
             if (m3.has(code)) Object.assign(merged, m3.get(code))
             const obj = {}
-            handleRate(obj, merged, 'stock', Dates.shareDate)
-            const r = Preselect.evaluateStockYesterday(obj, Dates.shareDate)
+            handleRate(obj, merged, 'stock', dates)
+            const r = Preselect.evaluateStockYesterday(obj, dates)
             obj.__isCandidate = r.isYesterday
             obj.__conditions = r.conditions
             obj.__blockType = Stocks.currentBlockType
@@ -242,6 +242,12 @@ const App = {
     setup() {
         const Intervals = reactive({ timer: null, time: '-', updateTime: () => (Intervals.time = dayjs().format('YYYY-MM-DD HH:mm:ss')) })
 
+        // 当日预筛视角：把所选日期 td 当作评估用的 pd1（选哪天筛哪天）
+        const evalDates = () => {
+            const s = Dates.shareDate
+            return { ...s, pd1: s.td, pd2: s.pd1, pd3: s.pd2, pd4: s.pd3, pd1cn: s.tdcn }
+        }
+
         const GlobalState = reactive({
             isRequesting: false,
             isDarkTheme: true,
@@ -275,7 +281,7 @@ const App = {
                 const payload = {
                     schema: 1,
                     targetDate: td,
-                    sourceDate: pd1,
+                    sourceDate: td,   // 数据所属日 = 所选日期
                     createdAt: new Date().toISOString(),
                     blocks: [
                         ...Industries.Data[0].filters.map(b => buildEntry(b, '行业')),
@@ -310,9 +316,10 @@ const App = {
             Dates.setRequestDate(Dates.requestDate)
             Dates.setShareDate()
             try {
+            const ed = evalDates()
                 await Promise.all([
-                    Industries.init(Dates.shareDate, null, buildIndustryQuestions),
-                    Concepts.init(Dates.shareDate, null, buildConceptQuestions),
+                    Industries.init(ed, null, buildIndustryQuestions),
+                    Concepts.init(ed, null, buildConceptQuestions),
                 ])
                 await savePreset()
             } finally {
@@ -327,14 +334,14 @@ const App = {
         const displayIndustries = computed(() => {
             let result = Industries.Data[0].filters
             if (MatchChart.industryFilterMode === 'strong') result = result.filter(item => item.__isCandidate)
-            result.sort((a, b) => (b[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity) - (a[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity))
+            result.sort((a, b) => (b[evalDates().pd1]?.涨跌幅 ?? -Infinity) - (a[evalDates().pd1]?.涨跌幅 ?? -Infinity))
             return result
         })
         const strongConceptsCount = computed(() => Concepts.Data[0].filters.filter(item => item.__isCandidate).length)
         const displayConcepts = computed(() => {
             let result = Concepts.Data[0].filters
             if (MatchChart.conceptFilterMode === 'strong') result = result.filter(item => item.__isCandidate)
-            result.sort((a, b) => (b[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity) - (a[Dates.shareDate.pd1]?.涨跌幅 ?? -Infinity))
+            result.sort((a, b) => (b[evalDates().pd1]?.涨跌幅 ?? -Infinity) - (a[evalDates().pd1]?.涨跌幅 ?? -Infinity))
             return result
         })
         const strongStocksCount = computed(() => {
@@ -347,8 +354,8 @@ const App = {
             if (MatchChart.stockFilterMode === 'strong') result = result.filter(stock => stock.__isCandidate)
             result.sort((a, b) => {
                 if (a['昨日涨停'] !== b['昨日涨停']) return a['昨日涨停'] ? -1 : 1
-                const aHeat = a[Dates.shareDate.pd1]?.热度排名 ?? Infinity
-                const bHeat = b[Dates.shareDate.pd1]?.热度排名 ?? Infinity
+                const aHeat = a[evalDates().pd1]?.热度排名 ?? Infinity
+                const bHeat = b[evalDates().pd1]?.热度排名 ?? Infinity
                 return aHeat - bHeat
             })
             return result.map((s) => ({ ...s }))
@@ -361,13 +368,13 @@ const App = {
         const handleIndustryRowClick = async (row) => {
             MatchChart.selectedStock = null
             const blockName = row['指数简称']
-            await Stocks.fetchByBlock(blockName, '行业', Dates.shareDate)
+            await Stocks.fetchByBlock(blockName, '行业', evalDates())
             await savePreset()
         }
         const handleConceptRowClick = async (row) => {
             MatchChart.selectedStock = null
             const blockName = row['指数简称']
-            await Stocks.fetchByBlock(blockName, '概念', Dates.shareDate)
+            await Stocks.fetchByBlock(blockName, '概念', evalDates())
             await savePreset()
         }
         const handleStockRowClick = (row) => {
@@ -382,7 +389,7 @@ const App = {
             if (typeof forceNoCache === 'function') forceNoCache()
             Industries.loading = true
             Industries.Data[0].filters = []
-            await Industries.init(Dates.shareDate, null, buildIndustryQuestions)
+            await Industries.init(ed, null, buildIndustryQuestions)
             await savePreset()
             if (typeof setNoCache === 'function') setNoCache(false)
         }
@@ -390,7 +397,7 @@ const App = {
             if (typeof forceNoCache === 'function') forceNoCache()
             Concepts.loading = true
             Concepts.Data[0].filters = []
-            await Concepts.init(Dates.shareDate, null, buildConceptQuestions)
+            await Concepts.init(ed, null, buildConceptQuestions)
             await savePreset()
             if (typeof setNoCache === 'function') setNoCache(false)
         }
@@ -400,7 +407,7 @@ const App = {
             const blockType = Stocks.currentBlockType
             Stocks.Data[0].filters = []
             if (blockName && blockType) {
-                await Stocks.fetchByBlock(blockName, blockType, Dates.shareDate)
+                await Stocks.fetchByBlock(blockName, blockType, evalDates())
             }
             await savePreset()
             if (typeof setNoCache === 'function') setNoCache(false)
