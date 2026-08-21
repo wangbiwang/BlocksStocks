@@ -1,8 +1,8 @@
-# 依赖
+﻿# 渚濊禆
 node_modules/
 service/node_modules/
 
-# 系统文件
+# 绯荤粺鏂囦欢
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -15,13 +15,14 @@ desktop.ini
 *.swo
 *~
 
-# 日志
+# 鏃ュ織
 *.log
 npm-debug.log*
 
-# 环境变量
+# 鐜鍙橀噺
 .env
 .env.local
 
-# V8 预筛缓存
-.data/preset/
+# V8 棰勭瓫缂撳瓨
+data/preset/
+
