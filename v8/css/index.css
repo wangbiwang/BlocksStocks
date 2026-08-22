@@ -695,3 +695,13 @@ html, body, #app {
     background: rgba(88, 166, 255, 0.1);
     font-weight: 600;
 }
+
+/* 股票简称链接（跳转同花顺个股页） */
+.stock-link {
+    color: var(--color-accent);
+    text-decoration: none;
+    cursor: pointer;
+}
+.stock-link:hover {
+    text-decoration: underline;
+}

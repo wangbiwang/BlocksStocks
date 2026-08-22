@@ -148,7 +148,11 @@
                         </div>
                         <div class="panel-content">
                             <el-table :data="displayStocks" height="100%" stripe border v-loading="Stocks.loading" element-loading-text="加载中..." size="small" style="width: 100%" @row-click="handleStockRowClick" :row-class-name="stockRowClassName">
-                                <el-table-column prop="股票简称" label="股票简称" width="90"></el-table-column>
+<el-table-column prop="股票简称" label="股票简称" width="90">
+                                                                    <template #default="{ row }">
+                                                                        <a :href="`https://stockpage.10jqka.com.cn/${row.code}/`" target="_blank" rel="noopener" class="stock-link" @click.stop>{{ row['股票简称'] }}</a>
+                                                                    </template>
+                                                                </el-table-column>
                                 <el-table-column width="75" align="center">
                                     <template #header><div class="column-header-with-subtitle"><div>涨跌幅</div><div class="column-subtitle">({{Dates.shareDate.tdcn}})</div></div></template>
                                     <template #default="{ row }"><span v-html="precentformater(row[Dates.shareDate.td]?.涨跌幅)"></span></template>
