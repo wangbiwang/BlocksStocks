@@ -15,6 +15,7 @@ if (!fs.existsSync(CACHE_DIR)) {
 
 const PORT = 3001;
 const PROXY_FILE = path.join(__dirname, '../v8/proxies.json');
+const COOKIE_FILE = path.join(__dirname, '../data/iwencai-cookies.json');
 
 let browser, context, page;
 let isReady = false;
@@ -93,6 +94,17 @@ async function initBrowser() {
         ...(proxy ? { proxy: { server: `http://${proxy}` } } : {}),
       });
 
+
+      // V8: 注入问财登录 cookies（data/iwencai-cookies.json，由 start.js / v8/login.js 生成）
+      try {
+        if (fs.existsSync(COOKIE_FILE)) {
+          const cookies = JSON.parse(fs.readFileSync(COOKIE_FILE, 'utf8'));
+          if (Array.isArray(cookies) && cookies.length > 0) {
+            await context.addCookies(cookies);
+            console.log('已注入问财登录 cookies:', cookies.length, '条');
+          }
+        }
+      } catch (e) { console.log('cookie 注入失败:', e.message); }
       await context.addInitScript(() => {
         Object.defineProperty(navigator, 'webdriver', { get: () => false });
         window.chrome = { runtime: {} };
@@ -387,16 +399,3 @@ process.on('SIGINT', async () => {
 });
 
 start();
-
-
-      // V8: 注入问财登录 cookies（data/iwencai-cookies.json，由 v8/login.js 生成）
-      try {
-        if (fs.existsSync(COOKIE_FILE)) {
-          const cookies = JSON.parse(fs.readFileSync(COOKIE_FILE, 'utf8'));
-          if (Array.isArray(cookies) && cookies.length > 0) {
-            await context.addCookies(cookies);
-            console.log('已注入问财登录 cookies:', cookies.length, '条');
-          }
-        }
-      } catch (e) { console.log('cookie 注入失败:', e.message); }
-const COOKIE_FILE = path.join(__dirname, '../data/iwencai-cookies.json');
