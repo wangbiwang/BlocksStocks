@@ -25,4 +25,5 @@ npm-debug.log*
 
 # V8 棰勭瓫缂撳瓨
 data/preset/
+data/iwencai-cookies.json
 
