@@ -379,10 +379,12 @@ app.post('/api/preset', (req, res) => {
 });
 // 数据目录
 app.use('/data', express.static(path.join(__dirname, '../data')));
-// V7 静态文件（根路径）
-app.use(express.static(path.join(__dirname, '../v8')));
-// V6 手机版
-app.use('/m', express.static(path.join(__dirname, '../v8/mobile')));
+// 老 V8 策略（/v8 后缀）
+app.use('/v8', express.static(path.join(__dirname, '../v8')));
+// 默认根路径 = V9 新策略
+app.use(express.static(path.join(__dirname, '../v9')));
+// 手机版
+app.use('/m', express.static(path.join(__dirname, '../v9/mobile')));
 
 async function start() {
   await fetchProxyList();
