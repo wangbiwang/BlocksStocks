@@ -27,3 +27,13 @@ npm-debug.log*
 data/preset/
 data/iwencai-cookies.json
 
+# Local temporary and generated artifacts
+.playwright-mcp/
+scratch/
+_patch_fields.js
+_verify_cases.js
+_verify_cases2.js
+
+# V9 kline fetch cache
+v9/kline-cache.json
+
