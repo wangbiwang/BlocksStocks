@@ -97,5 +97,39 @@ for (const c of CASES) {
   const failed = Object.entries(r.conditions).filter(([, v]) => !v).map(([k]) => k).join(',');
   console.log(`${ok ? '✅' : '❌'} ${c.td} ${c.block}(${c.type}) → ${c.stock}  ${ok ? '' : '未满足: ' + failed}`);
 }
-console.log(`\nBlock 历史用例通过: ${pass}/${CASES.length}  失败: ${fail}/${CASES.length}`);
+
+// V9 Block 资金门槛边界用例：不依赖历史缓存
+const td = '20260908';
+const pd1 = '20260907';
+const mkBlockItem = ({ pd1Net = 1, chg0933 = 1, chg0935 = 1, f0933 = 1, f0935 = 1, n0933 = 1, n0935 = 1 } = {}) => ({
+  M01: 2,
+  M05: 2,
+  M21: 1,
+  prevM05: 1,
+  '09:35涨跌幅排名': 1,
+  limitUpCount: 1,
+  [pd1]: { 涨跌幅: 1, 大单净额: pd1Net },
+  [`${td} 09:33`]: { 涨跌幅: chg0933, 资金流向: f0933, 大单净额: n0933 },
+  [`${td} 09:35`]: { 涨跌幅: chg0935, 资金流向: f0935, 大单净额: n0935 },
+});
+const UNIT_CASES = [
+  { name: '昨日大单净额为正且 09:35 资金健康', item: mkBlockItem(), expect: true },
+  { name: '昨日大单净额为负应剔除', item: mkBlockItem({ pd1Net: -1 }), expect: false },
+  { name: '09:35 资金流向与大单净额同负应剔除', item: mkBlockItem({ f0935: -1, n0935: -1 }), expect: false },
+  { name: '两项相对 09:33 同时弱化应剔除', item: mkBlockItem({ chg0933: 1, chg0935: 2, f0933: 1, f0935: -1, n0933: 2, n0935: 1 }), expect: false },
+  { name: '三项相对 09:33 同时弱化应剔除', item: mkBlockItem({ chg0933: 2.217, chg0935: 2.145, f0933: -554688770, f0935: -740570140, n0933: 84694550, n0935: 71645250 }), expect: false },
+  { name: '仅资金流向弱化但其余未弱化仍通过', item: mkBlockItem({ f0933: 1, f0935: -1, n0933: 1, n0935: 2, chg0933: 1, chg0935: 2 }), expect: true },
+];
+let unitPass = 0, unitFail = 0;
+for (const c of UNIT_CASES) {
+  const r = evaluateBlockStrongV9(c.item, { td, pd1 });
+  const ok = r.isStrong === c.expect;
+  if (ok) unitPass++; else unitFail++;
+  const failed = Object.entries(r.conditions).filter(([, v]) => !v).map(([k]) => k).join(',');
+  console.log(`${ok ? '✅' : '❌'} ${c.name}  ${ok ? '' : '未满足: ' + failed}`);
+}
+pass += unitPass;
+fail += unitFail;
+const totalCases = CASES.length + UNIT_CASES.length;
+console.log(`\nBlock 用例通过: ${pass}/${totalCases}  失败: ${fail}/${totalCases}`);
 process.exit(fail === 0 ? 0 : 1);

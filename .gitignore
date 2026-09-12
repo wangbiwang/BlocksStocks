@@ -9,6 +9,8 @@ desktop.ini
 
 # IDE
 .vscode/
+.workbuddy
+.codebuddy
 .idea/
 .claude
 *.swp

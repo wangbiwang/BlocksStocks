@@ -192,15 +192,17 @@ function evaluateBlockStrong(item, dates) {
 }
 
 /* ================================================================
- * V9 Block 策略（主线板块：趋势确认 + 今日领涨 + 近期强势 + 涨停龙头）
+ * V9 Block 策略（主线板块：趋势确认 + 今日领涨 + 近期强势 + 涨停龙头 + 资金确认）
  *
  * 与 V7 的区别：V7 要求均线完全多头 + MACD + 放量 + 资金等一堆硬条件，
  * 对刚启动的主线板块太严，也容易误杀“板块早盘温和、但个股已是龙头”的
- * 主线（如开开实业/医药商业）。V9 改成四问：
+ * 主线（如开开实业/医药商业）。V9 改成五问：
  *   1) 趋势确认：板块指数站上 21 日线，且 5 日线向上（过滤超跌反弹假主线）
  *   2) 今日领涨：板块 09:35 涨幅全市场排名前 5（主线领涨）
  *   3) 近期强势：板块昨日上涨（非一日游）
  *   4) 赚钱效应：板块内有涨停龙头
+ *   5) 资金确认：昨日大单净额为正；09:35 资金/大单未双负，
+ *      且相对 09:33 在资金流向/大单净额/涨幅三项中走弱项 < 2
  * ================================================================ */
 
 function evaluateBlockStrongV9(item, dates) {
@@ -220,9 +222,23 @@ function evaluateBlockStrongV9(item, dates) {
     // 4. 赚钱效应：板块内有涨停龙头
     const hasLeader = (item.limitUpCount || 0) >= 1
 
+    // 5. 资金确认：昨日大单净额为正（非资金净流出上涨）
+    const fund1 = (item[pd1]?.大单净额 || 0) > 0
+    // 09:35 资金恶化筛除：双负，或相对 09:33 三项中至少两项走弱
+    const f0935 = item[`${td} 09:35`]?.资金流向 || 0
+    const n0935 = item[`${td} 09:35`]?.大单净额 || 0
+    const f0933 = item[`${td} 09:33`]?.资金流向 || 0
+    const n0933 = item[`${td} 09:33`]?.大单净额 || 0
+    const chg0935 = item[`${td} 09:35`]?.涨跌幅 || 0
+    const chg0933 = item[`${td} 09:33`]?.涨跌幅 || 0
+    const notBothNegative = !(f0935 < 0 && n0935 < 0)
+    const weakenCount = (f0935 < f0933 ? 1 : 0) + (n0935 < n0933 ? 1 : 0) + (chg0935 < chg0933 ? 1 : 0)
+    const notMajorWeaken = weakenCount < 2
+    const flowOk = notBothNegative && notMajorWeaken
+
     return {
-        isStrong: trendUp && mainLine && recentStrong && hasLeader,
-        conditions: { trendUp, mainLine, recentStrong, hasLeader },
+        isStrong: trendUp && mainLine && recentStrong && hasLeader && fund1 && flowOk,
+        conditions: { trendUp, mainLine, recentStrong, hasLeader, fund1, notBothNegative, weakenCount, notMajorWeaken, flowOk },
     }
 }
 

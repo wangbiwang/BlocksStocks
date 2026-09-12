@@ -6,9 +6,9 @@
  *
  * 核心四问：
  *   1. 板块是不是主线（evaluateBlockStrongV9）；
- *   2. 昨日强不强：昨日涨幅 >= 7%（涨停/接近涨停）；
+ *   2. 昨日强不强：昨日涨幅归一主板基准后 >= 7%（创业板/科创板原值 ÷2）；
  *   3. 今日是否持续：09:35 涨幅 >= 4%，且是板块内今日涨幅前 5；
- *   4. 质量护栏：热度适中 + 09:35 不跳水 + 板块今早全市场涨幅前 5。
+ *   4. 质量护栏：昨日热度榜前 500（昨日涨停可忽略）+ 09:35 不跳水 + 板块今早全市场涨幅前 5。
  *
  * 与旧版区别：不再把 chg0935<9.5（分歧低吸）和 rankPd1<=5（昨日板块内前 5）
  * 当硬门槛——昨日涨停但板块内只排第 6~N、今天直接一字/封板的强票同样入选。
@@ -27,11 +27,11 @@
   // ===== 可调参数 =====
   const V9_CONFIG = {
     chg0935Min: 4,          // 今日 09:35 涨幅下限（今日确实在走强；无上限，涨停也接受）
-    pd1ChgMin: 7,           // 昨日涨幅下限（昨日强：涨停/接近涨停）
+    pd1ChgMin: 7,           // 归一主板基准后的昨日强线（创业板/科创板原值 ÷2）
     rank0935Max: 5,         // 板块内 09:35 涨幅排名前 5（今日持续领涨）
     deltaMin: -3,           // 09:35 - 09:33 跌幅容忍度（防高开跳水）
-    heatMin: 20,            // 热度排名下限
-    heatMax: 300,           // 热度排名上限
+    heatMin: 1,             // 热度榜越靠前越有人气
+    heatMax: 500,           // 昨日热度榜前 500 才有人气；昨日涨停可忽略
     blockRank0935Max: 5,    // 板块今早 09:35 涨幅全市场排名前 5（主线）
     nStrongBlocksMax: 999,  // 当日强势板块总数上限（默认放宽）
   };
@@ -52,6 +52,7 @@
     const chg0935 = item[td + ' 09:35']?.涨跌幅 || 0;
     const chg0933 = item[td + ' 09:33']?.涨跌幅 || 0;
     const pd1Chg = item[pd1]?.涨跌幅 || 0;
+    const pd1ChgNorm = mainBoard ? pd1Chg : pd1Chg / 2;   // 折算到主板 10% 基准
     const delta = chg0935 - chg0933;
     const rank0935 = item['09:35涨跌幅排名'] || 9999;
     const rankPd1 = item['昨日涨跌幅排名'] || 9999;
@@ -73,11 +74,11 @@
     const checks = {
       blockStrong: !!blockStrong,                          // 主线板块
       marketOk: !!marketOk,                                // 大盘环境（可选门控）
-      pd1Chg: pd1Chg >= V9_CONFIG.pd1ChgMin,               // 昨日强
+      pd1Chg: pd1ChgNorm >= V9_CONFIG.pd1ChgMin,           // 昨日强（归一主板基准）
       chg0935: chg0935 >= V9_CONFIG.chg0935Min,            // 今日持续（涨停也接受）
       rank0935: rank0935 <= V9_CONFIG.rank0935Max,         // 板块内今日涨幅前 5
       deltaOk: delta >= V9_CONFIG.deltaMin,                // 09:35 不跳水
-      heatOk: heatVal >= V9_CONFIG.heatMin && heatVal <= V9_CONFIG.heatMax,
+      heatOk: pd1LimitUp || (heatVal >= V9_CONFIG.heatMin && heatVal <= V9_CONFIG.heatMax),
       blockRank0935: blockRank0935 <= V9_CONFIG.blockRank0935Max,
       nStrongBlocksOk: nStrongBlocks <= V9_CONFIG.nStrongBlocksMax,
     };
